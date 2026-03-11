@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getvela (Vela) - UI/UX Analysis & Wireframes</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+
+  /* Navigation */
+  .top-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .top-nav h1 { font-size: 18px; color: #38bdf8; }
+  .top-nav .tabs { display: flex; gap: 4px; margin-left: auto; }
+  .top-nav .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #94a3b8; transition: all 0.2s; border: none; background: none; }
+  .top-nav .tab:hover, .top-nav .tab.active { background: #334155; color: #f1f5f9; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 80px 24px 40px; }
+
+  /* Screen cards */
+  .screen-section { margin-bottom: 60px; }
+  .screen-header { margin-bottom: 20px; }
+  .screen-header h2 { font-size: 24px; color: #38bdf8; margin-bottom: 8px; }
+  .screen-header p { color: #94a3b8; font-size: 14px; line-height: 1.6; }
+  .screen-header .tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .screen-header .tag { background: #1e293b; border: 1px solid #334155; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #67e8f9; }
+
+  /* Wireframe container */
+  .wireframe { background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  .browser-bar { background: #e2e8f0; padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+  .browser-dots { display: flex; gap: 6px; }
+  .browser-dots span { width: 12px; height: 12px; border-radius: 50%; }
+  .browser-dots span:nth-child(1) { background: #ef4444; }
+  .browser-dots span:nth-child(2) { background: #f59e0b; }
+  .browser-dots span:nth-child(3) { background: #22c55e; }
+  .browser-url { flex: 1; background: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; color: #64748b; margin-left: 12px; }
+  .wireframe-content { color: #1e293b; }
+
+  /* Design notes */
+  .design-notes { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 24px; margin-top: 20px; }
+  .design-notes h3 { color: #fbbf24; font-size: 16px; margin-bottom: 12px; }
+  .design-notes ul { list-style: none; padding: 0; }
+  .design-notes li { padding: 6px 0; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
+  .design-notes li::before { content: "→ "; color: #38bdf8; }
+
+  /* Wireframe internal styles */
+  .wf-sidebar { width: 220px; background: #1a1f36; min-height: 600px; float: left; padding: 20px 0; }
+  .wf-sidebar .logo { padding: 0 20px 20px; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .wf-sidebar .logo span { color: #6366f1; }
+  .wf-nav-item { padding: 10px 20px; color: #8892b0; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .wf-nav-item.active { background: rgba(99,102,241,0.15); color: #fff; border-left: 3px solid #6366f1; }
+  .wf-nav-item .icon { width: 18px; height: 18px; background: #334155; border-radius: 4px; display: inline-block; }
+  .wf-main { margin-left: 220px; background: #f8fafc; min-height: 600px; }
+  .wf-topbar { background: #fff; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+  .wf-search { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px; width: 300px; font-size: 14px; color: #64748b; }
+  .wf-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; border: none; cursor: pointer; font-weight: 500; }
+  .wf-btn-primary { background: #6366f1; color: #fff; }
+  .wf-btn-outline { background: #fff; border: 1px solid #e2e8f0; color: #475569; }
+  .wf-content { padding: 24px; }
+  .clearfix::after { content: ""; display: table; clear: both; }
+
+  /* Login specific */
+  .login-container { display: flex; min-height: 600px; }
+  .login-left { flex: 1; background: linear-gradient(135deg, #1a1f36, #2d1b69); display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .login-right { flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .login-form { width: 100%; max-width: 360px; }
+  .login-form h2 { font-size: 28px; color: #1e293b; margin-bottom: 8px; }
+  .login-form p { color: #64748b; margin-bottom: 24px; font-size: 14px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; color: #475569; margin-bottom: 6px; font-weight: 500; }
+  .form-input { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1e293b; }
+  .form-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+  .login-btn { width: 100%; padding: 12px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+  .social-login { margin-top: 24px; text-align: center; }
+  .social-login .divider { color: #94a3b8; font-size: 13px; margin: 16px 0; }
+  .social-btn { width: 100%; padding: 10px; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #374151; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .hero-text { color: #fff; text-align: center; }
+  .hero-text h1 { font-size: 36px; margin-bottom: 16px; }
+  .hero-text h1 span { color: #818cf8; }
+  .hero-text p { color: #94a3b8; font-size: 16px; line-height: 1.6; }
+
+  /* Listings table */
+  .listings-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+  .listings-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  .listings-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; vertical-align: middle; }
+  .listing-img { width: 48px; height: 48px; background: #e2e8f0; border-radius: 8px; display: inline-block; }
+  .listing-title { font-weight: 500; color: #1e293b; }
+  .listing-channel { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .channel-etsy { background: #fef3c7; color: #92400e; }
+  .channel-shopify { background: #d1fae5; color: #065f46; }
+  .channel-ebay { background: #dbeafe; color: #1e40af; }
+  .score-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+  .score-a { background: #d1fae5; color: #065f46; }
+  .score-b { background: #fef3c7; color: #92400e; }
+  .score-c { background: #fee2e2; color: #991b1b; }
+
+  /* Bulk editor */
+  .bulk-toolbar { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .bulk-field { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .bulk-field label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: block; }
+  .bulk-field .field-input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; min-height: 40px; color: #1e293b; }
+  .bulk-field textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; min-height: 80px; resize: vertical; color: #1e293b; }
+  .ai-suggest { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, #818cf8, #6366f1); color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+
+  /* Studio */
+  .studio-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .studio-card { background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+  .studio-img { width: 100%; height: 160px; background: linear-gradient(135deg, #e2e8f0, #cbd5e1); display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 13px; }
+  .studio-info { padding: 12px; }
+  .studio-info .name { font-size: 13px; color: #1e293b; font-weight: 500; }
+  .studio-info .meta { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .studio-actions { display: flex; gap: 8px; padding: 0 12px 12px; }
+  .studio-action-btn { padding: 4px 10px; border-radius: 4px; font-size: 11px; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; }
+
+  /* Analytics */
+  .analytics-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .analytics-card { background: #fff; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0; }
+  .analytics-card .metric-label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+  .analytics-card .metric-value { font-size: 28px; font-weight: 700; color: #1e293b; margin: 8px 0 4px; }
+  .analytics-card .metric-change { font-size: 13px; }
+  .analytics-card .up { color: #059669; }
+  .analytics-card .down { color: #dc2626; }
+  .chart-placeholder { background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 24px; height: 300px; display: flex; align-items: center; justify-content: center; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 12px; height: 200px; }
+  .chart-bar { width: 40px; background: linear-gradient(to top, #6366f1, #818cf8); border-radius: 4px 4px 0 0; }
+
+  /* Profile templates */
+  .profile-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .profile-name { font-weight: 600; color: #1e293b; font-size: 15px; }
+  .profile-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .profile-count { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px; color: #475569; }
+
+  /* Tabs for sections */
+  .section-tabs { display: flex; gap: 0; margin-bottom: 0; position: sticky; top: 60px; z-index: 50; background: #0f172a; padding: 16px 0 0; }
+  .section-tab { padding: 12px 20px; color: #94a3b8; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .section-tab:hover { color: #e2e8f0; }
+  .section-tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .analytics-cards, .studio-grid { grid-template-columns: repeat(2, 1fr); }
+    .login-container { flex-direction: column; }
+    .wf-sidebar { display: none; }
+    .wf-main { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <h1>Vela UI/UX Analysis</h1>
+  <span style="color:#64748b; font-size:13px;">Wireframes & Design Patterns</span>
+</div>
+
+<div class="container">
+
+<!-- ========== 1. LOGIN SCREEN ========== -->
+<div class="screen-section" id="login">
+  <div class="screen-header">
+    <h2>1. Sign In / Sign Up</h2>
+    <p>Trang đăng nhập sử dụng layout chia đôi (split-screen): bên trái là branding/hero, bên phải là form đăng nhập. Hỗ trợ đăng nhập qua email và social login (Google, Apple).</p>
+    <div class="tags">
+      <span class="tag">Split Layout</span>
+      <span class="tag">Social Auth</span>
+      <span class="tag">Clean Form</span>
+      <span class="tag">Brand Story</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/auth/sign-in</div>
+    </div>
+    <div class="wireframe-content">
+      <div class="login-container">
+        <div class="login-left">
+          <div class="hero-text">
+            <h1>The <span>AI edge</span> for eCommerce sellers</h1>
+            <p style="margin-top:16px;">Manage, optimize & grow all your shops from one powerful platform</p>
+            <div style="margin-top:32px; display:flex; gap:16px; justify-content:center;">
+              <div style="background:rgba(255,255,255,0.1); padding:12px 20px; border-radius:8px; font-size:13px; color:#c7d2fe;">Etsy</div>
+              <div style="background:rgba(255,255,255,0.1); padding:12px 20px; border-radius:8px; font-size:13px; color:#c7d2fe;">Shopify</div>
+              <div style="background:rgba(255,255,255,0.1); padding:12px 20px; border-radius:8px; font-size:13px; color:#c7d2fe;">eBay</div>
+              <div style="background:rgba(255,255,255,0.1); padding:12px 20px; border-radius:8px; font-size:13px; color:#c7d2fe;">Faire</div>
+            </div>
+          </div>
+        </div>
+        <div class="login-right">
+          <div class="login-form">
+            <h2>Welcome back</h2>
+            <p>Sign in to your Vela account</p>
+            <div class="social-login" style="margin-top:0; margin-bottom:16px;">
+              <div class="social-btn">&#x1f310; Continue with Google</div>
+              <div class="social-btn">&#x1F34E; Continue with Apple</div>
+            </div>
+            <div class="social-login">
+              <div class="divider">or sign in with email</div>
+            </div>
+            <div class="form-group">
+              <label>Email address</label>
+              <input class="form-input" type="text" placeholder="you@example.com" disabled>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input class="form-input" type="password" placeholder="Enter your password" disabled>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <div class="form-checkbox">
+                <input type="checkbox" disabled> Remember me
+              </div>
+              <a style="font-size:13px; color:#6366f1; text-decoration:none;">Forgot password?</a>
+            </div>
+            <button class="login-btn">Sign In</button>
+            <p style="text-align:center; margin-top:16px; font-size:13px; color:#64748b;">Don't have an account? <a style="color:#6366f1; text-decoration:none; font-weight:500;">Sign up free</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>Split-screen layout</strong> — rất phổ biến trong SaaS apps, bên trái để brand storytelling, bên phải cho action</li>
+      <li><strong>Social login ưu tiên</strong> — đặt trên cùng, giảm friction đăng nhập</li>
+      <li><strong>Gradient background</strong> — dark purple/blue tạo cảm giác premium, chuyên nghiệp</li>
+      <li><strong>Channel badges</strong> — hiển thị ngay các marketplace được hỗ trợ, tăng trust</li>
+      <li><strong>Gợi ý:</strong> Có thể thêm testimonial carousel ở phần bên trái và animated illustrations</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 2. DASHBOARD / LISTINGS ========== -->
+<div class="screen-section" id="listings">
+  <div class="screen-header">
+    <h2>2. Dashboard & Listings Management</h2>
+    <p>Giao diện chính sử dụng sidebar navigation + content area. Listings hiển thị dạng bảng (table view) với khả năng lọc, tìm kiếm, và bulk actions. Mỗi listing có AI Score từ F- đến A+.</p>
+    <div class="tags">
+      <span class="tag">Sidebar Nav</span>
+      <span class="tag">Table View</span>
+      <span class="tag">AI Score</span>
+      <span class="tag">Bulk Actions</span>
+      <span class="tag">Multi-channel Filter</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/listings</div>
+    </div>
+    <div class="wireframe-content clearfix">
+      <div class="wf-sidebar">
+        <div class="logo"><span>V</span>ela</div>
+        <div class="wf-nav-item active"><span class="icon"></span> Listings</div>
+        <div class="wf-nav-item"><span class="icon"></span> Profiles</div>
+        <div class="wf-nav-item"><span class="icon"></span> Schedule</div>
+        <div class="wf-nav-item"><span class="icon"></span> Studio</div>
+        <div class="wf-nav-item"><span class="icon"></span> Analytics</div>
+        <div class="wf-nav-item" style="margin-top:20px; border-top:1px solid #2a3050; padding-top:20px;"><span class="icon"></span> Settings</div>
+        <div class="wf-nav-item"><span class="icon"></span> Help Center</div>
+        <div style="position:absolute; bottom:20px; left:0; right:0; padding:0 20px;">
+          <div style="background:#2a3050; border-radius:8px; padding:12px; text-align:center;">
+            <div style="font-size:11px; color:#94a3b8;">Free Plan</div>
+            <div style="font-size:13px; color:#818cf8; margin-top:4px; font-weight:600;">Upgrade to Plus</div>
+          </div>
+        </div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-topbar">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <input class="wf-search" type="text" placeholder="Search listings..." disabled>
+            <select style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#475569;" disabled>
+              <option>All Channels</option>
+            </select>
+            <select style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px; color:#475569;" disabled>
+              <option>All Statuses</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="wf-btn wf-btn-outline">Export CSV</button>
+            <button class="wf-btn wf-btn-primary">+ New Listing</button>
+          </div>
+        </div>
+        <div class="wf-content">
+          <div style="background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:13px; color:#4338ca;">3 listings selected</span>
+            <div style="display:flex; gap:8px;">
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Bulk Edit</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Copy</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Merge</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Delete</button>
+            </div>
+          </div>
+          <table class="listings-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" disabled></th>
+                <th>Image</th>
+                <th>Title</th>
+                <th>Channel</th>
+                <th>Price</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" checked disabled></td>
+                <td><div class="listing-img" style="background:#dbeafe;"></div></td>
+                <td><span class="listing-title">Vintage Ceramic Vase - Handmade</span><br><span style="font-size:12px; color:#94a3b8;">SKU: VCV-001</span></td>
+                <td><span class="listing-channel channel-etsy">Etsy</span></td>
+                <td>$45.00</td>
+                <td><span class="score-badge score-a">A</span></td>
+                <td><span style="color:#059669;">Active</span></td>
+                <td style="color:#94a3b8; font-size:13px;">2h ago</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked disabled></td>
+                <td><div class="listing-img" style="background:#d1fae5;"></div></td>
+                <td><span class="listing-title">Organic Cotton T-Shirt Bundle</span><br><span style="font-size:12px; color:#94a3b8;">SKU: OCT-045</span></td>
+                <td><span class="listing-channel channel-shopify">Shopify</span> <span class="listing-channel channel-etsy">Etsy</span></td>
+                <td>$32.50</td>
+                <td><span class="score-badge score-b">B+</span></td>
+                <td><span style="color:#059669;">Active</span></td>
+                <td style="color:#94a3b8; font-size:13px;">5h ago</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" checked disabled></td>
+                <td><div class="listing-img" style="background:#fef3c7;"></div></td>
+                <td><span class="listing-title">Leather Wallet - Minimalist Design</span><br><span style="font-size:12px; color:#94a3b8;">SKU: LW-112</span></td>
+                <td><span class="listing-channel channel-ebay">eBay</span></td>
+                <td>$28.00</td>
+                <td><span class="score-badge score-c">C</span></td>
+                <td><span style="color:#d97706;">Draft</span></td>
+                <td style="color:#94a3b8; font-size:13px;">1d ago</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" disabled></td>
+                <td><div class="listing-img" style="background:#fce7f3;"></div></td>
+                <td><span class="listing-title">Handmade Candle Set - Lavender</span><br><span style="font-size:12px; color:#94a3b8;">SKU: HC-078</span></td>
+                <td><span class="listing-channel channel-etsy">Etsy</span> <span class="listing-channel channel-shopify">Shopify</span></td>
+                <td>$19.99</td>
+                <td><span class="score-badge score-a">A+</span></td>
+                <td><span style="color:#059669;">Active</span></td>
+                <td style="color:#94a3b8; font-size:13px;">3d ago</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:8px 0;">
+            <span style="font-size:13px; color:#64748b;">Showing 1-4 of 248 listings</span>
+            <div style="display:flex; gap:4px;">
+              <button class="wf-btn wf-btn-outline" style="font-size:12px; padding:6px 12px;">&lt;</button>
+              <button class="wf-btn wf-btn-primary" style="font-size:12px; padding:6px 12px;">1</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px; padding:6px 12px;">2</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px; padding:6px 12px;">3</button>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px; padding:6px 12px;">&gt;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>Dark sidebar + light content</strong> — tạo hierarchy rõ ràng, sidebar là navigation hub</li>
+      <li><strong>AI Score badges (A+ đến F-)</strong> — gamification thông minh, thúc đẩy seller tối ưu listing</li>
+      <li><strong>Multi-channel tags</strong> — hiển thị inline, seller thấy ngay listing đang ở platform nào</li>
+      <li><strong>Contextual bulk action bar</strong> — chỉ hiện khi có items được chọn, giảm UI clutter</li>
+      <li><strong>Hover actions</strong> — Copy, Merge, Delete xuất hiện khi hover row, giữ bảng clean</li>
+      <li><strong>Gợi ý:</strong> Cân nhắc thêm view toggle (Grid/List), drag-drop reorder, và inline editing</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 3. BULK EDITOR ========== -->
+<div class="screen-section" id="bulk-editor">
+  <div class="screen-header">
+    <h2>3. Bulk Editor</h2>
+    <p>Trình chỉnh sửa hàng loạt cho phép cập nhật titles, descriptions, tags, prices cho nhiều listings cùng lúc. Tích hợp AI suggestions để tối ưu SEO và nội dung.</p>
+    <div class="tags">
+      <span class="tag">Batch Update</span>
+      <span class="tag">AI Suggestions</span>
+      <span class="tag">SEO Optimization</span>
+      <span class="tag">Field-level Edit</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/bulk-edit</div>
+    </div>
+    <div class="wireframe-content clearfix">
+      <div class="wf-sidebar">
+        <div class="logo"><span>V</span>ela</div>
+        <div class="wf-nav-item active"><span class="icon"></span> Listings</div>
+        <div class="wf-nav-item"><span class="icon"></span> Profiles</div>
+        <div class="wf-nav-item"><span class="icon"></span> Schedule</div>
+        <div class="wf-nav-item"><span class="icon"></span> Studio</div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-topbar">
+          <div>
+            <span style="font-size:16px; font-weight:600; color:#1e293b;">Bulk Editor</span>
+            <span style="font-size:13px; color:#64748b; margin-left:12px;">3 listings selected</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="wf-btn wf-btn-outline">Cancel</button>
+            <button class="wf-btn wf-btn-primary">Save Changes</button>
+          </div>
+        </div>
+        <div class="wf-content">
+          <div class="bulk-toolbar">
+            <span style="font-size:13px; color:#64748b;">Apply to:</span>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">All Selected</button>
+            <span style="color:#d1d5db;">|</span>
+            <span style="font-size:13px; color:#64748b;">Fields:</span>
+            <button class="wf-btn wf-btn-primary" style="font-size:12px;">Title</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Description</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Tags</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Price</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Photos</button>
+            <div style="margin-left:auto;">
+              <span class="ai-suggest">&#x2728; AI Optimize All</span>
+            </div>
+          </div>
+
+          <div class="bulk-field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label>Title</label>
+              <span class="ai-suggest" style="font-size:11px;">&#x2728; AI Suggest</span>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:8px;">
+              <div style="flex:1;">
+                <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">Current</div>
+                <div class="field-input" style="background:#fff; border:1px solid #d1d5db; padding:10px; border-radius:6px; font-size:14px; color:#64748b;">Vintage Ceramic Vase - Handmade</div>
+              </div>
+              <div style="display:flex; align-items:center; color:#94a3b8; font-size:20px;">→</div>
+              <div style="flex:1;">
+                <div style="font-size:11px; color:#059669; margin-bottom:4px;">AI Optimized</div>
+                <div class="field-input" style="background:#f0fdf4; border:1px solid #86efac; padding:10px; border-radius:6px; font-size:14px; color:#1e293b;">Handmade Vintage Ceramic Vase | Artisan Pottery Decor | Unique Home Gift</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bulk-field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label>Description</label>
+              <span class="ai-suggest" style="font-size:11px;">&#x2728; AI Suggest</span>
+            </div>
+            <textarea style="margin-top:8px;" placeholder="Enter description to apply to all selected listings..." disabled></textarea>
+          </div>
+
+          <div class="bulk-field">
+            <label>Tags</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              <span style="background:#eef2ff; color:#4338ca; padding:4px 12px; border-radius:20px; font-size:13px;">vintage &times;</span>
+              <span style="background:#eef2ff; color:#4338ca; padding:4px 12px; border-radius:20px; font-size:13px;">ceramic &times;</span>
+              <span style="background:#eef2ff; color:#4338ca; padding:4px 12px; border-radius:20px; font-size:13px;">handmade &times;</span>
+              <span style="background:#f0fdf4; color:#059669; padding:4px 12px; border-radius:20px; font-size:13px; border:1px dashed #86efac;">+ pottery (AI)</span>
+              <span style="background:#f0fdf4; color:#059669; padding:4px 12px; border-radius:20px; font-size:13px; border:1px dashed #86efac;">+ home decor (AI)</span>
+              <span style="background:#f8fafc; border:1px dashed #d1d5db; padding:4px 12px; border-radius:20px; font-size:13px; color:#94a3b8; cursor:pointer;">+ Add tag</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>Before/After comparison</strong> — hiển thị current vs AI-optimized side-by-side, rất trực quan</li>
+      <li><strong>AI integration tự nhiên</strong> — nút "AI Suggest" nhỏ gọn bên cạnh mỗi field, không intrusive</li>
+      <li><strong>Tag chips with AI suggestions</strong> — tags AI gợi ý có viền nét đứt + màu xanh lá, phân biệt rõ</li>
+      <li><strong>Field selector toolbar</strong> — chọn field muốn edit ngay trên toolbar, workflow rất mượt</li>
+      <li><strong>Gợi ý:</strong> Thêm undo/redo, preview changes trước khi save, và diff view cho mỗi listing</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 4. STUDIO (Photo Management) ========== -->
+<div class="screen-section" id="studio">
+  <div class="screen-header">
+    <h2>4. Vela Studio (Photo Management)</h2>
+    <p>Workspace quản lý và chỉnh sửa ảnh sản phẩm. Tự động nhận diện và liên kết ảnh với listing. Tích hợp AI để xóa nền, thêm banner, và tạo lifestyle images.</p>
+    <div class="tags">
+      <span class="tag">Photo Grid</span>
+      <span class="tag">AI Background Removal</span>
+      <span class="tag">Image Optimization</span>
+      <span class="tag">Linked Listings</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/studio</div>
+    </div>
+    <div class="wireframe-content clearfix">
+      <div class="wf-sidebar">
+        <div class="logo"><span>V</span>ela</div>
+        <div class="wf-nav-item"><span class="icon"></span> Listings</div>
+        <div class="wf-nav-item"><span class="icon"></span> Profiles</div>
+        <div class="wf-nav-item"><span class="icon"></span> Schedule</div>
+        <div class="wf-nav-item active"><span class="icon"></span> Studio</div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-topbar">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <span style="font-size:16px; font-weight:600; color:#1e293b;">Studio</span>
+            <input class="wf-search" type="text" placeholder="Search photos..." disabled>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="wf-btn wf-btn-outline">&#x1F4F7; Upload</button>
+            <span class="ai-suggest">&#x2728; AI Edit</span>
+          </div>
+        </div>
+        <div class="wf-content">
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <button class="wf-btn wf-btn-primary" style="font-size:12px;">All Photos</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Unlinked</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">Optimized</button>
+            <button class="wf-btn wf-btn-outline" style="font-size:12px;">By Listing</button>
+          </div>
+          <div class="studio-grid">
+            <div class="studio-card">
+              <div class="studio-img" style="background:linear-gradient(135deg, #dbeafe, #bfdbfe);">Product Photo 1</div>
+              <div class="studio-info">
+                <div class="name">vase-front-01.jpg</div>
+                <div class="meta">1200x1200 · 340KB · 2 listings</div>
+              </div>
+              <div class="studio-actions">
+                <span class="studio-action-btn">Edit</span>
+                <span class="studio-action-btn">&#x2728; AI Enhance</span>
+                <span class="studio-action-btn">Remove BG</span>
+              </div>
+            </div>
+            <div class="studio-card">
+              <div class="studio-img" style="background:linear-gradient(135deg, #d1fae5, #a7f3d0);">Product Photo 2</div>
+              <div class="studio-info">
+                <div class="name">tshirt-bundle.jpg</div>
+                <div class="meta">1500x1500 · 420KB · 1 listing</div>
+              </div>
+              <div class="studio-actions">
+                <span class="studio-action-btn">Edit</span>
+                <span class="studio-action-btn">&#x2728; AI Enhance</span>
+                <span class="studio-action-btn">Remove BG</span>
+              </div>
+            </div>
+            <div class="studio-card">
+              <div class="studio-img" style="background:linear-gradient(135deg, #fef3c7, #fde68a);">Product Photo 3</div>
+              <div class="studio-info">
+                <div class="name">wallet-leather.jpg</div>
+                <div class="meta">800x800 · 180KB · 1 listing</div>
+              </div>
+              <div class="studio-actions">
+                <span class="studio-action-btn">Edit</span>
+                <span class="studio-action-btn">&#x2728; AI Enhance</span>
+                <span class="studio-action-btn">Remove BG</span>
+              </div>
+            </div>
+            <div class="studio-card">
+              <div class="studio-img" style="background:linear-gradient(135deg, #fce7f3, #fbcfe8);">Product Photo 4</div>
+              <div class="studio-info">
+                <div class="name">candle-set.jpg</div>
+                <div class="meta">1200x900 · 290KB · 3 listings</div>
+              </div>
+              <div class="studio-actions">
+                <span class="studio-action-btn">Edit</span>
+                <span class="studio-action-btn">&#x2728; AI Enhance</span>
+                <span class="studio-action-btn">Remove BG</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>Grid layout cho ảnh</strong> — visual-first approach, dễ scan và chọn ảnh cần edit</li>
+      <li><strong>Metadata inline</strong> — kích thước, dung lượng, số listings sử dụng ngay bên dưới</li>
+      <li><strong>Quick actions</strong> — Edit, AI Enhance, Remove BG trực tiếp trên card, không cần mở modal</li>
+      <li><strong>Filter tabs</strong> — lọc theo trạng thái (Unlinked, Optimized, By Listing) rất tiện</li>
+      <li><strong>Gợi ý:</strong> Thêm drag-drop upload, batch AI processing, before/after slider cho ảnh</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 5. PROFILES ========== -->
+<div class="screen-section" id="profiles">
+  <div class="screen-header">
+    <h2>5. Profiles (Reusable Templates)</h2>
+    <p>Templates tái sử dụng giúp chuẩn hóa và áp dụng nhanh các fields chung (tags, variations, shipping) cho nhiều listings. Giống concept "presets" hoặc "templates".</p>
+    <div class="tags">
+      <span class="tag">Templates</span>
+      <span class="tag">Reusable Presets</span>
+      <span class="tag">Quick Apply</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/profiles</div>
+    </div>
+    <div class="wireframe-content clearfix">
+      <div class="wf-sidebar">
+        <div class="logo"><span>V</span>ela</div>
+        <div class="wf-nav-item"><span class="icon"></span> Listings</div>
+        <div class="wf-nav-item active"><span class="icon"></span> Profiles</div>
+        <div class="wf-nav-item"><span class="icon"></span> Schedule</div>
+        <div class="wf-nav-item"><span class="icon"></span> Studio</div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-topbar">
+          <span style="font-size:16px; font-weight:600; color:#1e293b;">Profiles</span>
+          <button class="wf-btn wf-btn-primary">+ Create Profile</button>
+        </div>
+        <div class="wf-content">
+          <div class="profile-card">
+            <div>
+              <div class="profile-name">Summer Collection Tags</div>
+              <div class="profile-desc">Tags: summer, outdoor, beach, seasonal, warm weather</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="profile-count">Applied to 45 listings</span>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Edit</button>
+              <button class="wf-btn wf-btn-primary" style="font-size:12px;">Apply</button>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div>
+              <div class="profile-name">Standard Shipping Policy</div>
+              <div class="profile-desc">Processing: 1-3 days | Free shipping over $35 | Returns accepted</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="profile-count">Applied to 120 listings</span>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Edit</button>
+              <button class="wf-btn wf-btn-primary" style="font-size:12px;">Apply</button>
+            </div>
+          </div>
+          <div class="profile-card">
+            <div>
+              <div class="profile-name">Size Variations - Clothing</div>
+              <div class="profile-desc">Variations: XS, S, M, L, XL, XXL with corresponding prices</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span class="profile-count">Applied to 67 listings</span>
+              <button class="wf-btn wf-btn-outline" style="font-size:12px;">Edit</button>
+              <button class="wf-btn wf-btn-primary" style="font-size:12px;">Apply</button>
+            </div>
+          </div>
+          <div class="profile-card" style="border-style:dashed; justify-content:center; padding:32px;">
+            <div style="text-align:center; color:#94a3b8;">
+              <div style="font-size:32px; margin-bottom:8px;">+</div>
+              <div style="font-size:14px;">Create a new profile to standardize your listings</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>Card-based list</strong> — mỗi profile là 1 card với name, description, và usage count</li>
+      <li><strong>One-click Apply</strong> — áp dụng profile cho listings đã chọn chỉ cần 1 click</li>
+      <li><strong>Usage metrics</strong> — hiển thị "Applied to X listings" tạo trust và context</li>
+      <li><strong>Empty state với CTA</strong> — dashed border + icon "+" hướng dẫn user tạo profile mới</li>
+      <li><strong>Gợi ý:</strong> Thêm profile categories, import/export profiles, và AI auto-generate profiles</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== 6. ANALYTICS ========== -->
+<div class="screen-section" id="analytics">
+  <div class="screen-header">
+    <h2>6. Analytics & Listing Scores</h2>
+    <p>Dashboard analytics hiển thị overview metrics, listing score distribution, và channel performance. AI phân tích và đưa ra recommendations cụ thể.</p>
+    <div class="tags">
+      <span class="tag">KPI Cards</span>
+      <span class="tag">Score Distribution</span>
+      <span class="tag">Channel Comparison</span>
+      <span class="tag">AI Recommendations</span>
+    </div>
+  </div>
+  <div class="wireframe">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">app.getvela.com/analytics</div>
+    </div>
+    <div class="wireframe-content clearfix">
+      <div class="wf-sidebar">
+        <div class="logo"><span>V</span>ela</div>
+        <div class="wf-nav-item"><span class="icon"></span> Listings</div>
+        <div class="wf-nav-item"><span class="icon"></span> Profiles</div>
+        <div class="wf-nav-item"><span class="icon"></span> Schedule</div>
+        <div class="wf-nav-item"><span class="icon"></span> Studio</div>
+        <div class="wf-nav-item active"><span class="icon"></span> Analytics</div>
+      </div>
+      <div class="wf-main">
+        <div class="wf-topbar">
+          <span style="font-size:16px; font-weight:600; color:#1e293b;">Analytics</span>
+          <select style="padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13px;" disabled>
+            <option>Last 30 days</option>
+          </select>
+        </div>
+        <div class="wf-content">
+          <div class="analytics-cards">
+            <div class="analytics-card">
+              <div class="metric-label">Total Listings</div>
+              <div class="metric-value">248</div>
+              <div class="metric-change up">+12 this month</div>
+            </div>
+            <div class="analytics-card">
+              <div class="metric-label">Avg. Score</div>
+              <div class="metric-value" style="color:#059669;">B+</div>
+              <div class="metric-change up">+0.3 improvement</div>
+            </div>
+            <div class="analytics-card">
+              <div class="metric-label">Channels</div>
+              <div class="metric-value">4</div>
+              <div class="metric-change">Etsy, Shopify, eBay, Faire</div>
+            </div>
+            <div class="analytics-card">
+              <div class="metric-label">AI Optimized</div>
+              <div class="metric-value">73%</div>
+              <div class="metric-change up">+15% vs last month</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px;">
+            <div class="chart-placeholder">
+              <div style="text-align:center; width:100%;">
+                <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:24px;">Score Distribution</div>
+                <div class="chart-bars" style="justify-content:center;">
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:40px; background:linear-gradient(to top,#ef4444,#f87171);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">F</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:60px; background:linear-gradient(to top,#f59e0b,#fbbf24);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">D</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:100px; background:linear-gradient(to top,#eab308,#facc15);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">C</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:160px; background:linear-gradient(to top,#6366f1,#818cf8);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">B</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:140px; background:linear-gradient(to top,#059669,#34d399);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">A</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div class="chart-bar" style="height:80px; background:linear-gradient(to top,#047857,#10b981);"></div>
+                    <div style="font-size:11px; color:#64748b; margin-top:4px;">A+</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="background:#fff; border-radius:8px; border:1px solid #e2e8f0; padding:20px;">
+              <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:16px;">AI Recommendations</div>
+              <div style="padding:12px; background:#fef3c7; border-radius:8px; margin-bottom:12px;">
+                <div style="font-size:13px; color:#92400e; font-weight:500;">23 listings need better titles</div>
+                <div style="font-size:12px; color:#a16207; margin-top:4px;">Titles are too short for Etsy SEO</div>
+              </div>
+              <div style="padding:12px; background:#dbeafe; border-radius:8px; margin-bottom:12px;">
+                <div style="font-size:13px; color:#1e40af; font-weight:500;">15 listings missing tags</div>
+                <div style="font-size:12px; color:#2563eb; margin-top:4px;">Add 8+ tags per Etsy listing</div>
+              </div>
+              <div style="padding:12px; background:#f0fdf4; border-radius:8px;">
+                <div style="font-size:13px; color:#065f46; font-weight:500;">45 photos can be enhanced</div>
+                <div style="font-size:12px; color:#059669; margin-top:4px;">Use AI to optimize product images</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="design-notes">
+    <h3>Design Notes & Inspiration</h3>
+    <ul>
+      <li><strong>KPI cards row</strong> — 4 metrics chính trên cùng, dễ scan, mỗi card có trend indicator</li>
+      <li><strong>Score distribution chart</strong> — color-coded bars (đỏ→xanh) trực quan về quality distribution</li>
+      <li><strong>AI Recommendations panel</strong> — actionable insights, color-coded by priority</li>
+      <li><strong>Gợi ý:</strong> Thêm historical trend lines, channel-by-channel comparison, export report PDF</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ========== SUMMARY & RECOMMENDATIONS ========== -->
+<div class="screen-section" id="summary" style="background:#1e293b; border-radius:16px; padding:32px; margin-top:40px;">
+  <h2 style="font-size:28px; color:#38bdf8; margin-bottom:24px;">Tổng kết & Gợi ý cho ứng dụng tương tự</h2>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+    <div>
+      <h3 style="color:#fbbf24; margin-bottom:16px;">Design Patterns nổi bật của Vela</h3>
+      <div style="color:#cbd5e1; line-height:1.8; font-size:14px;">
+        <p><strong style="color:#f1f5f9;">1. AI-First UX:</strong> AI integration ở mọi nơi nhưng không intrusive — nút nhỏ "AI Suggest" cạnh mỗi field, để user quyết định dùng hay không.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">2. Gamification với Scoring:</strong> Listing Score (A+ đến F-) tạo động lực tối ưu, rất smart cho engagement.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">3. Multi-channel nhưng unified:</strong> Channel tags hiển thị inline, không cần switch context giữa platforms.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">4. Progressive disclosure:</strong> Bulk actions chỉ hiện khi cần, hover actions trên rows, giữ UI clean.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">5. Spreadsheet-like efficiency:</strong> Table view cho listings, batch operations, CSV import/export — quen thuộc với sellers.</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:#fbbf24; margin-bottom:16px;">Gợi ý cải tiến cho app của bạn</h3>
+      <div style="color:#cbd5e1; line-height:1.8; font-size:14px;">
+        <p><strong style="color:#f1f5f9;">1. Onboarding wizard:</strong> Thêm step-by-step setup khi user mới — kết nối shop, import listings, first AI optimization.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">2. Real-time sync indicator:</strong> Hiển thị trạng thái sync với từng marketplace (last synced, pending changes).</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">3. Drag-drop everywhere:</strong> Reorder photos, listings, tags bằng drag-drop — Vela chưa có nhiều.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">4. Inline editing:</strong> Click-to-edit trực tiếp trên bảng listings, không cần mở editor riêng.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">5. Notification center:</strong> Thông báo khi listing bị deactivated, giá bị undercut, hoặc cần attention.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">6. Mobile-responsive:</strong> Vela chủ yếu desktop — cơ hội lớn nếu build mobile-first.</p>
+        <p style="margin-top:12px;"><strong style="color:#f1f5f9;">7. Marketplace analytics:</strong> So sánh performance giữa channels — listing nào bán tốt ở đâu.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:32px; background:#0f172a; border-radius:12px; padding:24px;">
+    <h3 style="color:#fbbf24; margin-bottom:12px;">Tech Stack gợi ý</h3>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px;">
+      <div style="text-align:center; padding:16px; background:#1e293b; border-radius:8px;">
+        <div style="font-size:24px; margin-bottom:8px;">&#x269B;</div>
+        <div style="color:#f1f5f9; font-size:14px; font-weight:600;">React / Next.js</div>
+        <div style="color:#94a3b8; font-size:12px; margin-top:4px;">Frontend framework</div>
+      </div>
+      <div style="text-align:center; padding:16px; background:#1e293b; border-radius:8px;">
+        <div style="font-size:24px; margin-bottom:8px;">&#x1F3A8;</div>
+        <div style="color:#f1f5f9; font-size:14px; font-weight:600;">Tailwind + shadcn</div>
+        <div style="color:#94a3b8; font-size:12px; margin-top:4px;">UI Components</div>
+      </div>
+      <div style="text-align:center; padding:16px; background:#1e293b; border-radius:8px;">
+        <div style="font-size:24px; margin-bottom:8px;">&#x1F916;</div>
+        <div style="color:#f1f5f9; font-size:14px; font-weight:600;">Claude / GPT API</div>
+        <div style="color:#94a3b8; font-size:12px; margin-top:4px;">AI Optimization</div>
+      </div>
+      <div style="text-align:center; padding:16px; background:#1e293b; border-radius:8px;">
+        <div style="font-size:24px; margin-bottom:8px;">&#x1F5C4;</div>
+        <div style="color:#f1f5f9; font-size:14px; font-weight:600;">PostgreSQL + Redis</div>
+        <div style="color:#94a3b8; font-size:12px; margin-top:4px;">Data & Caching</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

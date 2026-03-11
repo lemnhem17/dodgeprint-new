@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Listings</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+        etsy: '#F1641E', shopify: '#96BF48', amazon: '#FF9900', tiktok: '#000000',
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* Side panel tab styles scoped to this page */
+.detail-tab { transition: all .15s ease; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+.detail-tab:hover { color: var(--text-primary); }
+.detail-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); font-weight: 600; }
+.detail-content { display: none; }
+.detail-content.active { display: block; animation: fadeIn .2s ease-out; }
+/* Import modal tab */
+.import-tab { transition: all .15s ease; padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+.import-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); font-weight: 600; }
+.import-content { display: none; }
+.import-content.active { display: block; }
+
+/* Score badges */
+.score-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  font-size: 11px; font-weight: 700; cursor: help;
+}
+.score-a  { background: var(--brand-primary-bg);   color: var(--brand-primary); }
+.score-b  { background: var(--brand-secondary-bg); color: var(--brand-secondary); }
+.score-c  { background: #FFF7ED; color: #F97316; }
+.score-d  { background: var(--danger-bg);          color: var(--danger); }
+.score-f  { background: var(--danger-bg);          color: var(--danger); }
+
+/* Row hover quick actions */
+.listing-row { position: relative; }
+.row-actions { display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 2px; box-shadow: var(--shadow-md); }
+.listing-row:hover .row-actions { display: flex; }
+.row-action-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); transition: background .12s, color .12s;
+}
+.row-action-btn:hover { background: var(--bg-muted); color: var(--text-primary); }
+.row-action-btn.danger:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* Filter panel */
+#filterPanel { transition: width .2s ease; }
+</style>
+</head>
+<body>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== LISTINGS CONTENT ===== -->
+    <main class="p-7">
+
+      <!-- Page Title + Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Listings</h1>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">1,247 total</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="openModal('importModal')" class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Import</button>
+          <button class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Export</button>
+          <button class="btn-ai px-4 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4"></i> AI Optimize</button>
+          <button class="btn-primary px-5 h-9 text-sm font-semibold inline-flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> New Listing</button>
+        </div>
+      </div>
+
+      <!-- PSYCH: Confidence Bar — persistent status toolbar -->
+      <div class="flex items-center gap-0 bg-white rounded-lg px-3 py-2.5 mb-5" style="border-bottom:1px solid var(--border)" id="confidenceBar">
+        <div class="flex items-center gap-1.5 px-2">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--brand-primary)"></span>
+          <span class="text-xs font-medium" style="color:var(--brand-primary)">All synced</span>
+        </div>
+        <div class="w-px h-4 mx-1" style="background:#E5E7EB"></div>
+        <span class="text-xs px-2" style="color:var(--text-secondary)">247 listings</span>
+        <div class="w-px h-4 mx-1" style="background:#E5E7EB"></div>
+        <span class="text-xs px-2" style="color:var(--text-secondary)" id="confidenceSelected">0 selected</span>
+        <div class="w-px h-4 mx-1" style="background:#E5E7EB"></div>
+        <span class="text-xs px-2 inline-flex items-center gap-1" style="color:var(--text-secondary)" id="autosaveStatus">
+          <i data-lucide="check" class="w-3 h-3" style="color:var(--brand-primary)"></i> Saved just now
+        </span>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
+        <!-- Platform tabs -->
+        <div class="flex items-center gap-1 border-b" style="border-color:var(--border-light)">
+          <button class="platform-tab active pb-2 px-3 text-sm font-medium" onclick="switchTab(this)">All</button>
+          <button class="platform-tab pb-2 px-3 text-sm font-medium" style="color:var(--text-secondary)" onclick="switchTab(this)">Etsy</button>
+          <button class="platform-tab pb-2 px-3 text-sm font-medium" style="color:var(--text-secondary)" onclick="switchTab(this)">Shopify</button>
+          <button class="platform-tab pb-2 px-3 text-sm font-medium" style="color:var(--text-secondary)" onclick="switchTab(this)">Amazon</button>
+          <button class="platform-tab pb-2 px-3 text-sm font-medium" style="color:var(--text-secondary)" onclick="switchTab(this)">TikTok</button>
+        </div>
+        <div class="flex items-center gap-2 ml-auto">
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+            <input type="text" placeholder="Search listings..." class="h-9 pl-9 pr-4 text-sm border rounded-full w-48" style="border-color:var(--border);background:var(--bg-card)">
+          </div>
+          <button onclick="toggleFilterPanel()" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Filters
+          </button>
+          <button class="btn-ghost px-3 h-9 text-sm font-medium inline-flex items-center gap-1.5"><i data-lucide="arrow-up-down" class="w-4 h-4"></i> Sort</button>
+        </div>
+      </div>
+
+      <!-- Spreadsheet Grid -->
+      <div class="flex flex-1 overflow-hidden rounded-xl" style="border:1px solid var(--border)">
+
+        <!-- Filter Panel -->
+        <div id="filterPanel" class="flex-shrink-0 overflow-y-auto p-4 space-y-5"
+             style="width:240px;border-right:1px solid var(--border);background:var(--bg-card)">
+
+          <!-- Status Tabs -->
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Status</div>
+            <div class="space-y-1">
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+                Active <span class="font-mono">247</span>
+              </button>
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style="color:var(--text-secondary)">
+                Draft <span class="font-mono">12</span>
+              </button>
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style="color:var(--text-secondary)">
+                Processing <span class="font-mono">3</span>
+              </button>
+              <button class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium"
+                      style="color:var(--text-secondary)">
+                Failed <span class="font-mono" style="color:var(--danger)">2</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quality Score Distribution -->
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Listing Score</div>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono w-3 text-center" style="color:var(--text-tertiary)">F</span>
+                <div class="flex-1 h-2 rounded-full" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:8%;background:var(--danger)"></div>
+                </div>
+                <span class="text-[10px] font-mono w-4 text-right" style="color:var(--text-tertiary)">5</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono w-3 text-center" style="color:var(--text-tertiary)">D</span>
+                <div class="flex-1 h-2 rounded-full" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:15%;background:#F97316"></div>
+                </div>
+                <span class="text-[10px] font-mono w-4 text-right" style="color:var(--text-tertiary)">12</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono w-3 text-center" style="color:var(--text-tertiary)">C</span>
+                <div class="flex-1 h-2 rounded-full" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:25%;background:var(--brand-secondary)"></div>
+                </div>
+                <span class="text-[10px] font-mono w-4 text-right" style="color:var(--text-tertiary)">38</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono w-3 text-center" style="color:var(--text-tertiary)">B</span>
+                <div class="flex-1 h-2 rounded-full" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:35%;background:var(--brand-primary)"></div>
+                </div>
+                <span class="text-[10px] font-mono w-4 text-right" style="color:var(--text-tertiary)">67</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono w-3 text-center" style="color:var(--text-tertiary)">A</span>
+                <div class="flex-1 h-2 rounded-full" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:45%;background:var(--success)"></div>
+                </div>
+                <span class="text-[10px] font-mono w-4 text-right" style="color:var(--text-tertiary)">89</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform Filter -->
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Platform</div>
+            <div class="space-y-1.5">
+              <label class="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs" style="color:var(--text-secondary)">
+                <input type="checkbox" checked class="rounded"> <span style="color:#F1641E">&#9679;</span> Etsy <span class="ml-auto font-mono text-[10px]">142</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs" style="color:var(--text-secondary)">
+                <input type="checkbox" checked class="rounded"> <span style="color:#96BF48">&#9679;</span> Shopify <span class="ml-auto font-mono text-[10px]">68</span>
+              </label>
+              <label class="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs" style="color:var(--text-secondary)">
+                <input type="checkbox" checked class="rounded"> <span style="color:#FF9900">&#9679;</span> Amazon <span class="ml-auto font-mono text-[10px]">37</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Tags Filter -->
+          <div>
+            <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Tags</div>
+            <input placeholder="Search tags..." class="w-full px-3 py-1.5 rounded-lg text-xs"
+                   style="border:1px solid var(--border);background:var(--bg-page)">
+          </div>
+        </div>
+
+        <!-- Table area -->
+        <div class="flex-1 overflow-x-auto bg-white">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left" style="background:var(--bg-muted)">
+                <th class="w-10 px-4 py-3"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="w-4 h-4 rounded"></th>
+                <th class="w-12 px-2 py-3"></th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Title</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Platform</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Shop</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Price</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Stock</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Status</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Quality</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Last Synced</th>
+                <th class="w-[140px]"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="row-1" class="listing-row cursor-pointer" onclick="openDetailPanel(1)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-1')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-base">🌿</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Vintage Plant Pot — Handmade Ceramic</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$34.99</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">24</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-a" title="Quality: A+ — All criteria met">A+</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">2m ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-2" class="listing-row cursor-pointer" onclick="openDetailPanel(2)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-2')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-base">🎨</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Boho Wall Art Print Set of 3</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$49.00</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">156</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-a" title="Quality: A — All criteria met">A</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">5m ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-3" class="listing-row cursor-pointer" onclick="openDetailPanel(3)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-3')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center text-base">🌸</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Floral Embroidered Tote Bag</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$28.50</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">42</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-b" title="Quality: B+ — Good, minor issues">B+</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">12m ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-4" class="listing-row cursor-pointer" onclick="openDetailPanel(4)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-4')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-100 to-blue-200 flex items-center justify-center text-base">☕</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Ceramic Mug Set — Morning Brew</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,153,0,.08);color:#FF9900">Amazon</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">US Store</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$22.99</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">89</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-a" title="Quality: A — All criteria met">A</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">1h ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-5" class="listing-row cursor-pointer" onclick="openDetailPanel(5)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-5')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-100 to-green-200 flex items-center justify-center text-base">🕯️</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Soy Candle Bundle — Lavender Bliss</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$18.00</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">3</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Low Stock</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-b" title="Quality: B — Good, a few issues">B</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">30m ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-6" class="listing-row cursor-pointer" onclick="openDetailPanel(6)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-6')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-base">🧶</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Macrame Wall Hanging — Desert Sun</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$65.00</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">7</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-a" title="Quality: A- — Near excellent">A-</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">45m ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-7" class="listing-row cursor-pointer" onclick="openDetailPanel(7)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-7')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-base">🖼️</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Minimalist Line Art — Abstract Face</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(0,0,0,.06);color:#333">TikTok</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">TikTok Shop</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$15.99</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">200</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Draft</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-c" title="Quality: C — Needs improvement">C</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">—</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr id="row-8" class="listing-row cursor-pointer" onclick="openDetailPanel(8)">
+                <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-8')"></td>
+                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-100 to-red-200 flex items-center justify-center text-base">🎁</div></td>
+                <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Gift Box Set — Holiday Edition</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'price')">$42.00</span></td>
+                <td class="px-4 py-3"><span class="editable-cell font-mono text-sm" onclick="event.stopPropagation();makeEditable(this,'number')">0</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--danger-bg);color:var(--danger)">Out of Stock</span></td>
+                <td class="px-4 py-3"><span class="score-badge score-b" title="Quality: B- — Fair, improvements needed">B-</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">2h ago</td>
+                <td class="relative" onclick="event.stopPropagation()">
+                  <div class="row-actions absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <button class="row-action-btn" title="Edit"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Deploy"><i data-lucide="upload" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn" title="Duplicate"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                    <button class="row-action-btn danger" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div><!-- /table area -->
+      </div><!-- /flex container -->
+
+    </main>
+  </div>
+</div>
+
+<!-- ===== LISTING DETAIL SIDE PANEL ===== -->
+<div class="side-panel" id="detailPanel">
+  <div class="sticky top-0 z-10" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+    <div class="flex items-center justify-between px-5 pt-4 pb-2">
+      <h3 class="text-[15px] font-bold">Listing Details</h3>
+      <button onclick="closeDetailPanel()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+        <i data-lucide="x" class="w-4 h-4" style="color:var(--text-secondary)"></i>
+      </button>
+    </div>
+    <div class="flex items-center gap-0 px-4 pt-1 overflow-x-auto" style="border-bottom:1px solid var(--border)">
+      <button class="panel-tab active" onclick="switchPanelTab(this,'tab-photos')">Photos</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-title')">Title</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-description')">Description</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-tags')">Tags</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-details')">Details</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-price')">Price</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-shipping')">Shipping</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-seo')">SEO</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-platforms')">Platforms</button>
+      <button class="panel-tab" onclick="switchPanelTab(this,'tab-history')">History</button>
+    </div>
+  </div>
+
+  <!-- Photos Tab -->
+  <div class="panel-content active pb-16" id="tab-photos">
+    <div class="p-5">
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="aspect-square rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-3xl border-2 cursor-pointer" style="border-color:var(--brand-primary)">🌿</div>
+        <div class="aspect-square rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center text-3xl border-2 border-transparent hover:border-blue transition-colors cursor-pointer">🌿</div>
+        <div class="aspect-square rounded-lg bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-3xl border-2 border-transparent hover:border-blue transition-colors cursor-pointer">🌿</div>
+        <div class="aspect-square rounded-lg flex items-center justify-center border-2 border-dashed cursor-pointer" style="border-color:var(--border)">
+          <i data-lucide="plus" class="w-6 h-6" style="color:var(--text-tertiary)"></i>
+        </div>
+      </div>
+      <p class="text-xs" style="color:var(--text-tertiary)">Drag to reorder. First image is the primary listing photo.</p>
+    </div>
+  </div>
+
+  <!-- Title Tab -->
+  <div class="panel-content pb-16" id="tab-title">
+    <div class="p-5 space-y-4">
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-medium" style="color:var(--text-secondary)">Title</label>
+          <button class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style="background:var(--purple-bg);color:var(--purple)">
+            <i data-lucide="sparkles" class="w-3 h-3"></i> AI Enhance
+          </button>
+        </div>
+        <input type="text" value="Vintage Plant Pot — Handmade Ceramic" class="w-full h-10 px-3 text-sm border rounded-md" style="border-color:var(--border)">
+        <p class="text-[10px] mt-1" style="color:var(--text-tertiary)">140 chars max — 36 used</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description Tab -->
+  <div class="panel-content pb-16" id="tab-description">
+    <div class="p-5 space-y-4">
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-medium" style="color:var(--text-secondary)">Description</label>
+          <button class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style="background:var(--purple-bg);color:var(--purple)">
+            <i data-lucide="sparkles" class="w-3 h-3"></i> AI Enhance
+          </button>
+        </div>
+        <textarea rows="8" class="w-full px-3 py-2 text-sm border rounded-md resize-none" style="border-color:var(--border)">Beautiful handmade ceramic plant pot, perfect for succulents and small plants. Each pot is uniquely crafted with natural earth tones.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tags Tab -->
+  <div class="panel-content pb-16" id="tab-tags">
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Tags <span class="font-normal" style="color:var(--text-tertiary)">(4/13 used)</span></label>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style="background:var(--bg-muted);color:var(--text-secondary)">ceramic <button class="ml-0.5 hover:text-red-500">&times;</button></span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style="background:var(--bg-muted);color:var(--text-secondary)">handmade <button class="ml-0.5 hover:text-red-500">&times;</button></span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style="background:var(--bg-muted);color:var(--text-secondary)">plant pot <button class="ml-0.5 hover:text-red-500">&times;</button></span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs" style="background:var(--bg-muted);color:var(--text-secondary)">vintage <button class="ml-0.5 hover:text-red-500">&times;</button></span>
+        </div>
+        <input type="text" placeholder="Add a tag..." class="w-full h-9 px-3 text-sm border rounded-md" style="border-color:var(--border)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Tab -->
+  <div class="panel-content pb-16" id="tab-details">
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Category</label>
+        <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+          <option>Home & Living > Planters & Pots</option>
+          <option>Home Decor > Vases</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Stock</label>
+        <input type="number" value="24" class="w-full h-10 px-3 text-sm font-mono border rounded-md" style="border-color:var(--border)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Price Tab -->
+  <div class="panel-content pb-16" id="tab-price">
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Price</label>
+        <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color:var(--text-secondary)">$</span><input type="text" value="34.99" class="w-full h-10 pl-7 pr-3 text-sm font-mono border rounded-md" style="border-color:var(--border)"></div>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Compare-at Price</label>
+        <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color:var(--text-secondary)">$</span><input type="text" placeholder="0.00" class="w-full h-10 pl-7 pr-3 text-sm font-mono border rounded-md" style="border-color:var(--border)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shipping Tab -->
+  <div class="panel-content pb-16" id="tab-shipping">
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Processing Time</label>
+        <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+          <option>1–3 business days</option>
+          <option>3–5 business days</option>
+          <option>5–7 business days</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Shipping Profile</label>
+        <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+          <option>Standard US Shipping</option>
+          <option>Free Shipping</option>
+          <option>Expedited</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEO Tab -->
+  <div class="panel-content pb-16 p-5 space-y-4" id="tab-seo">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl text-lg font-bold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">A+</span>
+      <div>
+        <p class="text-sm font-semibold">SEO Quality Score</p>
+        <p class="text-xs" style="color:var(--text-tertiary)">92 / 100 — Excellent</p>
+      </div>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <div class="flex items-center justify-between mb-1"><span class="text-xs font-medium" style="color:var(--text-secondary)">Title optimization</span><span class="text-xs font-mono" style="color:var(--brand-primary)">95%</span></div>
+        <div class="h-1.5 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:95%;background:var(--brand-primary)"></div></div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1"><span class="text-xs font-medium" style="color:var(--text-secondary)">Description quality</span><span class="text-xs font-mono" style="color:var(--brand-primary)">88%</span></div>
+        <div class="h-1.5 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:88%;background:var(--brand-primary)"></div></div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1"><span class="text-xs font-medium" style="color:var(--text-secondary)">Tag relevance</span><span class="text-xs font-mono" style="color:var(--brand-primary)">92%</span></div>
+        <div class="h-1.5 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:92%;background:var(--brand-primary)"></div></div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-1"><span class="text-xs font-medium" style="color:var(--text-secondary)">Image quality</span><span class="text-xs font-mono" style="color:var(--brand-secondary)">78%</span></div>
+        <div class="h-1.5 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:78%;background:var(--brand-secondary)"></div></div>
+      </div>
+    </div>
+    <div class="rounded-lg p-3" style="background:var(--brand-primary-bg)">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="sparkles" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+        <span class="text-xs font-semibold" style="color:var(--brand-primary)">AI Suggestions</span>
+      </div>
+      <ul class="text-xs space-y-1.5" style="color:var(--text-secondary)">
+        <li>Add "gift" and "home decor" to tags for broader reach</li>
+        <li>Include dimensions in description for buyer confidence</li>
+        <li>Add a lifestyle photo showing the pot in use</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Platforms Tab -->
+  <div class="panel-content pb-16 p-5 space-y-3" id="tab-platforms">
+    <div class="flex items-center justify-between p-3 rounded-lg" style="background:var(--bg-muted)">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold" style="background:rgba(241,100,30,.1);color:#F1641E">E</span>
+        <span class="text-sm font-medium">Etsy</span>
+      </div>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
+    </div>
+    <div class="flex items-center justify-between p-3 rounded-lg" style="background:var(--bg-muted)">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold" style="background:rgba(255,153,0,.1);color:#FF9900">A</span>
+        <span class="text-sm font-medium">Amazon</span>
+      </div>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Pending</span>
+    </div>
+    <div class="flex items-center justify-between p-3 rounded-lg" style="background:var(--bg-muted)">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold" style="background:rgba(150,191,72,.1);color:#96BF48">S</span>
+        <span class="text-sm font-medium">Shopify</span>
+      </div>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-tertiary)">Not listed</span>
+    </div>
+    <button class="btn-primary w-full h-9 text-sm font-medium mt-2">Publish to All Platforms</button>
+  </div>
+
+  <!-- History Tab -->
+  <div class="panel-content pb-16 p-5" id="tab-history">
+    <div class="space-y-4">
+      <div class="flex gap-3">
+        <div class="flex flex-col items-center">
+          <div class="w-2 h-2 rounded-full mt-1.5" style="background:var(--brand-primary)"></div>
+          <div class="w-px flex-1" style="background:var(--border-light)"></div>
+        </div>
+        <div class="pb-4">
+          <p class="text-sm font-medium">Price updated $32.99 → $34.99</p>
+          <p class="text-xs" style="color:var(--text-tertiary)">2 hours ago · by John</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex flex-col items-center">
+          <div class="w-2 h-2 rounded-full mt-1.5" style="background:var(--brand-primary)"></div>
+          <div class="w-px flex-1" style="background:var(--border-light)"></div>
+        </div>
+        <div class="pb-4">
+          <p class="text-sm font-medium">Synced to Etsy</p>
+          <p class="text-xs" style="color:var(--text-tertiary)">5 hours ago · auto-sync</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex flex-col items-center">
+          <div class="w-2 h-2 rounded-full mt-1.5" style="background:var(--brand-secondary)"></div>
+          <div class="w-px flex-1" style="background:var(--border-light)"></div>
+        </div>
+        <div class="pb-4">
+          <p class="text-sm font-medium">Tags updated: added "vintage", "boho"</p>
+          <p class="text-xs" style="color:var(--text-tertiary)">1 day ago · by John</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex flex-col items-center">
+          <div class="w-2 h-2 rounded-full mt-1.5" style="background:var(--info)"></div>
+        </div>
+        <div>
+          <p class="text-sm font-medium">Listing created</p>
+          <p class="text-xs" style="color:var(--text-tertiary)">3 days ago · imported from Etsy</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky Bottom Action Bar -->
+  <div class="sticky bottom-0 flex items-center justify-between p-3" style="background:var(--bg-card);border-top:1px solid var(--border)">
+    <button class="btn-ghost px-4 py-2 text-xs font-medium" onclick="closeDetailPanel()">Cancel</button>
+    <div class="flex items-center gap-2">
+      <button class="btn-ghost px-4 py-2 text-xs font-medium">Save Draft</button>
+      <button class="btn-primary px-5 py-2 text-xs font-semibold">Publish</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BULK ACTION BAR ===== -->
+<div id="floatingBar" class="floating-bar fixed bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full px-5 py-2.5 items-center gap-4 z-50" style="display:none;border:1px solid var(--border);box-shadow:var(--shadow-md)">
+  <span class="text-sm font-medium"><span id="selectedCount">0</span> selected</span>
+  <div class="w-px h-5" style="background:var(--border)"></div>
+  <button class="text-sm font-medium px-3 py-1 rounded-md hover:bg-muted transition-colors" style="color:var(--text-secondary)">Edit</button>
+  <button class="text-sm font-medium px-3 py-1 rounded-md hover:bg-muted transition-colors" style="color:var(--text-secondary)">Sync</button>
+  <button class="text-sm font-medium px-3 py-1 rounded-md hover:bg-muted transition-colors" style="color:var(--text-secondary)">Duplicate</button>
+  <button class="text-sm font-medium px-3 py-1 rounded-md hover:bg-muted transition-colors" style="color:var(--danger)">Delete</button>
+  <div class="w-px h-5" style="background:var(--border)"></div>
+  <button onclick="clearSelection()" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+    <i data-lucide="x" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+  </button>
+</div>
+
+<!-- ===== IMPORT/EXPORT MODAL ===== -->
+<div class="modal-overlay" id="importModal">
+  <div class="bg-white rounded-xl w-full max-w-lg mx-4 overflow-hidden" style="box-shadow:var(--shadow-lg)">
+    <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color:var(--border-light)">
+      <h3 class="text-[15px] font-bold">Import Listings</h3>
+      <button onclick="closeModal('importModal')" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+        <i data-lucide="x" class="w-4 h-4" style="color:var(--text-secondary)"></i>
+      </button>
+    </div>
+    <div class="flex border-b" style="border-color:var(--border-light)">
+      <button class="import-tab active" onclick="switchImportTab(this,'import-platform')">From Platform</button>
+      <button class="import-tab" onclick="switchImportTab(this,'import-csv')">CSV Upload</button>
+    </div>
+    <!-- From Platform -->
+    <div class="import-content active p-5 space-y-4" id="import-platform">
+      <div>
+        <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Select Connected Shop</label>
+        <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+          <option>Etsy — CozyPrints (892 listings)</option>
+          <option>Etsy — VintageVibes (345 listings)</option>
+          <option>Shopify — Main Store (643 listings)</option>
+          <option>Amazon — US (312 listings)</option>
+        </select>
+      </div>
+      <div class="rounded-lg p-3 flex items-start gap-2" style="background:var(--info-bg)">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--info)"></i>
+        <p class="text-xs" style="color:var(--text-secondary)">This will import new listings that haven't been synced yet. Existing listings won't be duplicated.</p>
+      </div>
+      <button onclick="closeModal('importModal');showToast('Importing listings...','success')" class="btn-primary w-full h-10 text-sm font-semibold">Import Listings</button>
+    </div>
+    <!-- CSV Upload -->
+    <div class="import-content p-5 space-y-4" id="import-csv">
+      <div class="upload-zone rounded-lg p-8 text-center cursor-pointer">
+        <i data-lucide="file-up" class="w-10 h-10 mx-auto mb-3" style="color:var(--text-tertiary)"></i>
+        <p class="text-sm font-medium mb-1">Drop your CSV file here</p>
+        <p class="text-xs mb-3" style="color:var(--text-tertiary)">CSV or Excel files up to 10MB</p>
+        <button class="btn-ghost px-4 py-2 text-sm font-medium">Browse Files</button>
+      </div>
+      <a href="#" class="text-xs font-medium flex items-center gap-1" style="color:var(--brand-primary)">
+        <i data-lucide="download" class="w-3 h-3"></i> Download CSV template
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- PSYCH: Recovery Toast (hidden by default) -->
+<div id="recoveryToast" class="fixed bottom-6 right-6 z-[700] bg-white rounded-2xl px-4 py-3 flex items-center gap-3 transition-all" style="display:none;box-shadow:0 4px 24px rgba(0,0,0,.12);min-width:320px;border:1px solid var(--border)">
+  <span class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
+    <i data-lucide="check" class="w-3.5 h-3.5" style="color:var(--brand-primary)"></i>
+  </span>
+  <span class="text-sm font-medium flex-1" id="recoveryToastMsg">Price updated for 12 listings</span>
+  <button onclick="undoRecoveryAction()" class="text-xs font-semibold px-2 py-1 rounded-md" style="color:var(--brand-primary);background:var(--brand-primary-bg)">Undo</button>
+  <div class="absolute bottom-0 left-4 right-4 h-0.5 rounded-full overflow-hidden">
+    <div id="recoveryProgress" class="h-full rounded-full" style="background:var(--brand-primary);width:100%;transition:width 5s linear"></div>
+  </div>
+</div>
+
+<!-- PSYCH: Bulk Action Confirmation Overlay (hidden by default) -->
+<div id="bulkConfirmation" class="fixed inset-0 z-[650] flex items-center justify-center" style="display:none;background:rgba(0,0,0,.3)">
+  <div class="bg-white rounded-xl p-5 w-full max-w-sm mx-4" style="box-shadow:var(--shadow-lg)">
+    <h4 class="text-sm font-bold mb-2">Confirm bulk action</h4>
+    <p class="text-sm mb-4" style="color:var(--text-secondary)" id="bulkConfirmMsg">Apply to 47 listings?</p>
+    <div class="flex items-center gap-2 justify-end">
+      <button onclick="closeBulkConfirm()" class="btn-ghost px-4 h-9 text-sm font-medium">Cancel</button>
+      <button onclick="executeBulkAction();closeBulkConfirm()" class="btn-primary px-5 h-9 text-sm font-semibold">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav hidden fixed bottom-0 left-0 right-0 bg-white border-t z-40 px-2 py-2" style="border-color:var(--border)">
+  <div class="flex items-center justify-around">
+    <a onclick="navigate('dashboard')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a onclick="navigate('listings')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--brand-primary)" data-mob="listings"><i data-lucide="list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Listings</span></a>
+    <a onclick="navigate('orders')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="orders"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span class="text-[10px] font-medium">Orders</span></a>
+    <a onclick="navigate('pod-hub')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="pod-hub"><i data-lucide="printer" class="w-5 h-5"></i><span class="text-[10px] font-medium">POD</span></a>
+    <a onclick="navigate('settings')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="settings"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Settings</span></a>
+  </div>
+</nav>
+
+<script src="_shared-navigation.js"></script>
+<script>
+// Detail panel open/close
+function openDetailPanel(rowId) {
+  var panel = document.getElementById('detailPanel');
+  if (panel) panel.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+function closeDetailPanel() {
+  var panel = document.getElementById('detailPanel');
+  if (panel) panel.classList.remove('open');
+}
+
+// Panel tab switching (new horizontal tabs)
+function switchPanelTab(el, tabId) {
+  document.querySelectorAll('#detailPanel .panel-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('#detailPanel .panel-content').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+  var target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+// Detail panel tab switching (legacy alias)
+function switchDetailTab(el, tabId) {
+  switchPanelTab(el, tabId);
+}
+
+// Import modal tab switching
+function switchImportTab(el, tabId) {
+  document.querySelectorAll('.import-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.import-content').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+  var target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+}
+
+// Close detail panel on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDetailPanel();
+});
+
+// PSYCH: Recovery Toast
+var recoveryTimer = null;
+function showRecoveryToast(message) {
+  var toast = document.getElementById('recoveryToast');
+  var msg = document.getElementById('recoveryToastMsg');
+  var progress = document.getElementById('recoveryProgress');
+  if (!toast) return;
+  msg.textContent = message;
+  toast.style.display = 'flex';
+  progress.style.width = '100%';
+  progress.offsetWidth; // force reflow
+  progress.style.width = '0%';
+  clearTimeout(recoveryTimer);
+  recoveryTimer = setTimeout(function() { toast.style.display = 'none'; }, 5000);
+  if (window.lucide) lucide.createIcons();
+}
+function undoRecoveryAction() {
+  var toast = document.getElementById('recoveryToast');
+  clearTimeout(recoveryTimer);
+  if (toast) toast.style.display = 'none';
+  showToast('Action undone', 'info');
+}
+
+// PSYCH: Autosave indicator
+function showAutosaving() {
+  var el = document.getElementById('autosaveStatus');
+  if (!el) return;
+  el.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin" style="color:var(--text-tertiary)"></i> Saving...';
+  if (window.lucide) lucide.createIcons();
+  setTimeout(function() {
+    el.innerHTML = '<i data-lucide="check" class="w-3 h-3" style="color:var(--brand-primary)"></i> Saved just now';
+    if (window.lucide) lucide.createIcons();
+  }, 1200);
+}
+
+// PSYCH: Bulk action confirmation
+function showBulkConfirm(count) {
+  var overlay = document.getElementById('bulkConfirmation');
+  var msg = document.getElementById('bulkConfirmMsg');
+  if (!overlay) return;
+  msg.textContent = 'Apply to ' + count + ' listings?';
+  overlay.style.display = 'flex';
+}
+function closeBulkConfirm() {
+  var overlay = document.getElementById('bulkConfirmation');
+  if (overlay) overlay.style.display = 'none';
+}
+function executeBulkAction() {
+  var count = document.getElementById('selectedCount');
+  var n = count ? count.textContent : '0';
+  showRecoveryToast('Updated ' + n + ' listings');
+  showAutosaving();
+}
+
+// PSYCH: Update confidence bar selected count
+var _origToggleRow = window.toggleRow;
+if (typeof _origToggleRow === 'undefined') {
+  // Provide toggleRow if _shared-navigation doesn't define it
+}
+// Patch: update confidence bar when selection changes
+var confidenceObserver = new MutationObserver(function() {
+  var selectedCount = document.querySelectorAll('tbody input[type=checkbox]:checked').length;
+  var el = document.getElementById('confidenceSelected');
+  if (el) el.textContent = selectedCount + ' selected';
+});
+document.querySelectorAll('tbody input[type=checkbox]').forEach(function(cb) {
+  confidenceObserver.observe(cb, { attributes: true, attributeFilter: ['checked'] });
+  cb.addEventListener('change', function() {
+    var selectedCount = document.querySelectorAll('tbody input[type=checkbox]:checked').length;
+    var el = document.getElementById('confidenceSelected');
+    if (el) el.textContent = selectedCount + ' selected';
+  });
+});
+
+// Filter panel toggle
+function toggleFilterPanel() {
+  var panel = document.getElementById('filterPanel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+</script>
+</body>
+</html>

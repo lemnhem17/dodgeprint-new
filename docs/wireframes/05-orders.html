@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Orders</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+        etsy: '#F1641E', shopify: '#96BF48', amazon: '#FF9900',
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* Status filter tabs */
+.status-tab { transition: all .15s ease; padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.status-tab:hover { color: var(--text-primary); }
+.status-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); font-weight: 600; }
+/* Order panel sections */
+.order-timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.order-timeline-line { width: 2px; flex: 1; min-height: 24px; }
+/* Collapsible analytics */
+.analytics-section { overflow: hidden; transition: max-height .3s ease; }
+.analytics-section.collapsed { max-height: 0 !important; }
+</style>
+</head>
+<body>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== ORDERS CONTENT ===== -->
+    <main class="p-7">
+
+      <!-- Page Title + Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Orders</h1>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">856 total</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="download" class="w-4 h-4"></i> Export</button>
+          <button onclick="showToast('Syncing orders from all platforms...','success')" class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync Orders</button>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="bg-white rounded-xl p-5 mb-6" style="border:1px solid var(--border)">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="kpi-card py-1 px-2">
+            <span class="text-xs font-medium block mb-1" style="color:var(--text-secondary)">Total Revenue</span>
+            <div class="text-[26px] font-extrabold font-mono tracking-tight" style="line-height:1.1">$12,847.50</div>
+          </div>
+          <div class="kpi-card py-1 px-2 lg:border-l" style="border-color:var(--border-light)">
+            <span class="text-xs font-medium block mb-1" style="color:var(--text-secondary)">Avg Order Value</span>
+            <div class="text-[26px] font-extrabold font-mono tracking-tight" style="line-height:1.1">$37.55</div>
+          </div>
+          <div class="kpi-card py-1 px-2 lg:border-l" style="border-color:var(--border-light)">
+            <span class="text-xs font-medium block mb-1" style="color:var(--text-secondary)">Pending Orders</span>
+            <div class="flex items-center gap-3">
+              <div class="text-[26px] font-extrabold font-mono tracking-tight" style="line-height:1.1">23</div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Action needed</span>
+            </div>
+          </div>
+          <div class="kpi-card py-1 px-2 lg:border-l" style="border-color:var(--border-light)">
+            <span class="text-xs font-medium block mb-1" style="color:var(--text-secondary)">Return Rate</span>
+            <div class="flex items-center gap-3">
+              <div class="text-[26px] font-extrabold font-mono tracking-tight" style="line-height:1.1">2.1%</div>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)"><i data-lucide="trending-down" class="w-3 h-3"></i> Good</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PSYCH: Confidence Bar -->
+      <div class="flex items-center gap-0 bg-white rounded-lg px-3 py-2.5 mb-5" style="border-bottom:1px solid var(--border)" id="ordersConfidenceBar">
+        <div class="flex items-center gap-1.5 px-2">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--brand-primary)"></span>
+          <span class="text-xs font-medium" style="color:var(--brand-primary)">All synced</span>
+        </div>
+        <div class="w-px h-4 mx-1" style="background:#E5E7EB"></div>
+        <span class="text-xs px-2" style="color:var(--text-secondary)">856 orders</span>
+        <div class="w-px h-4 mx-1" style="background:#E5E7EB"></div>
+        <span class="text-xs px-2" style="color:var(--text-secondary)" id="ordersConfidenceSelected">0 selected</span>
+      </div>
+
+      <!-- Status Filter Tabs -->
+      <div class="flex items-center gap-0 mb-5 border-b overflow-x-auto" style="border-color:var(--border-light)">
+        <button class="status-tab active" onclick="switchStatusTab(this)">All <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--bg-muted);color:var(--text-tertiary)">856</span></button>
+        <button class="status-tab" onclick="switchStatusTab(this)">Pending <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">23</span><span class="ml-1 text-[10px] font-mono px-1.5 py-0.5 rounded-full" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">7</span></button>
+        <button class="status-tab" onclick="switchStatusTab(this)">Processing <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--info-bg);color:var(--info)">15</span></button>
+        <button class="status-tab" onclick="switchStatusTab(this)">Shipped <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">412</span></button>
+        <button class="status-tab" onclick="switchStatusTab(this)">Delivered <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--bg-muted);color:var(--text-secondary)">389</span></button>
+        <button class="status-tab" onclick="switchStatusTab(this)">Cancelled <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--danger-bg);color:var(--danger)">17</span></button>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="card-static bg-white rounded-xl overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left" style="background:var(--bg-muted)">
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Order ID</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Customer</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Platform</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Shop</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Items</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Total</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Status</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4521')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4521</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Sarah Johnson</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">sarah.j@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
+                <td class="px-4 py-3 text-sm">2 items</td>
+                <td class="px-4 py-3 font-mono font-medium">$67.98</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 7, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4520')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4520</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Mike Chen</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">mike.c@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
+                <td class="px-4 py-3 text-sm">1 item</td>
+                <td class="px-4 py-3 font-mono font-medium">$49.00</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Pending</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 7, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4519')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4519</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Emily Davis</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">emily.d@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,153,0,.08);color:#FF9900">Amazon</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">US Store</td>
+                <td class="px-4 py-3 text-sm">3 items</td>
+                <td class="px-4 py-3 font-mono font-medium">$84.97</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--info-bg);color:var(--info)">Processing</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 6, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4518')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4518</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Alex Rivera</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">alex.r@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
+                <td class="px-4 py-3 text-sm">1 item</td>
+                <td class="px-4 py-3 font-mono font-medium">$28.50</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 5, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4517')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4517</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Jessica Park</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">jess.p@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
+                <td class="px-4 py-3 text-sm">2 items</td>
+                <td class="px-4 py-3 font-mono font-medium">$53.00</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 5, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4516')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4516</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Tom Williams</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">tom.w@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,153,0,.08);color:#FF9900">Amazon</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">US Store</td>
+                <td class="px-4 py-3 text-sm">1 item</td>
+                <td class="px-4 py-3 font-mono font-medium">$22.99</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--danger-bg);color:var(--danger)">Cancelled</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 4, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4515')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4515</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Laura Martinez</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">laura.m@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
+                <td class="px-4 py-3 text-sm">4 items</td>
+                <td class="px-4 py-3 font-mono font-medium">$142.00</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 3, 2026</td>
+              </tr>
+              <tr class="cursor-pointer" onclick="openOrderPanel('4514')">
+                <td class="px-4 py-3 font-mono text-sm font-medium">#4514</td>
+                <td class="px-4 py-3">
+                  <div><span class="font-medium">Chris Taylor</span></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">chris.t@email.com</span>
+                </td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
+                <td class="px-4 py-3 text-sm">1 item</td>
+                <td class="px-4 py-3 font-mono font-medium">$65.00</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 3, 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Order Analytics (Collapsible) -->
+      <div class="card-static bg-white rounded-xl overflow-hidden">
+        <button onclick="toggleAnalytics()" class="w-full flex items-center justify-between px-5 py-4 text-left">
+          <h3 class="text-[14px] font-bold">Order Analytics</h3>
+          <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" style="color:var(--text-tertiary)" id="analyticsChevron"></i>
+        </button>
+        <div class="analytics-section px-5 pb-5" id="analyticsContent" style="max-height:300px">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Revenue Trend Mini Chart -->
+            <div>
+              <p class="text-xs font-medium mb-3" style="color:var(--text-secondary)">Revenue Trend (7 days)</p>
+              <div class="flex items-end gap-2 h-[100px]">
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:50%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">M</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:65%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">T</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:45%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">W</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:80%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">T</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:90%;background:var(--brand-accent)"></div>
+                  <span class="text-[10px] font-medium" style="color:var(--text-primary)">F</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:70%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">S</span>
+                </div>
+                <div class="flex-1 flex flex-col items-center gap-1">
+                  <div class="w-full rounded-t-sm" style="height:40%;background:rgba(59,130,246,0.5)"></div>
+                  <span class="text-[10px]" style="color:var(--text-tertiary)">S</span>
+                </div>
+              </div>
+            </div>
+            <!-- Platform Comparison -->
+            <div>
+              <p class="text-xs font-medium mb-3" style="color:var(--text-secondary)">Revenue by Platform</p>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium">Etsy</span>
+                    <span class="text-xs font-mono" style="color:var(--text-secondary)">$5,840</span>
+                  </div>
+                  <div class="h-2 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:60%;background:#F1641E"></div></div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium">Shopify</span>
+                    <span class="text-xs font-mono" style="color:var(--text-secondary)">$4,210</span>
+                  </div>
+                  <div class="h-2 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:43%;background:#96BF48"></div></div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium">Amazon</span>
+                    <span class="text-xs font-mono" style="color:var(--text-secondary)">$2,797</span>
+                  </div>
+                  <div class="h-2 rounded-full" style="background:var(--bg-muted)"><div class="h-full rounded-full" style="width:29%;background:#FF9900"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===== ORDER DETAIL SIDE PANEL ===== -->
+<div class="side-panel" id="orderPanel">
+  <div class="sticky top-0 bg-white z-10 px-5 pt-4 pb-4" style="border-bottom:1px solid var(--border-light)">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-[15px] font-bold">Order #4521</h3>
+        <p class="text-xs" style="color:var(--text-tertiary)">March 7, 2026 at 2:34 PM</p>
+      </div>
+      <button onclick="closeOrderPanel()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+        <i data-lucide="x" class="w-4 h-4" style="color:var(--text-secondary)"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="p-5 space-y-5">
+
+    <!-- Customer Info -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Customer</h4>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--brand-accent-bg);color:var(--brand-accent)">SJ</div>
+        <div>
+          <p class="text-sm font-medium">Sarah Johnson</p>
+          <p class="text-xs" style="color:var(--text-tertiary)">sarah.j@email.com</p>
+          <p class="text-xs mt-0.5" style="color:var(--text-secondary)">3rd order from this customer</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color:var(--text-tertiary)">Items</h4>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-lg flex-shrink-0">🌿</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Vintage Plant Pot</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Qty: 1</p>
+          </div>
+          <span class="text-sm font-mono font-medium">$34.99</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center text-lg flex-shrink-0">🌸</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate">Floral Tote Bag</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Qty: 1</p>
+          </div>
+          <span class="text-sm font-mono font-medium">$28.50</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mt-3 pt-3 border-t" style="border-color:var(--border-light)">
+        <span class="text-xs font-medium" style="color:var(--text-secondary)">Subtotal</span>
+        <span class="text-sm font-mono font-medium">$63.49</span>
+      </div>
+      <div class="flex items-center justify-between mt-1">
+        <span class="text-xs" style="color:var(--text-tertiary)">Shipping</span>
+        <span class="text-sm font-mono" style="color:var(--text-secondary)">$4.49</span>
+      </div>
+      <div class="flex items-center justify-between mt-2 pt-2 border-t" style="border-color:var(--border-light)">
+        <span class="text-sm font-semibold">Total</span>
+        <span class="text-base font-mono font-bold">$67.98</span>
+      </div>
+    </div>
+
+    <!-- Fulfillment -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-tertiary)">Fulfillment</h4>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Tracking Number</label>
+          <input type="text" value="1Z999AA10123456784" class="w-full h-10 px-3 text-sm font-mono border rounded-md" style="border-color:var(--border)">
+        </div>
+        <div>
+          <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Carrier</label>
+          <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+            <option>UPS</option>
+            <option>USPS</option>
+            <option>FedEx</option>
+            <option>DHL</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="showToast('Marked as shipped!','success')" class="btn-primary flex-1 h-10 text-sm font-semibold inline-flex items-center justify-center gap-2">
+            <i data-lucide="truck" class="w-4 h-4"></i> Mark as Shipped
+          </button>
+          <button class="btn-ghost h-10 px-4 text-sm font-medium inline-flex items-center gap-2">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Label
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Timeline -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-tertiary)">Timeline</h4>
+      <div class="space-y-0">
+        <!-- Placed -->
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="order-timeline-dot" style="background:var(--brand-primary)"></div>
+            <div class="order-timeline-line" style="background:var(--brand-primary)"></div>
+          </div>
+          <div class="pb-4">
+            <p class="text-sm font-medium">Order placed</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Mar 7, 2:34 PM</p>
+          </div>
+        </div>
+        <!-- Confirmed -->
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="order-timeline-dot" style="background:var(--brand-primary)"></div>
+            <div class="order-timeline-line" style="background:var(--brand-primary)"></div>
+          </div>
+          <div class="pb-4">
+            <p class="text-sm font-medium">Payment confirmed</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Mar 7, 2:35 PM</p>
+          </div>
+        </div>
+        <!-- Shipped -->
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="order-timeline-dot" style="background:var(--brand-primary)"></div>
+            <div class="order-timeline-line" style="background:var(--border-light)"></div>
+          </div>
+          <div class="pb-4">
+            <p class="text-sm font-medium">Shipped via UPS</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Mar 7, 5:12 PM</p>
+          </div>
+        </div>
+        <!-- Delivered (pending) -->
+        <div class="flex gap-3">
+          <div class="flex flex-col items-center">
+            <div class="order-timeline-dot" style="background:var(--border);border:2px solid var(--border)"></div>
+          </div>
+          <div>
+            <p class="text-sm" style="color:var(--text-tertiary)">Delivered</p>
+            <p class="text-xs" style="color:var(--text-tertiary)">Estimated: Mar 10-12</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PSYCH: Recovery Toast (hidden by default) -->
+<div id="recoveryToast" class="fixed bottom-6 right-6 z-[700] bg-white rounded-2xl px-4 py-3 flex items-center gap-3 transition-all" style="display:none;box-shadow:0 4px 24px rgba(0,0,0,.12);min-width:320px;border:1px solid var(--border)">
+  <span class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
+    <i data-lucide="check" class="w-3.5 h-3.5" style="color:var(--brand-primary)"></i>
+  </span>
+  <span class="text-sm font-medium flex-1" id="recoveryToastMsg">Order status updated</span>
+  <button onclick="undoRecoveryAction()" class="text-xs font-semibold px-2 py-1 rounded-md" style="color:var(--brand-primary);background:var(--brand-primary-bg)">Undo</button>
+  <div class="absolute bottom-0 left-4 right-4 h-0.5 rounded-full overflow-hidden">
+    <div id="recoveryProgress" class="h-full rounded-full" style="background:var(--brand-primary);width:100%;transition:width 5s linear"></div>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav hidden fixed bottom-0 left-0 right-0 bg-white border-t z-40 px-2 py-2" style="border-color:var(--border)">
+  <div class="flex items-center justify-around">
+    <a onclick="navigate('dashboard')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a onclick="navigate('listings')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="listings"><i data-lucide="list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Listings</span></a>
+    <a onclick="navigate('orders')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--brand-primary)" data-mob="orders"><i data-lucide="shopping-cart" class="w-5 h-5"></i><span class="text-[10px] font-medium">Orders</span></a>
+    <a onclick="navigate('pod-hub')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="pod-hub"><i data-lucide="printer" class="w-5 h-5"></i><span class="text-[10px] font-medium">POD</span></a>
+    <a onclick="navigate('settings')" class="flex flex-col items-center gap-1 px-3 py-1 cursor-pointer" style="color:var(--text-secondary)" data-mob="settings"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Settings</span></a>
+  </div>
+</nav>
+
+<script src="_shared-navigation.js"></script>
+<script>
+// Status tab switching
+function switchStatusTab(el) {
+  document.querySelectorAll('.status-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+// Order panel open/close
+function openOrderPanel(orderId) {
+  var panel = document.getElementById('orderPanel');
+  if (panel) panel.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+function closeOrderPanel() {
+  var panel = document.getElementById('orderPanel');
+  if (panel) panel.classList.remove('open');
+}
+
+// Analytics collapsible
+var analyticsOpen = true;
+function toggleAnalytics() {
+  var content = document.getElementById('analyticsContent');
+  var chevron = document.getElementById('analyticsChevron');
+  analyticsOpen = !analyticsOpen;
+  if (analyticsOpen) {
+    content.classList.remove('collapsed');
+    content.style.maxHeight = '300px';
+    chevron.style.transform = 'rotate(0deg)';
+  } else {
+    content.classList.add('collapsed');
+    chevron.style.transform = 'rotate(-90deg)';
+  }
+}
+
+// Close order panel on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeOrderPanel();
+});
+
+// PSYCH: Recovery Toast
+var recoveryTimer = null;
+function showRecoveryToast(message) {
+  var toast = document.getElementById('recoveryToast');
+  var msg = document.getElementById('recoveryToastMsg');
+  var progress = document.getElementById('recoveryProgress');
+  if (!toast) return;
+  msg.textContent = message;
+  toast.style.display = 'flex';
+  progress.style.width = '100%';
+  progress.offsetWidth;
+  progress.style.width = '0%';
+  clearTimeout(recoveryTimer);
+  recoveryTimer = setTimeout(function() { toast.style.display = 'none'; }, 5000);
+  if (window.lucide) lucide.createIcons();
+}
+function undoRecoveryAction() {
+  var toast = document.getElementById('recoveryToast');
+  clearTimeout(recoveryTimer);
+  if (toast) toast.style.display = 'none';
+  showToast('Action undone', 'info');
+}
+</script>
+</body>
+</html>

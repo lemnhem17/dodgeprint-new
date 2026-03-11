@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Settings</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<style>
+  .settings-panel { display: none; }
+  .settings-panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .radio-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease; }
+  .radio-dot.active { border-color: var(--brand-primary); }
+  .radio-dot.active::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--brand-primary); }
+  .save-feedback { opacity: 0; transition: opacity 0.2s ease; font-size: 11px; font-weight: 600; color: var(--brand-primary); margin-left: 8px; }
+  .save-feedback.show { opacity: 1; }
+</style>
+</head>
+<body data-page="settings">
+
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-7">
+
+      <!-- Title -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Settings</h1>
+        <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Manage your account, integrations, and preferences</p>
+      </div>
+
+      <!-- Settings Layout: Left Tabs + Right Content -->
+      <div class="flex gap-6">
+
+        <!-- Settings Sidebar Tabs -->
+        <div class="w-48 flex-shrink-0">
+          <div class="space-y-1">
+            <button class="settings-tab active w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" onclick="switchSettingsTab(this,'integrations')"><i data-lucide="plug" class="w-4 h-4 flex-shrink-0"></i> Integrations</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'billing')"><i data-lucide="credit-card" class="w-4 h-4 flex-shrink-0"></i> Billing</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'team')"><i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i> Team</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'notifications')"><i data-lucide="bell" class="w-4 h-4 flex-shrink-0"></i> Notifications</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'account')"><i data-lucide="user" class="w-4 h-4 flex-shrink-0"></i> Account</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'api')"><i data-lucide="key" class="w-4 h-4 flex-shrink-0"></i> API Keys</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'sync')"><i data-lucide="refresh-cw" class="w-4 h-4 flex-shrink-0"></i> Sync Settings</button>
+          </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="flex-1 max-w-3xl">
+
+          <!-- ====== INTEGRATIONS ====== -->
+          <div class="settings-panel active" id="stab-integrations">
+            <h2 class="text-base font-bold mb-4">Connected Platforms</h2>
+            <div class="space-y-3 mb-6">
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(241,100,30,.1)"><span class="text-lg font-bold" style="color:#F1641E">E</span></div>
+                <div class="flex-1"><h4 class="text-sm font-semibold">Etsy — CozyPrints</h4><p class="text-[11px]" style="color:var(--text-tertiary)">Connected 3 months ago</p></div>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)"><i data-lucide="check-circle" class="w-3 h-3"></i> Connected</span>
+                <div class="flex flex-col items-end gap-0.5"><button class="btn-ghost px-3 py-1.5 text-xs font-medium" style="color:var(--danger)">Disconnect</button><span class="text-[10px]" style="color:var(--text-tertiary)">Your data stays safe. Reconnect anytime.</span></div>
+              </div>
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(150,191,72,.1)"><span class="text-lg font-bold" style="color:#96BF48">S</span></div>
+                <div class="flex-1"><h4 class="text-sm font-semibold">Shopify — Main Store</h4><p class="text-[11px]" style="color:var(--text-tertiary)">Connected 2 months ago</p></div>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)"><i data-lucide="check-circle" class="w-3 h-3"></i> Connected</span>
+                <div class="flex flex-col items-end gap-0.5"><button class="btn-ghost px-3 py-1.5 text-xs font-medium" style="color:var(--danger)">Disconnect</button><span class="text-[10px]" style="color:var(--text-tertiary)">Your data stays safe. Reconnect anytime.</span></div>
+              </div>
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(255,153,0,.1)"><span class="text-lg font-bold" style="color:#FF9900">A</span></div>
+                <div class="flex-1"><h4 class="text-sm font-semibold">Amazon — US</h4><p class="text-[11px]" style="color:var(--text-tertiary)">Connected 1 month ago</p></div>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)"><i data-lucide="check-circle" class="w-3 h-3"></i> Connected</span>
+                <div class="flex flex-col items-end gap-0.5"><button class="btn-ghost px-3 py-1.5 text-xs font-medium" style="color:var(--danger)">Disconnect</button><span class="text-[10px]" style="color:var(--text-tertiary)">Your data stays safe. Reconnect anytime.</span></div>
+              </div>
+            </div>
+            <button class="btn-primary px-5 h-10 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Connect Platform</button>
+          </div>
+
+          <!-- ====== BILLING ====== -->
+          <div class="settings-panel" id="stab-billing">
+            <!-- Current Plan -->
+            <div class="card-static rounded-2xl p-5 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <span class="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Growth</span>
+                  <h3 class="text-lg font-bold mt-1">$99<span class="text-sm font-normal" style="color:var(--text-secondary)">/mo</span></h3>
+                </div>
+                <button class="btn-ghost px-4 py-2 text-xs font-medium">Change Plan</button>
+              </div>
+              <div class="rounded-xl px-3 py-2 mb-3 inline-flex items-center gap-2" style="background:var(--bg-muted)">
+                <i data-lucide="calendar" class="w-3.5 h-3.5" style="color:var(--text-secondary)"></i>
+                <span class="text-xs font-medium" style="color:var(--text-secondary)">Next billing: $99 on March 15, 2026</span>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="rounded-xl p-3 text-center" style="background:var(--bg-muted)"><p class="text-lg font-bold font-mono">892</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">of 2,000 listings</p></div>
+                <div class="rounded-xl p-3 text-center" style="background:var(--bg-muted)"><p class="text-lg font-bold font-mono">3</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">of 5 channels</p></div>
+                <div class="rounded-xl p-3 text-center" style="background:var(--bg-muted)"><p class="text-lg font-bold font-mono">2</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">of 5 team members</p></div>
+              </div>
+            </div>
+
+            <!-- Plan Comparison -->
+            <h3 class="text-sm font-bold mb-3">Available Plans</h3>
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="card-static rounded-2xl p-5 text-center">
+                <h4 class="text-sm font-bold mb-1">Free</h4>
+                <p class="text-2xl font-extrabold mb-2">$0</p>
+                <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">100 listings, 1 channel</p>
+                <button class="btn-ghost w-full py-2 text-xs font-medium">Downgrade</button>
+              </div>
+              <div class="card-static rounded-2xl p-5 text-center border-2" style="border-color:var(--brand-primary)">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mb-2" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Current</span>
+                <h4 class="text-sm font-bold mb-1">Growth</h4>
+                <p class="text-2xl font-extrabold mb-2">$99</p>
+                <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">2,000 listings, 5 channels</p>
+                <button class="btn-primary w-full py-2 text-xs font-medium" disabled style="opacity:0.5">Current Plan</button>
+              </div>
+              <div class="card-static rounded-2xl p-5 text-center">
+                <h4 class="text-sm font-bold mb-1">Scale</h4>
+                <p class="text-2xl font-extrabold mb-2">$249</p>
+                <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">Unlimited listings & channels</p>
+                <button class="btn-accent w-full py-2 text-xs font-medium">Upgrade</button>
+              </div>
+            </div>
+
+            <!-- Billing History -->
+            <h3 class="text-sm font-bold mb-3">Billing History</h3>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead><tr style="background:var(--bg-muted)">
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Date</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Description</th>
+                  <th class="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Amount</th>
+                  <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Status</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td class="px-4 py-3 text-sm">Mar 1, 2026</td><td class="px-4 py-3 text-sm">Growth Plan</td><td class="px-4 py-3 text-right font-mono text-[13px]">$99.00</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Paid</span></td></tr>
+                  <tr><td class="px-4 py-3 text-sm">Feb 1, 2026</td><td class="px-4 py-3 text-sm">Growth Plan</td><td class="px-4 py-3 text-right font-mono text-[13px]">$99.00</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Paid</span></td></tr>
+                  <tr><td class="px-4 py-3 text-sm">Jan 1, 2026</td><td class="px-4 py-3 text-sm">Growth Plan</td><td class="px-4 py-3 text-right font-mono text-[13px]">$99.00</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Paid</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== TEAM ====== -->
+          <div class="settings-panel" id="stab-team">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-bold">Team Members</h2>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Invite Member</button>
+            </div>
+            <div class="space-y-3">
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                <div class="flex-1"><h4 class="text-sm font-semibold">John Doe</h4><p class="text-[11px]" style="color:var(--text-tertiary)">john@dodgeprint.com</p></div>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Owner</span>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
+              </div>
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+                <div class="flex-1"><h4 class="text-sm font-semibold">Sarah Adams</h4><p class="text-[11px]" style="color:var(--text-tertiary)">sarah@dodgeprint.com</p></div>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--info-bg);color:var(--info)">Admin</span>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ====== NOTIFICATIONS ====== -->
+          <div class="settings-panel" id="stab-notifications">
+            <h2 class="text-base font-bold mb-4">Notification Preferences</h2>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 rounded-xl border" style="border-color:var(--border)">
+                <div><p class="text-sm font-medium">Sync Alerts</p><p class="text-[11px]" style="color:var(--text-tertiary)">Get notified when sync fails or completes</p></div>
+                <div class="flex items-center gap-4">
+                  <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Email + In-app</span>
+                  <div class="toggle on" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-xl border" style="border-color:var(--border)">
+                <div><p class="text-sm font-medium">Order Notifications</p><p class="text-[11px]" style="color:var(--text-tertiary)">New orders, cancellations, refunds</p></div>
+                <div class="flex items-center gap-4">
+                  <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">In-app only</span>
+                  <div class="toggle on" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-xl border" style="border-color:var(--border)">
+                <div><p class="text-sm font-medium">Price Changes</p><p class="text-[11px]" style="color:var(--text-tertiary)">Competitor price alerts and suggestions</p></div>
+                <div class="flex items-center gap-4">
+                  <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Email</span>
+                  <div class="toggle" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-xl border" style="border-color:var(--border)">
+                <div><p class="text-sm font-medium">Inventory Warnings</p><p class="text-[11px]" style="color:var(--text-tertiary)">Low stock and out-of-stock alerts</p></div>
+                <div class="flex items-center gap-4">
+                  <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Email + In-app</span>
+                  <div class="toggle on" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-xl border" style="border-color:var(--border)">
+                <div><p class="text-sm font-medium">Weekly Report</p><p class="text-[11px]" style="color:var(--text-tertiary)">Performance summary every Monday</p></div>
+                <div class="flex items-center gap-4">
+                  <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Email</span>
+                  <div class="toggle on" onclick="toggleSwitch(this)"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ====== ACCOUNT ====== -->
+          <div class="settings-panel" id="stab-account">
+            <h2 class="text-base font-bold mb-4">Account Settings</h2>
+            <!-- Profile -->
+            <div class="card-static rounded-2xl p-5 mb-6">
+              <h3 class="text-sm font-bold mb-4">Profile</h3>
+              <div class="flex items-start gap-5 mb-5">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                <div class="flex-1 space-y-3">
+                  <div><label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Full Name</label><input type="text" value="John Doe" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-card)"></div>
+                  <div><label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Email</label><input type="email" value="john@dodgeprint.com" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-card)"></div>
+                </div>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium" onclick="showToast('Settings saved!','success')">Save Changes</button>
+            </div>
+
+            <!-- Password -->
+            <div class="card-static rounded-2xl p-5 mb-6">
+              <h3 class="text-sm font-bold mb-4">Change Password</h3>
+              <div class="space-y-3 max-w-md">
+                <div><label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Current Password</label><input type="password" placeholder="Enter current password" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-card)"></div>
+                <div><label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">New Password</label><input type="password" placeholder="Enter new password" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-card)"></div>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium mt-4">Update Password</button>
+            </div>
+
+            <!-- 2FA -->
+            <div class="card-static rounded-2xl p-5 mb-6">
+              <div class="flex items-center justify-between">
+                <div><h3 class="text-sm font-bold">Two-Factor Authentication</h3><p class="text-[11px]" style="color:var(--text-tertiary)">Add an extra layer of security to your account</p></div>
+                <div class="toggle" onclick="toggleSwitch(this)"></div>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="card-static rounded-2xl p-5 border-2" style="border-color:var(--danger)">
+              <h3 class="text-sm font-bold mb-1" style="color:var(--danger)">Danger Zone</h3>
+              <p class="text-[11px] mb-3" style="color:var(--text-tertiary)">Permanently delete your account and all data. This action cannot be undone.</p>
+              <button class="px-5 h-9 text-sm font-medium rounded-xl text-white" style="background:var(--danger)">Delete Account</button>
+            </div>
+          </div>
+
+          <!-- ====== API KEYS ====== -->
+          <div class="settings-panel" id="stab-api">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-bold">Your API Keys</h2>
+                <p class="text-[11px]" style="color:var(--text-tertiary)">Manage API keys for external integrations</p>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Generate New Key</button>
+            </div>
+
+            <!-- API Keys Table -->
+            <div class="card-static rounded-2xl overflow-hidden mb-6">
+              <table class="w-full text-sm">
+                <thead><tr style="background:var(--bg-muted)">
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Key</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Created</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Last Used</th>
+                  <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td class="px-4 py-3 text-sm font-medium">Production Key</td><td class="px-4 py-3 font-mono text-[12px]" style="color:var(--text-tertiary)">sk-prod-****-****-7f2a</td><td class="px-4 py-3 text-sm">Feb 15, 2026</td><td class="px-4 py-3 text-sm">2 hours ago</td><td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)">Revoke</button></td></tr>
+                  <tr><td class="px-4 py-3 text-sm font-medium">Development Key</td><td class="px-4 py-3 font-mono text-[12px]" style="color:var(--text-tertiary)">sk-dev-****-****-3b9c</td><td class="px-4 py-3 text-sm">Jan 20, 2026</td><td class="px-4 py-3 text-sm">5 days ago</td><td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)">Revoke</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Usage Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div class="card-static rounded-2xl p-4 text-center">
+                <p class="text-xs font-medium mb-1" style="color:var(--text-secondary)">Requests This Month</p>
+                <p class="text-xl font-bold font-mono">12,847</p>
+              </div>
+              <div class="card-static rounded-2xl p-4 text-center">
+                <p class="text-xs font-medium mb-1" style="color:var(--text-secondary)">Rate Limit</p>
+                <p class="text-xl font-bold font-mono">100/min</p>
+              </div>
+            </div>
+            <a href="#" class="text-xs font-medium inline-flex items-center gap-1" style="color:var(--brand-primary)"><i data-lucide="external-link" class="w-3 h-3"></i> View API Documentation</a>
+          </div>
+
+          <!-- ====== SYNC SETTINGS ====== -->
+          <div class="settings-panel" id="stab-sync">
+            <h2 class="text-base font-bold mb-1">Sync Settings</h2>
+            <p class="text-[13px] mb-5" style="color:var(--text-tertiary)">Configure how Dodgeprint syncs with your shops.</p>
+
+            <!-- Shop Selector -->
+            <div class="mb-5">
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Select Shop</label>
+              <select class="h-10 px-3 text-sm border rounded-xl w-64" style="border-color:var(--border);background:var(--bg-card)">
+                <option>Etsy — CozyPrints</option>
+                <option>Shopify — Main Store</option>
+                <option>Amazon — US</option>
+              </select>
+            </div>
+
+            <!-- Sync Frequency -->
+            <div class="card-static rounded-2xl p-5 mb-4">
+              <h3 class="text-sm font-bold mb-3">Sync Frequency</h3>
+              <div class="flex items-center gap-4 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot"><div class="w-[10px] h-[10px] rounded-full" style="background:var(--brand-primary)"></div></div><span class="text-xs font-medium" style="color:var(--brand-primary)">Real-time</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot" style="border-color:var(--border)"></div><span class="text-xs font-medium" style="color:var(--text-secondary)">Every 5 min</span><span class="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Recommended</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot" style="border-color:var(--border)"></div><span class="text-xs font-medium" style="color:var(--text-secondary)">Every 15 min</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot" style="border-color:var(--border)"></div><span class="text-xs font-medium" style="color:var(--text-secondary)">Manual</span></label>
+              </div>
+            </div>
+
+            <!-- Conflict Resolution -->
+            <div class="card-static rounded-2xl p-5 mb-4">
+              <h3 class="text-sm font-bold mb-3">Conflict Resolution</h3>
+              <div class="flex items-center gap-4 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot active"><div class="w-[10px] h-[10px] rounded-full" style="background:var(--brand-primary)"></div></div><span class="text-xs font-medium" style="color:var(--brand-primary)">Platform wins</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot" style="border-color:var(--border)"></div><span class="text-xs font-medium" style="color:var(--text-secondary)">Dodgeprint wins</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><div class="radio-dot" style="border-color:var(--border)"></div><span class="text-xs font-medium" style="color:var(--text-secondary)">Ask me</span></label>
+              </div>
+            </div>
+
+            <!-- Auto-sync Fields -->
+            <div class="card-static rounded-2xl p-5 mb-4">
+              <h3 class="text-sm font-bold mb-3">Auto-Sync Fields</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Price</span><div class="toggle on" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Inventory</span><div class="toggle on" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Title</span><div class="toggle on" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Description</span><div class="toggle" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Images</span><div class="toggle on" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+                <div class="flex items-center justify-between p-3 rounded-xl" style="background:var(--bg-muted)"><span class="text-xs font-medium">Tags</span><div class="toggle on" onclick="toggleSwitch(this)" style="transform:scale(0.85)"></div></div>
+              </div>
+            </div>
+
+            <button class="btn-primary px-5 h-10 text-sm font-semibold mb-6" onclick="showToast('Settings saved!','success')">Save Settings</button>
+
+            <!-- Sync Log -->
+            <h3 class="text-sm font-bold mb-3">Recent Sync Events</h3>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead><tr style="background:var(--bg-muted)">
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Timestamp</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Shop</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Action</th>
+                  <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Status</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 8, 10:32 AM</td><td class="px-4 py-3 text-sm">Etsy — CozyPrints</td><td class="px-4 py-3 text-sm">Full sync (892 listings)</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Success</span></td></tr>
+                  <tr><td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 8, 10:30 AM</td><td class="px-4 py-3 text-sm">Shopify — Main</td><td class="px-4 py-3 text-sm">Price update (12 items)</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Success</span></td></tr>
+                  <tr><td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 8, 10:15 AM</td><td class="px-4 py-3 text-sm">Amazon — US</td><td class="px-4 py-3 text-sm">Inventory sync</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--danger-bg);color:var(--danger)">Failed</span></td></tr>
+                  <tr><td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 8, 9:45 AM</td><td class="px-4 py-3 text-sm">Etsy — CozyPrints</td><td class="px-4 py-3 text-sm">Image sync (24 images)</td><td class="px-4 py-3 text-center"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Success</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white z-40 border-t hidden items-center justify-around py-2" style="border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span></a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span></a>
+  <a href="06-research.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="search" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Research</span></a>
+  <a href="07-pod-hub.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="printer" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">POD Hub</span></a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="settings" class="w-5 h-5" style="color:var(--brand-primary)"></i><span class="text-[10px] font-medium" style="color:var(--brand-primary)">Settings</span></a>
+</nav>
+
+<script>
+// Override toggleSwitch to add inline save feedback
+var _origToggle = window.toggleSwitch;
+window.toggleSwitch = function(el) {
+  if (_origToggle) _origToggle(el);
+  else el.classList.toggle('on');
+  // Show save feedback inline
+  var parent = el.closest('.flex');
+  if (!parent) return;
+  var existing = parent.querySelector('.save-feedback');
+  if (!existing) {
+    existing = document.createElement('span');
+    existing.className = 'save-feedback';
+    existing.textContent = 'Saved';
+    el.parentNode.insertBefore(existing, el.nextSibling);
+  }
+  existing.classList.add('show');
+  setTimeout(function() { existing.classList.remove('show'); }, 2000);
+};
+</script>
+</body>
+</html>
