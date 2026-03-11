@@ -568,7 +568,7 @@ function toggleCommandPalette() {
 function filterCommands() {
   var query = (document.getElementById('commandInput').value || '').toLowerCase();
   var results = COMMAND_ITEMS.filter(function(c) {
-    return c.label.toLowerCase().indexOf(query) !== -1;
+    return c.label.toLowerCase().indexOf(query) !== -1 || (c.keywords && c.keywords.toLowerCase().indexOf(query) !== -1);
   });
   var container = document.getElementById('commandResults');
   container.innerHTML = results.map(function(c) {
