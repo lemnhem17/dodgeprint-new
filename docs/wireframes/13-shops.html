@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Shops</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+        etsy: '#F1641E', shopify: '#96BF48', amazon: '#FF9900', tiktok: '#010101', ebay: '#E53238', woocommerce: '#96588A',
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* Platform tab active */
+.platform-tab { transition: all .15s ease; padding: 7px 14px; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.platform-tab:hover { color: var(--text-primary); }
+.platform-tab.active { color: var(--brand-primary); border-bottom-color: var(--brand-primary); font-weight: 600; }
+/* Settings tab (saved views) */
+.view-pill { transition: all .15s ease; padding: 5px 12px; font-size: 12px; font-weight: 500; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); color: var(--text-primary); }
+.view-pill:hover { border-color: var(--brand-primary); color: var(--brand-primary); }
+.view-pill.active { background: var(--brand-primary-bg); color: var(--brand-primary); border-color: var(--brand-primary); }
+/* 3-dot menu */
+.shop-menu { display: none; position: absolute; right: 8px; top: 36px; min-width: 160px; border-radius: 10px; padding: 4px; z-index: 50; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-lg); }
+.shop-menu.open { display: block; }
+.shop-menu button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 7px 10px; font-size: 12px; font-weight: 500; border-radius: 7px; cursor: pointer; background: transparent; border: none; color: var(--text-secondary); }
+.shop-menu button:hover { background: var(--bg-muted); color: var(--text-primary); }
+/* Checkbox visible on hover */
+.group:hover .shop-checkbox { opacity: 1; }
+.shop-checkbox { opacity: 0; transition: opacity .15s; }
+.shop-checkbox:checked { opacity: 1; }
+</style>
+</head>
+<body data-page="shops">
+
+<!-- Nav progress bar -->
+<div id="nav-progress-bar"></div>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR (nav populated by initSidebar()) ===== -->
+  <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)">
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+    <!-- Nav (populated by initSidebar()) -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto"></nav>
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search shops... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('Syncing all shops...','success')"
+                class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync All
+        </button>
+        <button onclick="showToast('3 new notifications','info')"
+                class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== SHOPS CONTENT ===== -->
+    <main class="p-7">
+
+      <!-- Page Title + Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Shops</h1>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style="background:var(--bg-muted);color:var(--text-secondary)">15 shops</span>
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style="background:var(--danger-bg);color:var(--danger)">
+            <i data-lucide="alert-circle" class="w-3 h-3"></i> 2 errors
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> Export
+          </button>
+          <button onclick="showToast('Syncing all platforms...','success')"
+                  class="btn-ghost px-4 h-9 text-sm font-medium inline-flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sync All
+          </button>
+          <button onclick="document.getElementById('addShopModal').classList.add('active')"
+                  class="btn-primary px-4 h-9 text-sm font-semibold inline-flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Shop
+          </button>
+        </div>
+      </div>
+
+      <!-- PSYCH: KPI Bar -->
+      <div class="flex items-center gap-0 rounded-xl px-4 py-3 mb-5"
+           style="background:var(--bg-card);border:1px solid var(--border)">
+        <div class="flex items-center gap-1.5 pr-4" style="border-right:1px solid var(--border-light)">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--success)"></span>
+          <span class="text-xs font-semibold" style="color:var(--success)">13 connected</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-4" style="border-right:1px solid var(--border-light)">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--danger)"></span>
+          <span class="text-xs font-semibold" style="color:var(--danger)">2 errors</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-4" style="border-right:1px solid var(--border-light)">
+          <span class="text-xs font-medium" style="color:var(--text-secondary)">Total revenue (30d)</span>
+          <span class="text-xs font-bold font-mono" style="color:var(--text-primary)">$181,610</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-4" style="border-right:1px solid var(--border-light)">
+          <span class="text-xs font-medium" style="color:var(--text-secondary)">Total orders</span>
+          <span class="text-xs font-bold font-mono" style="color:var(--text-primary)">3,297</span>
+        </div>
+        <div class="flex items-center gap-1.5 px-4">
+          <span class="text-xs font-medium" style="color:var(--text-secondary)">Active listings</span>
+          <span class="text-xs font-bold font-mono" style="color:var(--text-primary)">99,862</span>
+        </div>
+        <div class="ml-auto">
+          <span id="bulkSelectionCount" class="text-xs font-medium" style="color:var(--text-tertiary)">0 selected</span>
+        </div>
+      </div>
+
+      <!-- PSYCH: Since You Left banner -->
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl mb-5"
+           style="background:var(--brand-primary-bg);border:1px solid var(--brand-primary)">
+        <i data-lucide="clock" class="w-4 h-4 flex-shrink-0" style="color:var(--brand-primary)"></i>
+        <div class="flex-1 min-w-0">
+          <span class="text-sm font-semibold" style="color:var(--brand-primary)">Since you left (8 hrs ago):</span>
+          <span class="text-sm ml-2" style="color:var(--text-secondary)">
+            CozyPrints +$1,240 · UK Store sync failed again · US Merch hit 500 orders milestone
+          </span>
+        </div>
+        <button onclick="this.closest('[style]').remove()" class="p-1 rounded" style="color:var(--brand-primary)">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- PSYCH: Needs Attention -->
+      <div class="flex items-start gap-3 px-4 py-3 rounded-xl mb-5"
+           style="background:var(--danger-bg);border:1px solid var(--danger)">
+        <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--danger)"></i>
+        <div class="flex-1">
+          <p class="text-sm font-semibold mb-1" style="color:var(--danger)">Needs Attention</p>
+          <div class="flex flex-wrap gap-3">
+            <span class="text-xs inline-flex items-center gap-1" style="color:var(--text-secondary)">
+              <i data-lucide="store" class="w-3 h-3"></i>
+              <strong style="color:var(--danger)">ArtfulDecor</strong> — API token expired
+              <button onclick="showToast('Opening ArtfulDecor settings...','info')"
+                      class="ml-1 text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                      style="background:var(--danger);color:#fff">Fix now</button>
+            </span>
+            <span class="text-xs inline-flex items-center gap-1" style="color:var(--text-secondary)">
+              <i data-lucide="store" class="w-3 h-3"></i>
+              <strong style="color:var(--danger)">UK Store</strong> — Rate limit hit
+              <button onclick="showToast('Retrying UK Store sync...','info')"
+                      class="ml-1 text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                      style="background:var(--danger);color:#fff">Retry</button>
+            </span>
+          </div>
+        </div>
+        <button onclick="this.closest('[style]').remove()" class="p-1 rounded" style="color:var(--danger)">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Filter Panel + Saved Views + Platform Tabs -->
+      <div class="flex flex-col gap-3 mb-5">
+        <!-- Saved views -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-semibold uppercase tracking-wide mr-1" style="color:var(--text-secondary)">Views:</span>
+          <button class="view-pill active" onclick="switchView(this,'all')">All Platforms</button>
+          <button class="view-pill" onclick="switchView(this,'etsy')">Etsy Only</button>
+          <button class="view-pill" onclick="switchView(this,'amazon')">Amazon Only</button>
+          <button class="view-pill" onclick="switchView(this,'errors')">Errors Only</button>
+          <button class="view-pill" onclick="switchView(this,'toprev')">Top Revenue</button>
+          <button onclick="showToast('Save current view coming soon','info')"
+                  class="view-pill inline-flex items-center gap-1">
+            <i data-lucide="plus" class="w-3 h-3"></i> Save View
+          </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- Search (wider) -->
+          <div class="relative flex-1 min-w-[200px] max-w-md">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+            <input type="text" placeholder="Search shops..." oninput="filterShops(this.value)"
+                   class="w-full h-10 pl-10 pr-4 text-sm rounded-xl border"
+                   style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+          </div>
+          <!-- Filter button -->
+          <button onclick="showToast('Filter panel coming soon','info')"
+                  class="h-10 px-4 text-sm font-medium rounded-xl border inline-flex items-center gap-2 cursor-pointer transition-all hover:border-blue-400"
+                  style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Filter
+          </button>
+          <!-- Grid/List toggle -->
+          <div class="inline-flex rounded-xl border overflow-hidden" style="border-color:var(--border)">
+            <button onclick="setViewMode('grid')" id="viewGrid"
+                    class="h-10 w-10 flex items-center justify-center transition-colors"
+                    style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            </button>
+            <button onclick="setViewMode('list')" id="viewList"
+                    class="h-10 w-10 flex items-center justify-center transition-colors"
+                    style="background:var(--bg-card);color:var(--text-tertiary);border-left:1px solid var(--border)">
+              <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <!-- Sort dropdown -->
+          <select class="h-10 px-4 text-sm font-medium rounded-xl border cursor-pointer"
+                  style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)"
+                  onchange="showToast('Sort applied','info')">
+            <option>Sort by: Revenue</option>
+            <option>Sort by: Orders</option>
+            <option>Sort by: Name A–Z</option>
+            <option>Sort by: Last Synced</option>
+          </select>
+          <!-- Bulk actions (shown when items selected) -->
+          <div id="bulkActions" class="hidden flex items-center gap-2 ml-2">
+            <button onclick="showToast('Bulk sync started','success')"
+                    class="btn-ghost px-3 h-10 text-sm font-medium inline-flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Selected
+            </button>
+            <button onclick="showToast('Bulk pause applied','info')"
+                    class="btn-ghost px-3 h-10 text-sm font-medium inline-flex items-center gap-1.5">
+              <i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Selected
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform Tabs -->
+      <div class="flex items-center gap-0 mb-5 border-b overflow-x-auto" style="border-color:var(--border-light)">
+        <button class="platform-tab active" onclick="switchPlatformTab(this,'all')">
+          All <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">15</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'etsy')">
+          <span style="color:#F1641E">●</span> Etsy
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">6</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'shopify')">
+          <span style="color:#96BF48">●</span> Shopify
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">2</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'amazon')">
+          <span style="color:#FF9900">●</span> Amazon
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">3</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'tiktok')">
+          <span style="color:#010101">●</span> TikTok
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">2</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'ebay')">
+          <span style="color:#E53238">●</span> eBay
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">1</span>
+        </button>
+        <button class="platform-tab" onclick="switchPlatformTab(this,'woocommerce')">
+          <span style="color:#96588A">●</span> WooCommerce
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">1</span>
+        </button>
+      </div>
+
+      <!-- ===== SHOP CARDS GRID ===== -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="shopsGrid">
+
+        <!-- ===== CARD 1: CozyPrints (Etsy, Connected) ===== -->
+        <div id="card-1" data-platform="etsy" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening CozyPrints...','info')">
+          <!-- Checkbox -->
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <!-- 3-dot menu -->
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-1')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-1" class="shop-menu">
+              <button onclick="showToast('Opening CozyPrints settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing CozyPrints...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('CozyPrints paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">CozyPrints</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:8px"></span><span style="height:11px"></span>
+              <span style="height:14px"></span><span style="height:12px"></span>
+              <span style="height:16px"></span><span style="height:15px"></span>
+              <span style="height:18px"></span><span style="height:20px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$18,240</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">324 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 2,140 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 2 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Sarah Adams — Editor"
+                   style="border-color:var(--bg-card);background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 2: VintageVibes (Etsy, Connected) ===== -->
+        <div id="card-2" data-platform="etsy" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening VintageVibes...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-2')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-2" class="shop-menu">
+              <button onclick="showToast('Opening VintageVibes settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing VintageVibes...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('VintageVibes paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">VintageVibes</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:12px"></span><span style="height:9px"></span>
+              <span style="height:14px"></span><span style="height:17px"></span>
+              <span style="height:13px"></span><span style="height:18px"></span>
+              <span style="height:16px"></span><span style="height:19px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$12,450</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">245 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 1,890 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 5 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 3: ArtfulDecor (Etsy, Sync Error) ===== -->
+        <div id="card-3" data-platform="etsy" data-status="error"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="border:1.5px solid var(--danger);background:var(--bg-card)"
+             onclick="showToast('Opening ArtfulDecor...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-3')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-3" class="shop-menu">
+              <button onclick="showToast('Opening ArtfulDecor settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Retrying ArtfulDecor sync...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Retry Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">ArtfulDecor</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-error text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Sync Error</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:15px"></span><span style="height:12px"></span>
+              <span style="height:10px"></span><span style="height:8px"></span>
+              <span style="height:7px"></span><span style="height:6px"></span>
+              <span style="height:4px"></span><span style="height:3px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$9,810</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">189 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 1,340 listings</span>
+          </div>
+          <!-- Error message + retry -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] inline-flex items-center gap-1" style="color:var(--danger)">
+              <i data-lucide="alert-circle" class="w-3 h-3"></i> API token expired
+            </span>
+            <button class="text-[11px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1"
+                    style="background:var(--danger-bg);color:var(--danger)"
+                    onclick="event.stopPropagation();showToast('Retrying sync...','info')">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Retry
+            </button>
+          </div>
+          <!-- Member avatars -->
+          <div class="flex justify-end mt-2">
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Mike Roberts — Viewer"
+                   style="border-color:var(--bg-card);background:var(--purple-bg);color:var(--purple)">MR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 4: NatureCrafts (Etsy, Connected) ===== -->
+        <div id="card-4" data-platform="etsy" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening NatureCrafts...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-4')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-4" class="shop-menu">
+              <button onclick="showToast('Opening NatureCrafts settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing NatureCrafts...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('NatureCrafts paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">NatureCrafts</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:6px"></span><span style="height:8px"></span>
+              <span style="height:11px"></span><span style="height:13px"></span>
+              <span style="height:14px"></span><span style="height:16px"></span>
+              <span style="height:17px"></span><span style="height:18px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$7,320</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">156 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 980 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 12 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Tom Klein — Editor"
+                   style="border-color:var(--bg-card);background:var(--success-bg);color:var(--success)">TK</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 5: BohoGifts (Etsy, Connected) ===== -->
+        <div id="card-5" data-platform="etsy" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening BohoGifts...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-5')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-5" class="shop-menu">
+              <button onclick="showToast('Opening BohoGifts settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing BohoGifts...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('BohoGifts paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">BohoGifts</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:10px"></span><span style="height:12px"></span>
+              <span style="height:11px"></span><span style="height:15px"></span>
+              <span style="height:14px"></span><span style="height:16px"></span>
+              <span style="height:17px"></span><span style="height:16px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$5,890</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">118 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 760 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 1 hr ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Amy Lee — Manager"
+                   style="border-color:var(--bg-card);background:var(--brand-secondary-bg);color:var(--brand-secondary)">AL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 6: PrintPixels (Etsy, Connected) ===== -->
+        <div id="card-6" data-platform="etsy" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening PrintPixels...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-6')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-6" class="shop-menu">
+              <button onclick="showToast('Opening PrintPixels settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing PrintPixels...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('PrintPixels paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">PrintPixels</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:4px"></span><span style="height:6px"></span>
+              <span style="height:9px"></span><span style="height:8px"></span>
+              <span style="height:11px"></span><span style="height:10px"></span>
+              <span style="height:12px"></span><span style="height:13px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$4,210</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">92 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 540 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 3 hrs ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Sarah Adams — Editor"
+                   style="border-color:var(--bg-card);background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Mike Roberts — Viewer"
+                   style="border-color:var(--bg-card);background:var(--purple-bg);color:var(--purple)">MR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 7: US Merch (Amazon, Connected) ===== -->
+        <div id="card-7" data-platform="amazon" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening US Merch...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-7')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-7" class="shop-menu">
+              <button onclick="showToast('Opening US Merch settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing US Merch...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('US Merch paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#FF9900">A</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">US Merch</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Amazon</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:12px"></span><span style="height:14px"></span>
+              <span style="height:16px"></span><span style="height:15px"></span>
+              <span style="height:18px"></span><span style="height:17px"></span>
+              <span style="height:19px"></span><span style="height:20px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$31,600</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">504 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 4,200 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced just now</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 8: UK Store (Amazon, Sync Error) ===== -->
+        <div id="card-8" data-platform="amazon" data-status="error"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="border:1.5px solid var(--danger);background:var(--bg-card)"
+             onclick="showToast('Opening UK Store...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-8')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-8" class="shop-menu">
+              <button onclick="showToast('Opening UK Store settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Retrying UK Store sync...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Retry Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#FF9900">A</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">UK Store</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Amazon</div>
+            </div>
+            <span class="status-error text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Sync Error</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:16px"></span><span style="height:14px"></span>
+              <span style="height:12px"></span><span style="height:10px"></span>
+              <span style="height:8px"></span><span style="height:7px"></span>
+              <span style="height:5px"></span><span style="height:3px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$14,200</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">220 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 2,100 listings</span>
+          </div>
+          <!-- Error message + retry -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] inline-flex items-center gap-1" style="color:var(--danger)">
+              <i data-lucide="alert-circle" class="w-3 h-3"></i> Rate limit hit
+            </span>
+            <button class="text-[11px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1"
+                    style="background:var(--danger-bg);color:var(--danger)"
+                    onclick="event.stopPropagation();showToast('Retrying sync...','info')">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Retry
+            </button>
+          </div>
+          <!-- Member avatars -->
+          <div class="flex justify-end mt-2">
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Amy Lee — Manager"
+                   style="border-color:var(--bg-card);background:var(--brand-secondary-bg);color:var(--brand-secondary)">AL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 9: DE Marketplace (Amazon, Connected) ===== -->
+        <div id="card-9" data-platform="amazon" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening DE Marketplace...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-9')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-9" class="shop-menu">
+              <button onclick="showToast('Opening DE Marketplace settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing DE Marketplace...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('DE Marketplace paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#FF9900">A</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">DE Marketplace</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Amazon</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:7px"></span><span style="height:9px"></span>
+              <span style="height:11px"></span><span style="height:12px"></span>
+              <span style="height:14px"></span><span style="height:14px"></span>
+              <span style="height:15px"></span><span style="height:16px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$9,750</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">168 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 1,560 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 20 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Sarah Adams — Editor"
+                   style="border-color:var(--bg-card);background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 10: TrendyGoods (TikTok, Connected) ===== -->
+        <div id="card-10" data-platform="tiktok" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening TrendyGoods...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-10')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-10" class="shop-menu">
+              <button onclick="showToast('Opening TrendyGoods settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing TrendyGoods...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('TrendyGoods paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#010101">T</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">TrendyGoods</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">TikTok</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:4px"></span><span style="height:7px"></span>
+              <span style="height:11px"></span><span style="height:14px"></span>
+              <span style="height:17px"></span><span style="height:19px"></span>
+              <span style="height:20px"></span><span style="height:20px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$22,100</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">410 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 3,100 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 4 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Mike Roberts — Viewer"
+                   style="border-color:var(--bg-card);background:var(--purple-bg);color:var(--purple)">MR</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 11: FashionFinder (TikTok, Connected) ===== -->
+        <div id="card-11" data-platform="tiktok" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening FashionFinder...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-11')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-11" class="shop-menu">
+              <button onclick="showToast('Opening FashionFinder settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing FashionFinder...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('FashionFinder paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#010101">T</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">FashionFinder</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">TikTok</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:8px"></span><span style="height:10px"></span>
+              <span style="height:13px"></span><span style="height:12px"></span>
+              <span style="height:15px"></span><span style="height:14px"></span>
+              <span style="height:16px"></span><span style="height:17px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$11,340</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">203 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 1,430 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 30 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Amy Lee — Manager"
+                   style="border-color:var(--bg-card);background:var(--brand-secondary-bg);color:var(--brand-secondary)">AL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 12: VintageFinds (eBay, Connected) ===== -->
+        <div id="card-12" data-platform="ebay" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening VintageFinds...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-12')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-12" class="shop-menu">
+              <button onclick="showToast('Opening VintageFinds settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing VintageFinds...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('VintageFinds paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#E53238">B</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">VintageFinds</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">eBay</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:11px"></span><span style="height:12px"></span>
+              <span style="height:13px"></span><span style="height:12px"></span>
+              <span style="height:14px"></span><span style="height:15px"></span>
+              <span style="height:14px"></span><span style="height:14px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$6,880</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">134 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 920 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 45 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Tom Klein — Editor"
+                   style="border-color:var(--bg-card);background:var(--success-bg);color:var(--success)">TK</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 13: StyleStore (Shopify, Connected) ===== -->
+        <div id="card-13" data-platform="shopify" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening StyleStore...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-13')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-13" class="shop-menu">
+              <button onclick="showToast('Opening StyleStore settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing StyleStore...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('StyleStore paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#96BF48">S</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">StyleStore</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Shopify</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:10px"></span><span style="height:12px"></span>
+              <span style="height:15px"></span><span style="height:14px"></span>
+              <span style="height:17px"></span><span style="height:16px"></span>
+              <span style="height:18px"></span><span style="height:19px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$15,600</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">287 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 1,240 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 8 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 14: HomeEssentials (Shopify, Connected) ===== -->
+        <div id="card-14" data-platform="shopify" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening HomeEssentials...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-14')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-14" class="shop-menu">
+              <button onclick="showToast('Opening HomeEssentials settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing HomeEssentials...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('HomeEssentials paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#96BF48">S</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">HomeEssentials</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">Shopify</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:6px"></span><span style="height:8px"></span>
+              <span style="height:10px"></span><span style="height:12px"></span>
+              <span style="height:11px"></span><span style="height:13px"></span>
+              <span style="height:14px"></span><span style="height:15px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$8,900</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">165 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 890 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 15 min ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="Amy Lee — Manager"
+                   style="border-color:var(--bg-card);background:var(--brand-secondary-bg);color:var(--brand-secondary)">AL</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CARD 15: GreenLiving (WooCommerce, Connected) ===== -->
+        <div id="card-15" data-platform="woocommerce" data-status="connected"
+             class="group card-static rounded-xl p-5 relative cursor-pointer transition-all hover:shadow-md"
+             style="background:var(--bg-card)"
+             onclick="showToast('Opening GreenLiving...','info')">
+          <input type="checkbox" class="shop-checkbox absolute top-3 left-3 w-4 h-4 rounded cursor-pointer"
+                 style="accent-color:var(--brand-primary)" onclick="event.stopPropagation();updateBulkCount()">
+          <div class="absolute top-3 right-3">
+            <button onclick="event.stopPropagation();toggleMenu('menu-15')"
+                    class="w-7 h-7 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    style="color:var(--text-tertiary)">
+              <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+            </button>
+            <div id="menu-15" class="shop-menu">
+              <button onclick="showToast('Opening GreenLiving settings','info')"><i data-lucide="settings" class="w-3.5 h-3.5"></i> Settings</button>
+              <button onclick="showToast('Syncing GreenLiving...','success')"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now</button>
+              <button onclick="showToast('GreenLiving paused','info')"><i data-lucide="pause" class="w-3.5 h-3.5"></i> Pause Sync</button>
+              <button onclick="showToast('Opening listings...','info')"><i data-lucide="list" class="w-3.5 h-3.5"></i> View Listings</button>
+            </div>
+          </div>
+          <!-- Header -->
+          <div class="flex items-center gap-2.5 mb-4 pl-1">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#96588A">W</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">GreenLiving</div>
+              <div class="text-[11px]" style="color:var(--text-tertiary)">WooCommerce</div>
+            </div>
+            <span class="status-synced text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0">Connected</span>
+          </div>
+          <!-- Metrics row -->
+          <div class="flex items-center gap-3 mb-3">
+            <div class="sparkline">
+              <span style="height:5px"></span><span style="height:7px"></span>
+              <span style="height:9px"></span><span style="height:8px"></span>
+              <span style="height:10px"></span><span style="height:11px"></span>
+              <span style="height:12px"></span><span style="height:13px"></span>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--text-primary)">$3,450</span>
+            <span class="text-[11px]" style="color:var(--text-secondary)">78 orders</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">· 320 listings</span>
+          </div>
+          <!-- Last synced + member avatars -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">Synced 1 hr ago</span>
+            <div class="flex -space-x-1.5">
+              <div class="w-6 h-6 rounded-full border-2 text-[9px] font-bold flex items-center justify-center"
+                   title="John Doe — Owner"
+                   style="border-color:var(--bg-card);background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /shopsGrid -->
+
+    </main>
+  </div><!-- /mainArea -->
+</div><!-- /flex -->
+
+<!-- Add Shop Modal -->
+<div id="addShopModal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('active')">
+  <div class="rounded-2xl p-6 w-full max-w-lg" style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-bold">Connect a New Shop</h3>
+      <button onclick="document.getElementById('addShopModal').classList.remove('active')" class="p-1 rounded" style="color:var(--text-tertiary)">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <p class="text-sm mb-4" style="color:var(--text-secondary)">Choose a platform to connect your shop</p>
+    <div class="space-y-2">
+      <!-- Etsy -->
+      <button onclick="showToast('Connecting to Etsy...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#F1641E">E</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">Etsy</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Listings, Orders, Shipping Profiles</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+      <!-- Shopify -->
+      <button onclick="showToast('Connecting to Shopify...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#96BF48">S</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">Shopify</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Products, Collections, Orders</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+      <!-- TikTok -->
+      <button onclick="showToast('Connecting to TikTok...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#010101">T</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">TikTok Shop</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Products, Shipping Labels</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+      <!-- Amazon -->
+      <button onclick="showToast('Connecting to Amazon...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#FF9900">A</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">Amazon</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Products, Keywords, P&L</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+      <!-- eBay -->
+      <button onclick="showToast('Connecting to eBay...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#E53238">B</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">eBay</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Products, Auctions, Orders</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+      <!-- WooCommerce -->
+      <button onclick="showToast('Connecting to WooCommerce...','info')" class="w-full flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-blue-400" style="border-color:var(--border);background:var(--bg-card)">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style="background:#96588A">W</div>
+        <div class="flex-1 text-left">
+          <div class="text-sm font-semibold">WooCommerce</div>
+          <div class="text-[11px]" style="color:var(--text-tertiary)">Products, Orders, Sync</div>
+        </div>
+        <span class="text-xs font-medium px-3 py-1 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Connect</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="_shared-navigation.js"></script>
+<script>
+// ===== PLATFORM TABS =====
+function switchPlatformTab(btn, platform) {
+  document.querySelectorAll('.platform-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  filterByPlatform(platform);
+}
+
+function filterByPlatform(platform) {
+  document.querySelectorAll('#shopsGrid > div[data-platform]').forEach(function(card) {
+    if (platform === 'all' || card.dataset.platform === platform) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// ===== SAVED VIEWS =====
+function switchView(btn, view) {
+  document.querySelectorAll('.view-pill').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+  // Reset platform tabs
+  document.querySelectorAll('.platform-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('.platform-tab').classList.add('active');
+
+  if (view === 'all') {
+    filterByPlatform('all');
+  } else if (view === 'etsy') {
+    filterByPlatform('etsy');
+  } else if (view === 'amazon') {
+    filterByPlatform('amazon');
+  } else if (view === 'errors') {
+    document.querySelectorAll('#shopsGrid > div[data-platform]').forEach(function(card) {
+      card.style.display = card.dataset.status === 'error' ? '' : 'none';
+    });
+  } else if (view === 'toprev') {
+    // Show all, just indicate sorted (for wireframe purposes)
+    filterByPlatform('all');
+    showToast('Sorted by top revenue', 'info');
+  }
+}
+
+// ===== SHOP SEARCH FILTER =====
+function filterShops(query) {
+  query = query.toLowerCase();
+  document.querySelectorAll('#shopsGrid > div[data-platform]').forEach(function(card) {
+    var name = card.querySelector('.font-semibold.text-sm');
+    if (!name) return;
+    card.style.display = name.textContent.toLowerCase().indexOf(query) !== -1 ? '' : 'none';
+  });
+}
+
+// ===== 3-DOT MENU =====
+function toggleMenu(menuId) {
+  // Close all open menus first
+  document.querySelectorAll('.shop-menu.open').forEach(function(m) {
+    if (m.id !== menuId) m.classList.remove('open');
+  });
+  var menu = document.getElementById(menuId);
+  if (menu) menu.classList.toggle('open');
+}
+
+// Close menus on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('[onclick*="toggleMenu"]')) {
+    document.querySelectorAll('.shop-menu.open').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+
+// ===== BULK SELECTION =====
+// ===== VIEW MODE TOGGLE =====
+function setViewMode(mode) {
+  var gridBtn = document.getElementById('viewGrid');
+  var listBtn = document.getElementById('viewList');
+  if (mode === 'grid') {
+    gridBtn.style.background = 'var(--brand-primary-bg)';
+    gridBtn.style.color = 'var(--brand-primary)';
+    listBtn.style.background = 'var(--bg-card)';
+    listBtn.style.color = 'var(--text-tertiary)';
+  } else {
+    listBtn.style.background = 'var(--brand-primary-bg)';
+    listBtn.style.color = 'var(--brand-primary)';
+    gridBtn.style.background = 'var(--bg-card)';
+    gridBtn.style.color = 'var(--text-tertiary)';
+  }
+  showToast(mode.charAt(0).toUpperCase() + mode.slice(1) + ' view', 'info');
+}
+
+function updateBulkCount() {
+  var checked = document.querySelectorAll('.shop-checkbox:checked').length;
+  var countEl = document.getElementById('bulkSelectionCount');
+  var bulkActions = document.getElementById('bulkActions');
+  if (countEl) countEl.textContent = checked + ' selected';
+  if (bulkActions) {
+    if (checked > 0) {
+      bulkActions.classList.remove('hidden');
+      bulkActions.classList.add('flex');
+    } else {
+      bulkActions.classList.add('hidden');
+      bulkActions.classList.remove('flex');
+    }
+  }
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+});
+</script>
+</body>
+</html>
