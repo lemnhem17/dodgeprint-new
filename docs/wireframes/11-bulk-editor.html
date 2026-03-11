@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Bulk Editor</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* Score badges */
+.score-badge { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:11px;font-weight:700;cursor:help; }
+.score-a { background:var(--brand-primary-bg);color:var(--brand-primary); }
+.score-b { background:var(--brand-secondary-bg);color:var(--brand-secondary); }
+.score-c { background:#FFF7ED;color:#F97316; }
+.score-d { background:var(--danger-bg);color:var(--danger); }
+
+/* Status badges */
+.status-synced,.status-pending,.status-error,.status-draft {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.status-synced { background:var(--success-bg);color:var(--success); }
+.status-pending { background:#FFF7ED;color:#F97316; }
+.status-error { background:var(--danger-bg);color:var(--danger); }
+.status-draft { background:var(--bg-muted);color:var(--text-secondary); }
+
+/* Bulk editable cells */
+.bulk-cell {
+  min-height:32px;display:flex;align-items:center;cursor:pointer;
+  padding:4px 8px;border-radius:8px;border:1px solid transparent;
+  transition:all 0.15s;position:relative;
+}
+.bulk-cell:hover { background:var(--bg-muted);border-color:var(--border); }
+.bulk-cell.changed { background:var(--brand-primary-bg);border-color:var(--brand-primary); }
+.bulk-cell.changed::after { content:'●';position:absolute;top:2px;right:4px;font-size:8px;color:var(--brand-primary); }
+.bulk-cell:focus { outline:2px solid var(--brand-primary);outline-offset:-2px;border-radius:6px; }
+.bulk-cell.editing { background:var(--bg-card);border-color:var(--brand-primary);cursor:text; }
+
+/* Grid rows */
+.bulk-row:hover { background:var(--border-light); }
+.bulk-row.selected { background:var(--brand-primary-bg); }
+
+/* Tag pills */
+.tag-pill { display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bg-muted);color:var(--text-secondary); }
+
+/* Diff panel */
+#diffPanel { transition:transform 0.25s ease; }
+
+/* Modal overlay */
+.modal-overlay { position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.4); }
+.modal-overlay.open { display:flex; }
+
+/* Breadcrumb */
+.breadcrumb { display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary); }
+.breadcrumb a { color:var(--text-secondary);text-decoration:none; }
+.breadcrumb a:hover { color:var(--brand-primary); }
+.breadcrumb-separator { color:var(--text-tertiary); }
+.breadcrumb-current { color:var(--text-primary);font-weight:500; }
+
+/* Action bar select/input */
+.bulk-control {
+  height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg-card);color:var(--text-primary);font-size:13px;font-weight:500;
+}
+.bulk-control:focus { outline:none;border-color:var(--brand-primary); }
+</style>
+</head>
+<body style="font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg-page);color:var(--text-primary)">
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Top header bar -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg" style="color:var(--text-secondary)">
+          <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== BULK EDITOR CONTENT ===== -->
+    <main class="p-7">
+
+      <!-- Page Header -->
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <div class="breadcrumb mb-1">
+            <a href="04-listings.html">Listings</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 breadcrumb-separator"></i>
+            <span class="breadcrumb-current">Bulk Edit (12 listings)</span>
+          </div>
+          <h1 class="text-xl font-extrabold tracking-tight" style="letter-spacing:-0.3px">Bulk Editor</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Undo (D2) -->
+          <button class="btn-ghost px-3 py-2 text-xs font-medium inline-flex items-center" id="undoBtn" onclick="undoLastChange()" disabled style="opacity:0.4">
+            <i data-lucide="undo-2" class="w-4 h-4 mr-1.5"></i> Undo
+            <span id="undoCount" class="ml-1 text-xs" style="color:var(--text-tertiary)"></span>
+          </button>
+          <!-- Review Changes (D1) -->
+          <button class="btn-ghost px-3 py-2 text-xs font-medium inline-flex items-center" onclick="toggleDiffPanel()">
+            <i data-lucide="git-compare" class="w-4 h-4 mr-1.5"></i> Review Changes
+            <span id="changeCount" class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">0</span>
+          </button>
+          <!-- AI Optimize -->
+          <span class="inline-flex items-center gap-1 relative">
+            <button class="btn-ghost px-3 py-2 text-xs font-medium inline-flex items-center" onclick="openModal('aiProgressModal')">
+              <i data-lucide="sparkles" class="w-4 h-4 mr-1.5" style="color:var(--brand-primary)"></i> AI Optimize
+            </button>
+            <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+              <div class="help-tooltip">AI analyzes your titles, tags, and descriptions to suggest improvements.</div>
+            </button>
+          </span>
+          <!-- Cancel -->
+          <button class="btn-ghost px-4 py-2 text-sm font-medium" onclick="window.location.href='04-listings.html'">Cancel</button>
+          <!-- Publish Changes -->
+          <button class="btn-primary px-5 py-2 text-sm font-semibold inline-flex items-center" onclick="showDiffBeforePublish()">
+            <i data-lucide="upload" class="w-4 h-4 mr-1.5"></i> Publish Changes
+          </button>
+        </div>
+      </div>
+
+      <!-- Bulk Action Bar (D4 — Smart Apply) -->
+      <div class="flex items-center gap-3 p-3 rounded-xl mb-4" style="background:var(--bg-muted);border:1px solid var(--border)">
+        <span class="text-xs font-semibold" style="color:var(--text-secondary);white-space:nowrap">Bulk Edit:</span>
+        <!-- Field selector -->
+        <select class="bulk-control" id="bulkField">
+          <option value="">Select field...</option>
+          <option value="price">Price</option>
+          <option value="title">Title</option>
+          <option value="tags">Tags</option>
+          <option value="description">Description</option>
+          <option value="quantity">Quantity</option>
+          <option value="shipping">Shipping Profile</option>
+        </select>
+        <!-- Action type -->
+        <select class="bulk-control" id="bulkAction">
+          <option value="set">Set to</option>
+          <option value="increase">Increase by</option>
+          <option value="decrease">Decrease by</option>
+          <option value="append">Append text</option>
+          <option value="replace">Find &amp; Replace</option>
+        </select>
+        <!-- Value input -->
+        <input type="text" class="bulk-control flex-1" placeholder="Enter value..." id="bulkValue">
+        <!-- Smart apply buttons — clear distinction (D4) -->
+        <button class="btn-primary px-4 py-2 text-xs font-semibold whitespace-nowrap" onclick="applyToAll()">
+          Apply to All (12)
+        </button>
+        <button class="btn-ghost px-4 py-2 text-xs font-semibold whitespace-nowrap" onclick="applyToSelected()">
+          Apply to Selected (<span id="bulkSelectedCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Selection info bar -->
+      <div class="flex items-center gap-3 mb-3 text-xs" style="color:var(--text-secondary)">
+        <span id="selectionInfo">0 of 12 selected</span>
+        <span style="color:var(--border)">|</span>
+        <button class="underline text-xs" style="color:var(--brand-primary)" onclick="selectAllRows()">Select all</button>
+        <button class="underline text-xs" style="color:var(--text-tertiary)" onclick="clearSelection()">Clear</button>
+        <span style="color:var(--border)">|</span>
+        <span style="color:var(--text-tertiary)">Click a cell to edit · Tab between cells · Arrow keys to navigate · Esc to cancel · Ctrl+Z to undo</span>
+      </div>
+
+      <!-- Spreadsheet Grid -->
+      <div class="overflow-x-auto rounded-xl" style="border:1px solid var(--border)">
+        <table class="w-full text-sm" style="border-collapse:collapse">
+          <thead style="background:var(--bg-muted);position:sticky;top:0;z-index:5">
+            <tr>
+              <th class="px-3 py-2.5 text-left" style="width:36px">
+                <input type="checkbox" id="bulkSelectAll" onchange="toggleBulkSelectAll()">
+              </th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:60px">Image</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:220px">Title</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:80px">Price</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:60px">Stock</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:120px">Tags</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:80px">Status</th>
+              <th class="px-3 py-2.5 text-left text-xs font-semibold" style="color:var(--text-secondary);min-width:60px">Score</th>
+            </tr>
+          </thead>
+          <tbody id="bulkBody">
+
+            <!-- Row 1 -->
+            <tr class="bulk-row" id="bulk-row-1" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-1')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">☕</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="1" onclick="makeBulkEditable(this)" tabindex="0">Sunset Mountain Mug</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="1" onclick="makeBulkEditable(this)" tabindex="0">$24.99</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="1" onclick="makeBulkEditable(this)" tabindex="0">47</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">mug</span><span class="tag-pill">nature</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-a">A</span></td>
+            </tr>
+
+            <!-- Row 2 -->
+            <tr class="bulk-row" id="bulk-row-2" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-2')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🌸</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="2" onclick="makeBulkEditable(this)" tabindex="0">Vintage Floral Tea Set</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="2" onclick="makeBulkEditable(this)" tabindex="0">$45.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="2" onclick="makeBulkEditable(this)" tabindex="0">23</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">tea</span><span class="tag-pill">floral</span><span class="tag-pill">vintage</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-a">A</span></td>
+            </tr>
+
+            <!-- Row 3 -->
+            <tr class="bulk-row" id="bulk-row-3" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-3')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🏔️</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="3" onclick="makeBulkEditable(this)" tabindex="0">Mountain Trail Poster</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="3" onclick="makeBulkEditable(this)" tabindex="0">$18.50</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="3" onclick="makeBulkEditable(this)" tabindex="0">156</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">poster</span><span class="tag-pill">mountain</span></div></td>
+              <td class="px-3 py-2"><span class="status-pending">Pending</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-b">B</span></td>
+            </tr>
+
+            <!-- Row 4 -->
+            <tr class="bulk-row" id="bulk-row-4" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-4')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🌿</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="4" onclick="makeBulkEditable(this)" tabindex="0">Ceramic Plant Pot</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="4" onclick="makeBulkEditable(this)" tabindex="0">$32.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="4" onclick="makeBulkEditable(this)" tabindex="0">8</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">ceramic</span><span class="tag-pill">plant</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-b">B</span></td>
+            </tr>
+
+            <!-- Row 5 -->
+            <tr class="bulk-row" id="bulk-row-5" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-5')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🎨</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="5" onclick="makeBulkEditable(this)" tabindex="0">Boho Wall Tapestry</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="5" onclick="makeBulkEditable(this)" tabindex="0">$55.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="5" onclick="makeBulkEditable(this)" tabindex="0">31</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">boho</span><span class="tag-pill">wall art</span></div></td>
+              <td class="px-3 py-2"><span class="status-error">Error</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-c">C</span></td>
+            </tr>
+
+            <!-- Row 6 -->
+            <tr class="bulk-row" id="bulk-row-6" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-6')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">💡</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="6" onclick="makeBulkEditable(this)" tabindex="0">Minimalist Desk Lamp</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="6" onclick="makeBulkEditable(this)" tabindex="0">$67.99</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="6" onclick="makeBulkEditable(this)" tabindex="0">12</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">lamp</span><span class="tag-pill">desk</span><span class="tag-pill">minimal</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-a">A</span></td>
+            </tr>
+
+            <!-- Row 7 -->
+            <tr class="bulk-row" id="bulk-row-7" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-7')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🪵</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="7" onclick="makeBulkEditable(this)" tabindex="0">Hand-Painted Coasters (Set of 4)</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="7" onclick="makeBulkEditable(this)" tabindex="0">$16.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="7" onclick="makeBulkEditable(this)" tabindex="0">89</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">coasters</span><span class="tag-pill">handmade</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-b">B</span></td>
+            </tr>
+
+            <!-- Row 8 -->
+            <tr class="bulk-row" id="bulk-row-8" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-8')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🛋️</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="8" onclick="makeBulkEditable(this)" tabindex="0">Linen Throw Pillow</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="8" onclick="makeBulkEditable(this)" tabindex="0">$28.50</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="8" onclick="makeBulkEditable(this)" tabindex="0">45</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">pillow</span><span class="tag-pill">linen</span></div></td>
+              <td class="px-3 py-2"><span class="status-pending">Pending</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-c">C</span></td>
+            </tr>
+
+            <!-- Row 9 -->
+            <tr class="bulk-row" id="bulk-row-9" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-9')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">📱</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="9" onclick="makeBulkEditable(this)" tabindex="0">Wooden Phone Stand</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="9" onclick="makeBulkEditable(this)" tabindex="0">$22.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="9" onclick="makeBulkEditable(this)" tabindex="0">67</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">wood</span><span class="tag-pill">phone</span><span class="tag-pill">desk</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-a">A</span></td>
+            </tr>
+
+            <!-- Row 10 -->
+            <tr class="bulk-row" id="bulk-row-10" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-10')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🌱</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="10" onclick="makeBulkEditable(this)" tabindex="0">Macramé Plant Hanger</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="10" onclick="makeBulkEditable(this)" tabindex="0">$19.99</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="10" onclick="makeBulkEditable(this)" tabindex="0">34</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">macramé</span><span class="tag-pill">boho</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-b">B</span></td>
+            </tr>
+
+            <!-- Row 11 -->
+            <tr class="bulk-row" id="bulk-row-11" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-11')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🕯️</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="11" onclick="makeBulkEditable(this)" tabindex="0">Artisan Candle Set</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="11" onclick="makeBulkEditable(this)" tabindex="0">$38.00</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="11" onclick="makeBulkEditable(this)" tabindex="0">5</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">candle</span><span class="tag-pill">artisan</span></div></td>
+              <td class="px-3 py-2"><span class="status-draft">Draft</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-d">D</span></td>
+            </tr>
+
+            <!-- Row 12 -->
+            <tr class="bulk-row" id="bulk-row-12" style="border-top:1px solid var(--border-light)">
+              <td class="px-3 py-2"><input type="checkbox" onchange="toggleBulkRow(this,'bulk-row-12')"></td>
+              <td class="px-3 py-2">
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style="background:var(--bg-muted)">🏺</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="title" data-row="12" onclick="makeBulkEditable(this)" tabindex="0">Nordic Style Vase</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="price" data-row="12" onclick="makeBulkEditable(this)" tabindex="0">$42.50</div>
+              </td>
+              <td class="px-3 py-2">
+                <div class="bulk-cell" data-field="stock" data-row="12" onclick="makeBulkEditable(this)" tabindex="0">18</div>
+              </td>
+              <td class="px-3 py-2"><div class="flex flex-wrap gap-1"><span class="tag-pill">nordic</span><span class="tag-pill">vase</span><span class="tag-pill">ceramic</span></div></td>
+              <td class="px-3 py-2"><span class="status-synced">Synced</span></td>
+              <td class="px-3 py-2"><span class="score-badge score-a">A</span></td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div><!-- /grid -->
+
+    </main>
+  </div><!-- /main-area -->
+</div><!-- /flex wrapper -->
+
+<!-- ===== DIFF PREVIEW PANEL (D1) ===== -->
+<div id="diffPanel" class="fixed top-0 right-0 h-full z-40"
+  style="width:400px;background:var(--bg-card);border-left:1px solid var(--border);box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform 0.25s ease;overflow:hidden">
+  <div class="p-4" style="border-bottom:1px solid var(--border)">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-bold">Review Changes</h3>
+      <button onclick="toggleDiffPanel()" class="rounded-lg p-1" style="color:var(--text-secondary)">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <p class="text-xs mt-1" style="color:var(--text-secondary)">
+      <span id="diffCount">3</span> changes across <span id="diffListings">2</span> listings
+    </p>
+  </div>
+  <div class="p-4 overflow-y-auto" style="height:calc(100vh - 180px)">
+
+    <!-- Diff item 1 — Price change on Sunset Mountain Mug -->
+    <div class="mb-5">
+      <div class="text-xs font-semibold mb-1.5" style="color:var(--text-primary)">Sunset Mountain Mug</div>
+      <div class="text-[11px] font-medium mb-1.5 uppercase tracking-wider" style="color:var(--text-tertiary)">Price</div>
+      <div class="rounded-lg overflow-hidden" style="border:1px solid var(--border)">
+        <div class="px-3 py-2 text-xs flex items-center gap-2" style="background:var(--danger-bg)">
+          <span class="font-mono font-bold" style="color:var(--danger)">−</span>
+          <span style="color:var(--danger)">$24.99</span>
+        </div>
+        <div class="px-3 py-2 text-xs flex items-center gap-2" style="background:var(--success-bg)">
+          <span class="font-mono font-bold" style="color:var(--success)">+</span>
+          <span style="color:var(--success)">$29.99</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diff item 2 — Title change on Sunset Mountain Mug -->
+    <div class="mb-5">
+      <div class="text-xs font-semibold mb-1.5" style="color:var(--text-primary)">Sunset Mountain Mug</div>
+      <div class="text-[11px] font-medium mb-1.5 uppercase tracking-wider" style="color:var(--text-tertiary)">Title</div>
+      <div class="rounded-lg overflow-hidden" style="border:1px solid var(--border)">
+        <div class="px-3 py-2 text-xs leading-relaxed" style="background:var(--danger-bg);color:var(--danger)">
+          <span class="font-mono font-bold mr-1.5">−</span>Sunset Mountain Mug
+        </div>
+        <div class="px-3 py-2 text-xs leading-relaxed" style="background:var(--success-bg);color:var(--success)">
+          <span class="font-mono font-bold mr-1.5">+</span>Sunset Mountain Mug — Ceramic Coffee Cup
+        </div>
+      </div>
+    </div>
+
+    <!-- Diff item 3 — Price change on Boho Wall Tapestry -->
+    <div class="mb-5">
+      <div class="text-xs font-semibold mb-1.5" style="color:var(--text-primary)">Boho Wall Tapestry</div>
+      <div class="text-[11px] font-medium mb-1.5 uppercase tracking-wider" style="color:var(--text-tertiary)">Price</div>
+      <div class="rounded-lg overflow-hidden" style="border:1px solid var(--border)">
+        <div class="px-3 py-2 text-xs" style="background:var(--danger-bg);color:var(--danger)">
+          <span class="font-mono font-bold mr-1.5">−</span>$55.00
+        </div>
+        <div class="px-3 py-2 text-xs" style="background:var(--success-bg);color:var(--success)">
+          <span class="font-mono font-bold mr-1.5">+</span>$49.99
+        </div>
+      </div>
+    </div>
+
+    <div class="text-xs text-center py-3" style="color:var(--text-tertiary)">— end of changes —</div>
+  </div>
+
+  <!-- Confirm publish inside panel -->
+  <div class="p-4" style="border-top:1px solid var(--border)">
+    <button class="btn-primary w-full py-2.5 text-sm font-semibold" onclick="showToast('Publishing 3 changes...','success');toggleDiffPanel()">
+      <i data-lucide="upload" class="w-4 h-4 mr-1.5 inline"></i> Confirm &amp; Publish (3 changes)
+    </button>
+  </div>
+</div>
+
+<!-- ===== AI OPTIMIZATION PROGRESS MODAL (D3) ===== -->
+<div class="modal-overlay" id="aiProgressModal">
+  <div class="rounded-xl p-6" style="background:var(--bg-card);width:440px;border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
+        <i data-lucide="sparkles" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+      </div>
+      <div>
+        <div class="text-sm font-bold">AI Optimization</div>
+        <div class="text-xs" style="color:var(--text-secondary)">Optimizing 12 listings for Etsy SEO...</div>
+      </div>
+    </div>
+    <!-- Progress bar -->
+    <div class="mb-4">
+      <div class="flex justify-between text-xs mb-1.5">
+        <span style="color:var(--text-secondary)"><span id="aiDone">5</span> of <span id="aiTotal">12</span> complete</span>
+        <span style="color:var(--text-tertiary)">~15s remaining</span>
+      </div>
+      <div class="h-2 rounded-full overflow-hidden" style="background:var(--bg-muted)">
+        <div class="h-full rounded-full transition-all duration-300" id="aiProgressBar" style="width:42%;background:var(--brand-primary)"></div>
+      </div>
+    </div>
+    <!-- Current item -->
+    <div class="text-xs p-2.5 rounded-lg flex items-center gap-2" style="background:var(--bg-muted);color:var(--text-secondary)">
+      <i data-lucide="loader" class="w-3 h-3 flex-shrink-0" style="animation:spin 1s linear infinite"></i>
+      Processing: "Vintage Floral Tea Set — Hand-Painted..."
+    </div>
+    <!-- Optimizations completed -->
+    <div class="mt-4 space-y-1.5">
+      <div class="flex items-center gap-2 text-xs" style="color:var(--text-secondary)">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+        Sunset Mountain Mug — title + tags updated
+      </div>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--text-secondary)">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+        Mountain Trail Poster — description rewritten
+      </div>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--text-secondary)">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+        Ceramic Plant Pot — keywords optimized
+      </div>
+    </div>
+    <!-- Cancel -->
+    <div class="flex justify-end mt-5">
+      <button class="btn-ghost px-4 py-2 text-xs font-medium" onclick="closeModal('aiProgressModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+
+<script>
+// ===== UNDO STACK (D2) =====
+var undoStack = [];
+var MAX_UNDO = 20;
+
+function pushUndo(change) {
+  // change = { row, field, oldValue, newValue }
+  undoStack.push(change);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  updateUndoUI();
+}
+
+function undoLastChange() {
+  if (!undoStack.length) return;
+  var change = undoStack.pop();
+  var cell = document.querySelector('[data-row="' + change.row + '"][data-field="' + change.field + '"]');
+  if (cell) {
+    cell.textContent = change.oldValue;
+    // Remove changed class only if no more changes for this cell
+    var stillChanged = undoStack.some(function(c) { return c.row === change.row && c.field === change.field; });
+    if (!stillChanged) cell.classList.remove('changed');
+  }
+  updateUndoUI();
+  showToast('Reverted ' + change.field + ' for row ' + change.row, 'info');
+}
+
+function updateUndoUI() {
+  var btn = document.getElementById('undoBtn');
+  var countEl = document.getElementById('undoCount');
+  var changeCountEl = document.getElementById('changeCount');
+  if (undoStack.length > 0) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    countEl.textContent = '(' + undoStack.length + ')';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    countEl.textContent = '';
+  }
+  if (changeCountEl) changeCountEl.textContent = undoStack.length;
+}
+
+// Ctrl+Z global handler
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undoLastChange();
+  }
+});
+</script>
+
+<script>
+// ===== CELL EDITING =====
+var currentEditCell = null;
+
+function makeBulkEditable(cell) {
+  if (cell === currentEditCell) return;
+  cancelCurrentEdit();
+
+  var oldValue = cell.textContent.trim();
+  cell.classList.add('editing');
+  cell.setAttribute('contenteditable', 'true');
+  cell.focus();
+
+  // Move cursor to end
+  var range = document.createRange();
+  var sel = window.getSelection();
+  range.selectNodeContents(cell);
+  range.collapse(false);
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  currentEditCell = cell;
+
+  cell.addEventListener('blur', function onBlur() {
+    var newValue = cell.textContent.trim();
+    cell.removeAttribute('contenteditable');
+    cell.classList.remove('editing');
+    if (newValue !== oldValue) {
+      cell.classList.add('changed');
+      pushUndo({ row: parseInt(cell.dataset.row), field: cell.dataset.field, oldValue: oldValue, newValue: newValue });
+    }
+    currentEditCell = null;
+    cell.removeEventListener('blur', onBlur);
+  }, { once: true });
+}
+
+function cancelCurrentEdit() {
+  if (!currentEditCell) return;
+  currentEditCell.removeAttribute('contenteditable');
+  currentEditCell.classList.remove('editing');
+  currentEditCell = null;
+}
+</script>
+
+<script>
+// ===== KEYBOARD NAVIGATION (D5) =====
+var FIELDS = ['title', 'price', 'stock'];
+var TOTAL_ROWS = 12;
+
+document.addEventListener('keydown', function(e) {
+  var active = document.activeElement;
+  if (!active || !active.classList.contains('bulk-cell')) return;
+
+  var row = parseInt(active.dataset.row);
+  var field = active.dataset.field;
+  var fieldIdx = FIELDS.indexOf(field);
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    makeBulkEditable(active);
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    cancelCurrentEdit();
+    active.blur();
+    return;
+  }
+
+  // Don't intercept nav keys while editing
+  if (active.getAttribute('contenteditable') === 'true') return;
+
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    var nextFieldIdx = e.shiftKey ? fieldIdx - 1 : fieldIdx + 1;
+    if (nextFieldIdx >= 0 && nextFieldIdx < FIELDS.length) {
+      var next = document.querySelector('[data-row="' + row + '"][data-field="' + FIELDS[nextFieldIdx] + '"]');
+      if (next) next.focus();
+    } else if (!e.shiftKey && row < TOTAL_ROWS) {
+      var next = document.querySelector('[data-row="' + (row + 1) + '"][data-field="' + FIELDS[0] + '"]');
+      if (next) next.focus();
+    } else if (e.shiftKey && row > 1) {
+      var prev = document.querySelector('[data-row="' + (row - 1) + '"][data-field="' + FIELDS[FIELDS.length - 1] + '"]');
+      if (prev) prev.focus();
+    }
+    return;
+  }
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (row < TOTAL_ROWS) {
+      var nextRow = document.querySelector('[data-row="' + (row + 1) + '"][data-field="' + field + '"]');
+      if (nextRow) nextRow.focus();
+    }
+  }
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (row > 1) {
+      var prevRow = document.querySelector('[data-row="' + (row - 1) + '"][data-field="' + field + '"]');
+      if (prevRow) prevRow.focus();
+    }
+  }
+
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    if (fieldIdx < FIELDS.length - 1) {
+      var nextF = document.querySelector('[data-row="' + row + '"][data-field="' + FIELDS[fieldIdx + 1] + '"]');
+      if (nextF) nextF.focus();
+    }
+  }
+
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    if (fieldIdx > 0) {
+      var prevF = document.querySelector('[data-row="' + row + '"][data-field="' + FIELDS[fieldIdx - 1] + '"]');
+      if (prevF) prevF.focus();
+    }
+  }
+});
+</script>
+
+<script>
+// ===== BULK SELECTION =====
+var selectedRows = new Set();
+
+function toggleBulkSelectAll() {
+  var master = document.getElementById('bulkSelectAll');
+  var checkboxes = document.querySelectorAll('#bulkBody input[type="checkbox"]');
+  checkboxes.forEach(function(cb) {
+    cb.checked = master.checked;
+    var rowId = cb.closest('tr').id;
+    var row = document.getElementById(rowId);
+    if (master.checked) {
+      selectedRows.add(rowId);
+      row.classList.add('selected');
+    } else {
+      selectedRows.delete(rowId);
+      row.classList.remove('selected');
+    }
+  });
+  updateSelectionInfo();
+}
+
+function toggleBulkRow(cb, rowId) {
+  var row = document.getElementById(rowId);
+  if (cb.checked) {
+    selectedRows.add(rowId);
+    row.classList.add('selected');
+  } else {
+    selectedRows.delete(rowId);
+    row.classList.remove('selected');
+  }
+  updateSelectionInfo();
+  // Update master checkbox state
+  var allCbs = document.querySelectorAll('#bulkBody input[type="checkbox"]');
+  var checkedCount = document.querySelectorAll('#bulkBody input[type="checkbox"]:checked').length;
+  var master = document.getElementById('bulkSelectAll');
+  master.indeterminate = checkedCount > 0 && checkedCount < allCbs.length;
+  master.checked = checkedCount === allCbs.length;
+}
+
+function updateSelectionInfo() {
+  var infoEl = document.getElementById('selectionInfo');
+  var countEl = document.getElementById('bulkSelectedCount');
+  infoEl.textContent = selectedRows.size + ' of 12 selected';
+  countEl.textContent = selectedRows.size;
+}
+
+function selectAllRows() {
+  document.getElementById('bulkSelectAll').checked = true;
+  toggleBulkSelectAll();
+}
+
+function clearSelection() {
+  document.getElementById('bulkSelectAll').checked = false;
+  toggleBulkSelectAll();
+}
+</script>
+
+<script>
+// ===== BULK APPLY (D4) =====
+function applyToAll() {
+  var field = document.getElementById('bulkField').value;
+  var action = document.getElementById('bulkAction').value;
+  var value = document.getElementById('bulkValue').value.trim();
+  if (!field || !value) { showToast('Select a field and enter a value first', 'warning'); return; }
+  var cells = document.querySelectorAll('[data-field="' + field + '"]');
+  cells.forEach(function(cell) {
+    var oldValue = cell.textContent.trim();
+    var newValue = computeValue(oldValue, action, value, field);
+    if (newValue !== oldValue) {
+      pushUndo({ row: parseInt(cell.dataset.row), field: field, oldValue: oldValue, newValue: newValue });
+      cell.textContent = newValue;
+      cell.classList.add('changed');
+    }
+  });
+  showToast('Applied ' + field + ' to all 12 listings', 'success');
+}
+
+function applyToSelected() {
+  if (selectedRows.size === 0) { showToast('Select at least one listing first', 'warning'); return; }
+  var field = document.getElementById('bulkField').value;
+  var action = document.getElementById('bulkAction').value;
+  var value = document.getElementById('bulkValue').value.trim();
+  if (!field || !value) { showToast('Select a field and enter a value first', 'warning'); return; }
+  selectedRows.forEach(function(rowId) {
+    var row = parseInt(rowId.replace('bulk-row-', ''));
+    var cell = document.querySelector('[data-row="' + row + '"][data-field="' + field + '"]');
+    if (!cell) return;
+    var oldValue = cell.textContent.trim();
+    var newValue = computeValue(oldValue, action, value, field);
+    if (newValue !== oldValue) {
+      pushUndo({ row: row, field: field, oldValue: oldValue, newValue: newValue });
+      cell.textContent = newValue;
+      cell.classList.add('changed');
+    }
+  });
+  showToast('Applied ' + field + ' to ' + selectedRows.size + ' listings', 'success');
+}
+
+function computeValue(current, action, inputVal, field) {
+  if (action === 'set') return inputVal;
+  if (action === 'append') return current + ' ' + inputVal;
+  if (action === 'increase' && field === 'price') {
+    var num = parseFloat(current.replace('$', '')) || 0;
+    return '$' + (num + parseFloat(inputVal)).toFixed(2);
+  }
+  if (action === 'decrease' && field === 'price') {
+    var num = parseFloat(current.replace('$', '')) || 0;
+    return '$' + Math.max(0, num - parseFloat(inputVal)).toFixed(2);
+  }
+  if (action === 'replace') {
+    var parts = inputVal.split('→');
+    if (parts.length === 2) return current.replace(parts[0].trim(), parts[1].trim());
+  }
+  return inputVal;
+}
+</script>
+
+<script>
+// ===== DIFF PANEL (D1) =====
+function toggleDiffPanel() {
+  var panel = document.getElementById('diffPanel');
+  var isOpen = panel.style.transform === 'translateX(0px)';
+  panel.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0px)';
+  // Update live change count
+  var countEl = document.getElementById('diffCount');
+  if (countEl) countEl.textContent = undoStack.length || 3;
+}
+
+function showDiffBeforePublish() {
+  var panel = document.getElementById('diffPanel');
+  panel.style.transform = 'translateX(0px)';
+}
+</script>
+
+<script>
+// ===== MODALS =====
+function openModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+</script>
+
+<script src="_shared-navigation.js"></script>
+</body>
+</html>

@@ -146,6 +146,18 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <!-- Workspace Switcher -->
+        <div class="relative">
+          <button id="workspaceSwitcherBtn" onclick="toggleWorkspaceDropdown()"
+                  class="flex items-center gap-2 h-9 px-3 rounded-lg text-xs font-medium border transition-colors"
+                  style="border-color:var(--border);background:var(--bg-muted);color:var(--text-secondary)">
+            <i data-lucide="building-2" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--brand-primary)"></i>
+            <span id="workspaceSwitcherLabel" class="max-w-[120px] truncate">DodgePrint HQ</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 flex-shrink-0"></i>
+          </button>
+          <div id="workspaceDropdown" class="hidden absolute right-0 mt-1.5 w-64 rounded-xl p-1.5 z-50"
+               style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+        </div>
         <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
           <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
           <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
@@ -171,11 +183,13 @@
           <div class="space-y-1">
             <button class="settings-tab active w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" onclick="switchSettingsTab(this,'integrations')"><i data-lucide="plug" class="w-4 h-4 flex-shrink-0"></i> Integrations</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'billing')"><i data-lucide="credit-card" class="w-4 h-4 flex-shrink-0"></i> Billing</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'workspace')"><i data-lucide="building-2" class="w-4 h-4 flex-shrink-0"></i> Workspace</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'team')"><i data-lucide="users" class="w-4 h-4 flex-shrink-0"></i> Team</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'notifications')"><i data-lucide="bell" class="w-4 h-4 flex-shrink-0"></i> Notifications</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'account')"><i data-lucide="user" class="w-4 h-4 flex-shrink-0"></i> Account</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'api')"><i data-lucide="key" class="w-4 h-4 flex-shrink-0"></i> API Keys</button>
             <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'sync')"><i data-lucide="refresh-cw" class="w-4 h-4 flex-shrink-0"></i> Sync Settings</button>
+            <button class="settings-tab w-full text-left flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium" style="color:var(--text-secondary)" onclick="switchSettingsTab(this,'webhooks')"><i data-lucide="webhook" class="w-4 h-4 flex-shrink-0"></i> Webhooks</button>
           </div>
         </div>
 
@@ -206,6 +220,79 @@
               </div>
             </div>
             <button class="btn-primary px-5 h-10 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Connect Platform</button>
+          </div>
+
+          <!-- ====== WORKSPACE ====== -->
+          <div class="settings-panel" id="stab-workspace">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-bold">Workspace</h2>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2" onclick="openModal('modalCreateWorkspace')"><i data-lucide="plus" class="w-4 h-4"></i> Create New Workspace</button>
+            </div>
+
+            <!-- Active Workspace Card -->
+            <div class="card-static rounded-2xl p-5 mb-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold flex-shrink-0" style="background:var(--brand-primary-bg);color:var(--brand-primary)">DP</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h3 class="text-base font-bold">DodgePrint HQ</h3>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style="background:var(--brand-primary-bg);color:var(--brand-primary)">ACTIVE</span>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">BUSINESS</span>
+                  </div>
+                  <p class="text-[12px]" style="color:var(--text-tertiary)">Main workspace for all shop operations across platforms</p>
+                  <div class="flex items-center gap-1 mt-1.5" style="color:var(--text-secondary)">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                    <span class="text-[12px] font-medium">5 members</span>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn-ghost px-3 py-1.5 text-xs font-medium" onclick="showToast('Workspace settings saved','success')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Other Workspaces -->
+            <h3 class="text-sm font-semibold mb-2" style="color:var(--text-secondary)">Other Workspaces</h3>
+            <div class="space-y-3 mb-6">
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0" style="background:var(--bg-muted);color:var(--text-secondary)">PE</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-semibold">Personal Experiments</h4>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase" style="background:var(--bg-muted);color:var(--text-secondary)">PERSONAL</span>
+                  </div>
+                  <div class="flex items-center gap-1 mt-0.5" style="color:var(--text-tertiary)">
+                    <i data-lucide="user" class="w-3 h-3"></i>
+                    <span class="text-[11px]">1 member</span>
+                  </div>
+                </div>
+                <button class="btn-ghost px-3 py-1.5 text-xs font-medium" onclick="showToast('Switched to Personal Experiments','success')">Switch</button>
+              </div>
+            </div>
+
+            <!-- Workspace Roles Reference -->
+            <div class="card-static rounded-2xl p-5">
+              <h3 class="text-sm font-bold mb-3">Role Permissions</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr style="background:var(--bg-muted)">
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Permission</th>
+                      <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Owner</th>
+                      <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Manager</th>
+                      <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Member</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="px-4 py-2.5 text-sm">Manage billing</td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="minus" class="w-4 h-4 mx-auto" style="color:var(--text-tertiary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="minus" class="w-4 h-4 mx-auto" style="color:var(--text-tertiary)"></i></td></tr>
+                    <tr style="background:var(--bg-muted)"><td class="px-4 py-2.5 text-sm">Invite members</td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="minus" class="w-4 h-4 mx-auto" style="color:var(--text-tertiary)"></i></td></tr>
+                    <tr><td class="px-4 py-2.5 text-sm">Manage shops</td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="minus" class="w-4 h-4 mx-auto" style="color:var(--text-tertiary)"></i></td></tr>
+                    <tr style="background:var(--bg-muted)"><td class="px-4 py-2.5 text-sm">Edit listings</td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td></tr>
+                    <tr><td class="px-4 py-2.5 text-sm">View analytics</td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td><td class="px-4 py-2.5 text-center"><i data-lucide="check" class="w-4 h-4 mx-auto" style="color:var(--brand-primary)"></i></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- ====== BILLING ====== -->
@@ -271,27 +358,213 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- Credits -->
+            <div class="mt-6 pt-5" style="border-top:1px solid var(--border)">
+              <h3 class="text-sm font-bold mb-3">Credits</h3>
+              <div class="card-static rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium" style="color:var(--text-secondary)">Usage this period</span>
+                  <span class="text-xs font-mono font-semibold">750 / 1,000</span>
+                </div>
+                <div class="h-2.5 rounded-full mb-2" style="background:var(--bg-muted)">
+                  <div class="h-full rounded-full" style="width:75%;background:var(--brand-primary)"></div>
+                </div>
+                <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">Resets April 1, 2026</p>
+                <h4 class="text-xs font-semibold mb-2" style="color:var(--text-secondary)">Credit costs per action</h4>
+                <table class="w-full text-sm">
+                  <thead><tr style="background:var(--bg-muted)">
+                    <th class="text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Action</th>
+                    <th class="text-right px-3 py-2 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Cost</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td class="px-3 py-2 text-sm">Mockup generation</td><td class="px-3 py-2 text-right font-mono text-[13px]">1 credit</td></tr>
+                    <tr><td class="px-3 py-2 text-sm">AI product generation</td><td class="px-3 py-2 text-right font-mono text-[13px]">1 credit</td></tr>
+                    <tr><td class="px-3 py-2 text-sm">AI SEO optimization</td><td class="px-3 py-2 text-right font-mono text-[13px]">2 credits</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           <!-- ====== TEAM ====== -->
           <div class="settings-panel" id="stab-team">
+            <!-- Team Members Header -->
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-base font-bold">Team Members</h2>
-              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i> Invite Member</button>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2" onclick="openModal('modalInviteMember')"><i data-lucide="user-plus" class="w-4 h-4"></i> Invite Member</button>
             </div>
-            <div class="space-y-3">
+
+            <!-- Members List -->
+            <div class="space-y-3 mb-6">
+              <!-- Owner -->
               <div class="card-static rounded-2xl p-4 flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
-                <div class="flex-1"><h4 class="text-sm font-semibold">John Doe</h4><p class="text-[11px]" style="color:var(--text-tertiary)">john@dodgeprint.com</p></div>
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                <div class="flex-1">
+                  <h4 class="text-sm font-semibold">John Doe</h4>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">john@dodgeprint.com</p>
+                </div>
                 <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Owner</span>
                 <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
               </div>
+              <!-- Manager -->
               <div class="card-static rounded-2xl p-4 flex items-center gap-4">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
-                <div class="flex-1"><h4 class="text-sm font-semibold">Sarah Adams</h4><p class="text-[11px]" style="color:var(--text-tertiary)">sarah@dodgeprint.com</p></div>
-                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--info-bg);color:var(--info)">Admin</span>
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0" style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+                <div class="flex-1">
+                  <h4 class="text-sm font-semibold">Sarah Adams</h4>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">sarah@dodgeprint.com</p>
+                </div>
+                <select class="h-8 px-2.5 text-xs border rounded-lg font-medium" style="border-color:var(--border);background:var(--bg-card);color:var(--info)" onchange="showToast('Role updated','success')">
+                  <option>Owner</option>
+                  <option selected>Manager</option>
+                  <option>Member</option>
+                </select>
                 <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
+                <button class="btn-ghost px-2 py-1 text-xs font-medium" style="color:var(--danger)" onclick="showToast('Member removed','success')"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>
               </div>
+              <!-- Member -->
+              <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0" style="background:var(--bg-muted);color:var(--text-secondary)">MK</div>
+                <div class="flex-1">
+                  <h4 class="text-sm font-semibold">Mike Kim</h4>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">mike@example.com</p>
+                </div>
+                <select class="h-8 px-2.5 text-xs border rounded-lg font-medium" style="border-color:var(--border);background:var(--bg-card);color:var(--text-secondary)" onchange="showToast('Role updated','success')">
+                  <option>Owner</option>
+                  <option>Manager</option>
+                  <option selected>Member</option>
+                </select>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span>
+                <button class="btn-ghost px-2 py-1 text-xs font-medium" style="color:var(--danger)" onclick="showToast('Member removed','success')"><i data-lucide="user-minus" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+
+            <!-- Pending Invitations -->
+            <div class="mb-6">
+              <h3 class="text-sm font-bold mb-3">Pending Invitations</h3>
+              <div class="space-y-2">
+                <div class="flex items-center gap-3 px-4 py-3 rounded-xl" style="background:var(--bg-muted)">
+                  <i data-lucide="mail" class="w-4 h-4 flex-shrink-0" style="color:var(--text-tertiary)"></i>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium">alex@example.com</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Invited as Member · Sent 2 days ago</p>
+                  </div>
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Invitation resent','success')">Resend</button>
+                  <button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Invitation revoked','success')">Revoke</button>
+                </div>
+                <div class="flex items-center gap-3 px-4 py-3 rounded-xl" style="background:var(--bg-muted)">
+                  <i data-lucide="mail" class="w-4 h-4 flex-shrink-0" style="color:var(--text-tertiary)"></i>
+                  <div class="flex-1">
+                    <p class="text-sm font-medium">priya@example.com</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Invited as Manager · Sent 5 days ago</p>
+                  </div>
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Invitation resent','success')">Resend</button>
+                  <button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Invitation revoked','success')">Revoke</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Groups -->
+            <div class="mb-6" style="border-top:1px solid var(--border);padding-top:1.25rem">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold">User Groups</h3>
+                <button class="btn-ghost px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1" onclick="openModal('modalCreateGroup')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Group</button>
+              </div>
+              <div class="space-y-3">
+                <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)"><i data-lucide="users-2" class="w-4.5 h-4.5" style="color:var(--brand-primary)"></i></div>
+                  <div class="flex-1">
+                    <h4 class="text-sm font-semibold">Design Team</h4>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Handles POD design uploads and template creation</p>
+                  </div>
+                  <span class="text-[12px] font-medium" style="color:var(--text-secondary)">3 members</span>
+                  <div class="flex gap-1">
+                    <button class="btn-ghost px-2 py-1 text-xs" onclick="showToast('Edit group','info')"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                    <button class="btn-ghost px-2 py-1 text-xs" style="color:var(--danger)" onclick="showToast('Group deleted','success')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </div>
+                <div class="card-static rounded-2xl p-4 flex items-center gap-4">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:var(--brand-accent-bg)"><i data-lucide="users-2" class="w-4.5 h-4.5" style="color:var(--brand-accent)"></i></div>
+                  <div class="flex-1">
+                    <h4 class="text-sm font-semibold">Ops & Listings</h4>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Manages listings, orders, and platform sync</p>
+                  </div>
+                  <span class="text-[12px] font-medium" style="color:var(--text-secondary)">2 members</span>
+                  <div class="flex gap-1">
+                    <button class="btn-ghost px-2 py-1 text-xs" onclick="showToast('Edit group','info')"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                    <button class="btn-ghost px-2 py-1 text-xs" style="color:var(--danger)" onclick="showToast('Group deleted','success')"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Shared Resources -->
+            <div style="border-top:1px solid var(--border);padding-top:1.25rem">
+              <h3 class="text-sm font-bold mb-3">Shared Resources</h3>
+              <div class="card-static rounded-2xl overflow-hidden">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr style="background:var(--bg-muted)">
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Resource</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Type</th>
+                      <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Shared With</th>
+                      <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Permission</th>
+                      <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="px-4 py-3 text-sm font-medium">Holiday Templates</td>
+                      <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">Templates</span></td>
+                      <td class="px-4 py-3 text-[12px]" style="color:var(--text-secondary)">Design Team</td>
+                      <td class="px-4 py-3 text-center">
+                        <select class="h-7 px-2 text-xs border rounded-lg" style="border-color:var(--border);background:var(--bg-card)" onchange="showToast('Permission updated','success')">
+                          <option>View</option>
+                          <option selected>Edit</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Resource unshared','success')">Unshare</button></td>
+                    </tr>
+                    <tr style="background:var(--bg-muted)">
+                      <td class="px-4 py-3 text-sm font-medium">Size Variations</td>
+                      <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">Variations</span></td>
+                      <td class="px-4 py-3 text-[12px]" style="color:var(--text-secondary)">All members</td>
+                      <td class="px-4 py-3 text-center">
+                        <select class="h-7 px-2 text-xs border rounded-lg" style="border-color:var(--border);background:var(--bg-card)" onchange="showToast('Permission updated','success')">
+                          <option selected>View</option>
+                          <option>Edit</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Resource unshared','success')">Unshare</button></td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm font-medium">SEO Tag Library</td>
+                      <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">Tags</span></td>
+                      <td class="px-4 py-3 text-[12px]" style="color:var(--text-secondary)">Ops & Listings</td>
+                      <td class="px-4 py-3 text-center">
+                        <select class="h-7 px-2 text-xs border rounded-lg" style="border-color:var(--border);background:var(--bg-card)" onchange="showToast('Permission updated','success')">
+                          <option>View</option>
+                          <option selected>Edit</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Resource unshared','success')">Unshare</button></td>
+                    </tr>
+                    <tr style="background:var(--bg-muted)">
+                      <td class="px-4 py-3 text-sm font-medium">Product Descriptions</td>
+                      <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">Descriptions</span></td>
+                      <td class="px-4 py-3 text-[12px]" style="color:var(--text-secondary)">Ops & Listings</td>
+                      <td class="px-4 py-3 text-center">
+                        <select class="h-7 px-2 text-xs border rounded-lg" style="border-color:var(--border);background:var(--bg-card)" onchange="showToast('Permission updated','success')">
+                          <option selected>View</option>
+                          <option>Edit</option>
+                        </select>
+                      </td>
+                      <td class="px-4 py-3 text-center"><button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Resource unshared','success')">Unshare</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button class="btn-ghost px-4 py-2 text-xs font-medium inline-flex items-center gap-2 mt-3" onclick="showToast('Share resource modal coming soon','info')"><i data-lucide="share-2" class="w-3.5 h-3.5"></i> Share Resource</button>
             </div>
           </div>
 
@@ -472,6 +745,7 @@
             <button class="btn-primary px-5 h-10 text-sm font-semibold mb-6" onclick="showToast('Settings saved!','success')">Save Settings</button>
 
             <!-- Sync Log -->
+
             <h3 class="text-sm font-bold mb-3">Recent Sync Events</h3>
             <div class="card-static rounded-2xl overflow-hidden">
               <table class="w-full text-sm">
@@ -491,10 +765,180 @@
             </div>
           </div>
 
+          <!-- ====== WEBHOOKS ====== -->
+          <div class="settings-panel" id="stab-webhooks">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h2 class="text-base font-bold">Webhooks</h2>
+                <p class="text-[11px]" style="color:var(--text-tertiary)">Manage webhook endpoints for real-time event delivery</p>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2" onclick="showToast('Webhook editor coming soon','info')"><i data-lucide="plus" class="w-4 h-4"></i> Create Webhook</button>
+            </div>
+
+            <!-- Info banner -->
+            <div class="flex items-start gap-3 rounded-xl px-4 py-3 mb-5" style="background:var(--info-bg);border:1px solid var(--info)">
+              <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--info)"></i>
+              <p class="text-xs" style="color:var(--info)">HTTP POST requests sent to your URL when events occur. Expect a <strong>200</strong> status response within 5 seconds or the delivery will be retried.</p>
+            </div>
+
+            <!-- Webhooks Table -->
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead><tr style="background:var(--bg-muted)">
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">URL</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Method</th>
+                  <th class="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Events</th>
+                  <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Status</th>
+                  <th class="text-center px-4 py-2.5 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 text-sm font-medium">Order Created</td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">https://api.example.com/hooks/orders</td>
+                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--info-bg);color:var(--info)">POST</span></td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-secondary)">order.created</td>
+                    <td class="px-4 py-3 text-center"><span class="status-synced inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                    <td class="px-4 py-3 text-center">
+                      <button class="text-xs font-medium mr-3" style="color:var(--brand-primary)" onclick="showToast('Edit webhook','info')">Edit</button>
+                      <button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Webhook deleted','success')">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm font-medium">Product Updated</td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">https://api.example.com/hooks/products</td>
+                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--info-bg);color:var(--info)">POST</span></td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-secondary)">product.updated, product.created</td>
+                    <td class="px-4 py-3 text-center"><span class="status-synced inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Active</span></td>
+                    <td class="px-4 py-3 text-center">
+                      <button class="text-xs font-medium mr-3" style="color:var(--brand-primary)" onclick="showToast('Edit webhook','info')">Edit</button>
+                      <button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Webhook deleted','success')">Delete</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm font-medium">Sync Failed</td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">https://notify.example.com/alert</td>
+                    <td class="px-4 py-3"><span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--info-bg);color:var(--info)">POST</span></td>
+                    <td class="px-4 py-3 font-mono text-[11px]" style="color:var(--text-secondary)">sync.failed</td>
+                    <td class="px-4 py-3 text-center"><span class="status-draft inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">Inactive</span></td>
+                    <td class="px-4 py-3 text-center">
+                      <button class="text-xs font-medium mr-3" style="color:var(--brand-primary)" onclick="showToast('Edit webhook','info')">Edit</button>
+                      <button class="text-xs font-medium" style="color:var(--danger)" onclick="showToast('Webhook deleted','success')">Delete</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- ====== MODAL: Create Workspace ====== -->
+<div class="modal-overlay" id="modalCreateWorkspace">
+  <div class="w-full max-w-md mx-4 rounded-2xl p-6" style="background:var(--bg-card);box-shadow:var(--shadow-lg)">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold">Create New Workspace</h3>
+      <button onclick="closeModal('modalCreateWorkspace')" class="w-8 h-8 flex items-center justify-center rounded-lg" style="color:var(--text-tertiary)"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Workspace Name</label>
+        <input type="text" placeholder="e.g. Main Operations" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-muted)">
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Description</label>
+        <textarea placeholder="What's this workspace for?" rows="2" class="w-full px-3 py-2 text-sm border rounded-xl resize-none" style="border-color:var(--border);background:var(--bg-muted)"></textarea>
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-2 block" style="color:var(--text-secondary)">Workspace Type</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-center gap-2 p-3 rounded-xl border cursor-pointer" style="border-color:var(--brand-primary);background:var(--brand-primary-bg)">
+            <input type="radio" name="wsType" value="personal" checked class="accent-blue-600">
+            <div><p class="text-xs font-semibold" style="color:var(--brand-primary)">Personal</p><p class="text-[10px]" style="color:var(--text-tertiary)">Solo use</p></div>
+          </label>
+          <label class="flex items-center gap-2 p-3 rounded-xl border cursor-pointer" style="border-color:var(--border)">
+            <input type="radio" name="wsType" value="business" class="accent-blue-600">
+            <div><p class="text-xs font-semibold">Business</p><p class="text-[10px]" style="color:var(--text-tertiary)">Team collaboration</p></div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6">
+      <button class="btn-ghost px-5 h-9 text-sm font-medium" onclick="closeModal('modalCreateWorkspace')">Cancel</button>
+      <button class="btn-primary px-5 h-9 text-sm font-medium" onclick="closeModal('modalCreateWorkspace');showToast('Workspace created!','success')">Create Workspace</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL: Invite Member ====== -->
+<div class="modal-overlay" id="modalInviteMember">
+  <div class="w-full max-w-md mx-4 rounded-2xl p-6" style="background:var(--bg-card);box-shadow:var(--shadow-lg)">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold">Invite Team Member</h3>
+      <button onclick="closeModal('modalInviteMember')" class="w-8 h-8 flex items-center justify-center rounded-lg" style="color:var(--text-tertiary)"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Email Address</label>
+        <input type="email" placeholder="teammate@example.com" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-muted)">
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Role</label>
+        <select class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-muted)">
+          <option>Member — Can view and edit listings</option>
+          <option>Manager — Can manage shops and invite members</option>
+          <option>Owner — Full access including billing</option>
+        </select>
+      </div>
+      <div class="flex items-start gap-2 px-3 py-2.5 rounded-xl" style="background:var(--info-bg)">
+        <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style="color:var(--info)"></i>
+        <p class="text-[11px]" style="color:var(--info)">An invitation email will be sent. The link expires in 7 days.</p>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6">
+      <button class="btn-ghost px-5 h-9 text-sm font-medium" onclick="closeModal('modalInviteMember')">Cancel</button>
+      <button class="btn-primary px-5 h-9 text-sm font-medium" onclick="closeModal('modalInviteMember');showToast('Invitation sent!','success')">Send Invitation</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL: Create Group ====== -->
+<div class="modal-overlay" id="modalCreateGroup">
+  <div class="w-full max-w-md mx-4 rounded-2xl p-6" style="background:var(--bg-card);box-shadow:var(--shadow-lg)">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold">Create User Group</h3>
+      <button onclick="closeModal('modalCreateGroup')" class="w-8 h-8 flex items-center justify-center rounded-lg" style="color:var(--text-tertiary)"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="text-xs font-medium mb-1 block" style="color:var(--text-secondary)">Group Name</label>
+        <input type="text" placeholder="e.g. Design Team" class="w-full h-10 px-3 text-sm border rounded-xl" style="border-color:var(--border);background:var(--bg-muted)">
+      </div>
+      <div>
+        <label class="text-xs font-medium mb-2 block" style="color:var(--text-secondary)">Add Members</label>
+        <div class="space-y-2">
+          <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style="background:var(--bg-muted)">
+            <input type="checkbox" class="accent-blue-600">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+            <span class="text-sm font-medium">Sarah Adams</span>
+          </label>
+          <label class="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style="background:var(--bg-muted)">
+            <input type="checkbox" class="accent-blue-600">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">MK</div>
+            <span class="text-sm font-medium">Mike Kim</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-6">
+      <button class="btn-ghost px-5 h-9 text-sm font-medium" onclick="closeModal('modalCreateGroup')">Cancel</button>
+      <button class="btn-primary px-5 h-9 text-sm font-medium" onclick="closeModal('modalCreateGroup');showToast('Group created!','success')">Create Group</button>
+    </div>
   </div>
 </div>
 

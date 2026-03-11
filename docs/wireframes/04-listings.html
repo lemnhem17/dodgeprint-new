@@ -78,9 +78,34 @@ tailwind.config = {
 
 /* Filter panel */
 #filterPanel { transition: width .2s ease; }
+
+/* View toggle buttons */
+.view-toggle { transition: background 0.12s; color: var(--text-secondary); cursor: pointer; border: none; background: none; display: flex; align-items: center; }
+.view-toggle.active { background: var(--brand-primary-bg); color: var(--brand-primary); }
+
+/* Card grid view */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.listing-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+.listing-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.listing-card-img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg-muted); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+.listing-card-body { padding: 12px; }
+
+/* Sticky table header */
+thead { position: sticky; top: 0; z-index: 10; background: var(--bg-muted); }
+
+/* Image hover preview */
+.thumb-preview { position: relative; }
+.thumb-preview .thumb-enlarged { display: none; position: absolute; left: 56px; top: -20px; z-index: 50; width: 200px; height: 200px; border-radius: 12px; overflow: hidden; border: 2px solid var(--border); box-shadow: var(--shadow-lg); background: var(--bg-card); }
+.thumb-preview:hover .thumb-enlarged { display: block; }
+.thumb-enlarged { display: flex; align-items: center; justify-content: center; font-size: 80px; }
+
+/* Column config dropdown */
+.col-config-dropdown { position: absolute; right: 0; top: calc(100% + 4px); background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; min-width: 180px; z-index: 40; box-shadow: var(--shadow-md); }
+.col-config-dropdown label { display: flex; align-items: center; gap-8px; padding: 6px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--text-secondary); gap: 8px; }
+.col-config-dropdown label:hover { background: var(--bg-muted); color: var(--text-primary); }
 </style>
 </head>
-<body>
+<body data-page="listings">
 
 <!-- Toast container -->
 <div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
@@ -218,6 +243,21 @@ tailwind.config = {
     <!-- ===== LISTINGS CONTENT ===== -->
     <main class="p-7">
 
+      <!-- Empty state — hidden when listings present -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="list" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">No listings yet</div>
+        <div class="empty-state-desc">Import from your connected shops or create your first listing manually.</div>
+        <div class="flex items-center gap-2">
+          <button class="btn-primary px-4 py-2 text-xs font-semibold" onclick="openModal('importModal')">
+            <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i> Import Listings
+          </button>
+          <button class="btn-ghost px-4 py-2 text-xs font-medium">Create Listing</button>
+        </div>
+      </div>
+
       <!-- Page Title + Actions -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">
@@ -266,9 +306,41 @@ tailwind.config = {
           <button onclick="toggleFilterPanel()" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
             <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Filters
           </button>
+          <button onclick="saveCurrentFilter('My Filter')" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5" title="Save current filter">
+            <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Save View
+          </button>
           <button class="btn-ghost px-3 h-9 text-sm font-medium inline-flex items-center gap-1.5"><i data-lucide="arrow-up-down" class="w-4 h-4"></i> Sort</button>
+          <!-- View toggle -->
+          <div class="flex items-center gap-1 border rounded-lg p-0.5" style="border-color:var(--border)">
+            <button id="viewList" onclick="switchView('list')" class="view-toggle active" style="padding:5px 10px;border-radius:6px;font-size:12px;font-weight:500" title="List view">
+              <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+            <button id="viewGrid" onclick="switchView('grid')" class="view-toggle" style="padding:5px 10px;border-radius:6px;font-size:12px;font-weight:500" title="Card view">
+              <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <!-- Column config -->
+          <div class="relative" id="colConfigContainer">
+            <button onclick="toggleColumnConfig()" class="btn-ghost px-2 py-1.5" title="Customize columns">
+              <i data-lucide="columns-3" class="w-4 h-4"></i>
+            </button>
+            <div id="colConfigDropdown" class="col-config-dropdown" style="display:none">
+              <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1 mb-1" style="color:var(--text-tertiary)">Show Columns</div>
+              <label><input type="checkbox" checked onchange="toggleColumn(2)"> Title</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(3)"> Platform</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(4)"> Shop</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(5)"> Price</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(6)"> Stock</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(7)"> Status</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(8)"> Quality</label>
+              <label><input type="checkbox" checked onchange="toggleColumn(9)"> Last Synced</label>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Saved filter pills -->
+      <div id="savedFilters" class="flex items-center gap-2 mb-3" style="display:none"></div>
 
       <!-- Spreadsheet Grid -->
       <div class="flex flex-1 overflow-hidden rounded-xl" style="border:1px solid var(--border)">
@@ -366,9 +438,133 @@ tailwind.config = {
           </div>
         </div>
 
+        <!-- Card view (hidden by default) -->
+        <div id="cardView" class="card-grid flex-1 p-5" style="display:none">
+          <div class="listing-card" onclick="openDetailPanel(1)">
+            <div class="listing-card-img">🌿</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Vintage Plant Pot — Handmade Ceramic</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$34.99</span>
+                <span class="status-synced inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Active</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#F1641E"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Etsy · CozyPrints</span>
+                <span class="score-badge score-a ml-auto">A+</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(2)">
+            <div class="listing-card-img">🎨</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Boho Wall Art Print Set of 3</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$49.00</span>
+                <span class="status-synced inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Active</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#96BF48"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Shopify · Main Store</span>
+                <span class="score-badge score-a ml-auto">A</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(3)">
+            <div class="listing-card-img">🌸</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Floral Embroidered Tote Bag</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$28.50</span>
+                <span class="status-synced inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Active</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#F1641E"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Etsy · VintageVibes</span>
+                <span class="score-badge score-b ml-auto">B+</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(4)">
+            <div class="listing-card-img">☕</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Ceramic Mug Set — Morning Brew</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$22.99</span>
+                <span class="status-synced inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Active</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#FF9900"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Amazon · US Store</span>
+                <span class="score-badge score-a ml-auto">A</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(5)">
+            <div class="listing-card-img">🕯️</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Soy Candle Bundle — Lavender Bliss</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$18.00</span>
+                <span class="status-pending inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Low Stock</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#96BF48"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Shopify · Main Store</span>
+                <span class="score-badge score-b ml-auto">B</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(6)">
+            <div class="listing-card-img">🧶</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Macrame Wall Hanging — Desert Sun</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$65.00</span>
+                <span class="status-synced inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Active</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#F1641E"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Etsy · CozyPrints</span>
+                <span class="score-badge score-a ml-auto">A-</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(7)">
+            <div class="listing-card-img">🖼️</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Minimalist Line Art — Abstract Face</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$15.99</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Draft</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#333"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">TikTok · TikTok Shop</span>
+                <span class="score-badge score-c ml-auto">C</span>
+              </div>
+            </div>
+          </div>
+          <div class="listing-card" onclick="openDetailPanel(8)">
+            <div class="listing-card-img">🎁</div>
+            <div class="listing-card-body">
+              <div class="text-sm font-semibold truncate" style="color:var(--text-primary)">Gift Box Set — Holiday Edition</div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="font-mono text-sm font-medium" style="color:var(--text-primary)">$42.00</span>
+                <span class="status-error inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium">Out of Stock</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-2">
+                <i data-lucide="store" class="w-3 h-3" style="color:#F1641E"></i>
+                <span class="text-xs" style="color:var(--text-tertiary)">Etsy · VintageVibes</span>
+                <span class="score-badge score-b ml-auto">B-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Table area -->
-        <div class="flex-1 overflow-x-auto bg-white">
-          <table class="w-full text-sm">
+        <div id="listingsTableWrapper" class="flex-1 overflow-x-auto bg-white">
+          <table class="w-full text-sm" id="listingsTable">
             <thead>
               <tr class="text-left" style="background:var(--bg-muted)">
                 <th class="w-10 px-4 py-3"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()" class="w-4 h-4 rounded"></th>
@@ -379,15 +575,90 @@ tailwind.config = {
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Price</th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Stock</th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Status</th>
-                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Quality</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">
+                  <span class="inline-flex items-center gap-1">Quality (AI Score)
+                    <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+                      <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                      <div class="help-tooltip">AI Score rates your listing's SEO, photos, and pricing on a scale of A-F.</div>
+                    </button>
+                  </span>
+                </th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Last Synced</th>
                 <th class="w-[140px]"></th>
               </tr>
             </thead>
-            <tbody>
+            <!-- Skeleton loading state — shown initially, hidden after data "loads" -->
+            <tbody id="skeletonBody">
+              <tr class="skeleton-row">
+                <td class="px-4 py-3"><div class="skeleton" style="width:16px;height:16px;border-radius:4px"></div></td>
+                <td class="px-2 py-3"><div class="skeleton skeleton-thumbnail"></div></td>
+                <td class="px-4 py-3"><div class="flex items-center gap-3"><div class="space-y-1.5"><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text-sm"></div></div></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:60px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:50px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:30px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton" style="width:60px;height:20px;border-radius:9999px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:70px"></div></td>
+                <td></td>
+              </tr>
+              <tr class="skeleton-row">
+                <td class="px-4 py-3"><div class="skeleton" style="width:16px;height:16px;border-radius:4px"></div></td>
+                <td class="px-2 py-3"><div class="skeleton skeleton-thumbnail"></div></td>
+                <td class="px-4 py-3"><div class="flex items-center gap-3"><div class="space-y-1.5"><div class="skeleton skeleton-text" style="width:70%"></div><div class="skeleton skeleton-text-sm"></div></div></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:60px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:50px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:30px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton" style="width:60px;height:20px;border-radius:9999px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:70px"></div></td>
+                <td></td>
+              </tr>
+              <tr class="skeleton-row">
+                <td class="px-4 py-3"><div class="skeleton" style="width:16px;height:16px;border-radius:4px"></div></td>
+                <td class="px-2 py-3"><div class="skeleton skeleton-thumbnail"></div></td>
+                <td class="px-4 py-3"><div class="flex items-center gap-3"><div class="space-y-1.5"><div class="skeleton skeleton-text" style="width:55%"></div><div class="skeleton skeleton-text-sm"></div></div></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:60px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:50px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:30px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton" style="width:60px;height:20px;border-radius:9999px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:70px"></div></td>
+                <td></td>
+              </tr>
+              <tr class="skeleton-row">
+                <td class="px-4 py-3"><div class="skeleton" style="width:16px;height:16px;border-radius:4px"></div></td>
+                <td class="px-2 py-3"><div class="skeleton skeleton-thumbnail"></div></td>
+                <td class="px-4 py-3"><div class="flex items-center gap-3"><div class="space-y-1.5"><div class="skeleton skeleton-text" style="width:80%"></div><div class="skeleton skeleton-text-sm"></div></div></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:60px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:50px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:30px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton" style="width:60px;height:20px;border-radius:9999px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:70px"></div></td>
+                <td></td>
+              </tr>
+              <tr class="skeleton-row">
+                <td class="px-4 py-3"><div class="skeleton" style="width:16px;height:16px;border-radius:4px"></div></td>
+                <td class="px-2 py-3"><div class="skeleton skeleton-thumbnail"></div></td>
+                <td class="px-4 py-3"><div class="flex items-center gap-3"><div class="space-y-1.5"><div class="skeleton skeleton-text" style="width:65%"></div><div class="skeleton skeleton-text-sm"></div></div></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:60px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:50px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:30px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton" style="width:60px;height:20px;border-radius:9999px"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-badge"></div></td>
+                <td class="px-4 py-3"><div class="skeleton skeleton-text" style="width:70px"></div></td>
+                <td></td>
+              </tr>
+            </tbody>
+            <tbody id="dataBody" style="display:none">
               <tr id="row-1" class="listing-row cursor-pointer" onclick="openDetailPanel(1)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-1')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-base">🌿</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-base">🌿</div><div class="thumb-enlarged">🌿</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Vintage Plant Pot — Handmade Ceramic</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
@@ -407,7 +678,7 @@ tailwind.config = {
               </tr>
               <tr id="row-2" class="listing-row cursor-pointer" onclick="openDetailPanel(2)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-2')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-base">🎨</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-base">🎨</div><div class="thumb-enlarged">🎨</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Boho Wall Art Print Set of 3</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
@@ -427,7 +698,7 @@ tailwind.config = {
               </tr>
               <tr id="row-3" class="listing-row cursor-pointer" onclick="openDetailPanel(3)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-3')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center text-base">🌸</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-100 to-rose-200 flex items-center justify-center text-base">🌸</div><div class="thumb-enlarged">🌸</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Floral Embroidered Tote Bag</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
@@ -447,7 +718,7 @@ tailwind.config = {
               </tr>
               <tr id="row-4" class="listing-row cursor-pointer" onclick="openDetailPanel(4)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-4')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-100 to-blue-200 flex items-center justify-center text-base">☕</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-100 to-blue-200 flex items-center justify-center text-base">☕</div><div class="thumb-enlarged">☕</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Ceramic Mug Set — Morning Brew</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(255,153,0,.08);color:#FF9900">Amazon</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">US Store</td>
@@ -467,7 +738,7 @@ tailwind.config = {
               </tr>
               <tr id="row-5" class="listing-row cursor-pointer" onclick="openDetailPanel(5)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-5')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-100 to-green-200 flex items-center justify-center text-base">🕯️</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-100 to-green-200 flex items-center justify-center text-base">🕯️</div><div class="thumb-enlarged">🕯️</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Soy Candle Bundle — Lavender Bliss</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">Main Store</td>
@@ -487,7 +758,7 @@ tailwind.config = {
               </tr>
               <tr id="row-6" class="listing-row cursor-pointer" onclick="openDetailPanel(6)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-6')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-base">🧶</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-base">🧶</div><div class="thumb-enlarged">🧶</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Macrame Wall Hanging — Desert Sun</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
@@ -507,7 +778,7 @@ tailwind.config = {
               </tr>
               <tr id="row-7" class="listing-row cursor-pointer" onclick="openDetailPanel(7)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-7')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-base">🖼️</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-base">🖼️</div><div class="thumb-enlarged">🖼️</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Minimalist Line Art — Abstract Face</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(0,0,0,.06);color:#333">TikTok</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">TikTok Shop</td>
@@ -527,7 +798,7 @@ tailwind.config = {
               </tr>
               <tr id="row-8" class="listing-row cursor-pointer" onclick="openDetailPanel(8)">
                 <td class="px-4 py-3" onclick="event.stopPropagation()"><input type="checkbox" class="w-4 h-4 rounded" onchange="toggleRow(this,'row-8')"></td>
-                <td class="px-2 py-3"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-100 to-red-200 flex items-center justify-center text-base">🎁</div></td>
+                <td class="px-2 py-3"><div class="thumb-preview"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-100 to-red-200 flex items-center justify-center text-base">🎁</div><div class="thumb-enlarged">🎁</div></div></td>
                 <td class="px-4 py-3"><span class="editable-cell font-medium" onclick="event.stopPropagation();makeEditable(this,'text')">Gift Box Set — Holiday Edition</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
@@ -547,7 +818,7 @@ tailwind.config = {
               </tr>
             </tbody>
           </table>
-        </div><!-- /table area -->
+        </div><!-- /table area / listingsTableWrapper -->
       </div><!-- /flex container -->
 
     </main>
@@ -1031,6 +1302,205 @@ function toggleFilterPanel() {
   if (!panel) return;
   panel.style.display = panel.style.display === 'none' ? '' : 'none';
 }
+
+// ===== SKELETON LOADING =====
+// Hide skeleton after 1.5s, reveal real data
+setTimeout(function() {
+  var skeleton = document.getElementById('skeletonBody');
+  var data = document.getElementById('dataBody');
+  if (skeleton) skeleton.style.display = 'none';
+  if (data) data.style.display = '';
+}, 1500);
+
+// ===== VIEW TOGGLE (list / grid) =====
+function switchView(view) {
+  var wrapper = document.getElementById('listingsTableWrapper');
+  var cards = document.getElementById('cardView');
+  document.querySelectorAll('.view-toggle').forEach(function(b) { b.classList.remove('active'); });
+  if (view === 'grid') {
+    if (wrapper) wrapper.style.display = 'none';
+    if (cards) { cards.style.display = 'grid'; }
+    var btn = document.getElementById('viewGrid');
+    if (btn) btn.classList.add('active');
+  } else {
+    if (wrapper) wrapper.style.display = '';
+    if (cards) cards.style.display = 'none';
+    var btn = document.getElementById('viewList');
+    if (btn) btn.classList.add('active');
+  }
+  localStorage.setItem('dodgeprint_listings_view', view);
+  if (window.lucide) lucide.createIcons();
+}
+
+// Restore saved view on load
+(function() {
+  var saved = localStorage.getItem('dodgeprint_listings_view');
+  if (saved === 'grid') switchView('grid');
+})();
+
+// ===== SAVED FILTER VIEWS =====
+function getCurrentFilterParams() {
+  // Collect active platform tab
+  var activeTab = document.querySelector('.platform-tab.active');
+  return { platform: activeTab ? activeTab.textContent.trim() : 'All' };
+}
+
+function saveCurrentFilter(name) {
+  var filters = JSON.parse(localStorage.getItem('dodgeprint_saved_filters') || '[]');
+  var params = getCurrentFilterParams();
+  // Avoid duplicate names
+  var exists = filters.some(function(f) { return f.name === name && f.params.platform === params.platform; });
+  if (!exists) {
+    filters.push({ name: name + ' (' + params.platform + ')', params: params });
+    localStorage.setItem('dodgeprint_saved_filters', JSON.stringify(filters));
+  }
+  renderSavedFilters();
+  showToast('Filter view saved', 'success');
+}
+
+function renderSavedFilters() {
+  var filters = JSON.parse(localStorage.getItem('dodgeprint_saved_filters') || '[]');
+  var container = document.getElementById('savedFilters');
+  if (!container) return;
+  if (!filters.length) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = '<span class="text-xs font-medium flex-shrink-0" style="color:var(--text-tertiary)">Saved:</span>'
+    + filters.map(function(f, i) {
+      return '<button class="btn-ghost text-xs px-3 py-1 flex-shrink-0" style="border-radius:9999px;border:1px solid var(--border)" onclick="applyFilter(' + i + ')">'
+        + f.name
+        + ' <span onclick="event.stopPropagation();removeFilter(' + i + ')" style="margin-left:4px;opacity:.5">×</span></button>';
+    }).join('');
+}
+
+function applyFilter(index) {
+  var filters = JSON.parse(localStorage.getItem('dodgeprint_saved_filters') || '[]');
+  var f = filters[index];
+  if (!f) return;
+  // Apply platform tab
+  document.querySelectorAll('.platform-tab').forEach(function(t) {
+    if (t.textContent.trim() === f.params.platform) t.click();
+  });
+  showToast('Filter "' + f.name + '" applied', 'info');
+}
+
+function removeFilter(index) {
+  var filters = JSON.parse(localStorage.getItem('dodgeprint_saved_filters') || '[]');
+  filters.splice(index, 1);
+  localStorage.setItem('dodgeprint_saved_filters', JSON.stringify(filters));
+  renderSavedFilters();
+}
+
+// Render saved filters on load
+renderSavedFilters();
+
+// ===== COLUMN CUSTOMIZATION =====
+function toggleColumnConfig() {
+  var dropdown = document.getElementById('colConfigDropdown');
+  if (!dropdown) return;
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close column dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var container = document.getElementById('colConfigContainer');
+  var dropdown = document.getElementById('colConfigDropdown');
+  if (dropdown && container && !container.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+function toggleColumn(colIndex) {
+  // Toggle all th/td at given 0-based column index in the listings table
+  var table = document.getElementById('listingsTable');
+  if (!table) return;
+  var rows = table.querySelectorAll('tr');
+  rows.forEach(function(row) {
+    var cells = row.children;
+    if (cells[colIndex]) {
+      cells[colIndex].style.display = cells[colIndex].style.display === 'none' ? '' : 'none';
+    }
+  });
+  // Persist to localStorage
+  var hidden = [];
+  var headerRow = table.querySelector('thead tr');
+  if (headerRow) {
+    Array.from(headerRow.children).forEach(function(th, i) {
+      if (th.style.display === 'none') hidden.push(i);
+    });
+  }
+  localStorage.setItem('dodgeprint_hidden_cols', JSON.stringify(hidden));
+}
+
+// Restore hidden columns on load
+(function() {
+  var hidden = JSON.parse(localStorage.getItem('dodgeprint_hidden_cols') || '[]');
+  if (!hidden.length) return;
+  var table = document.getElementById('listingsTable');
+  if (!table) return;
+  // Wait for skeleton to hide before applying — run after DOMContentLoaded
+  setTimeout(function() {
+    hidden.forEach(function(colIndex) {
+      var checkboxes = document.querySelectorAll('#colConfigDropdown input[type=checkbox]');
+      // colIndex 2 = first checkbox (Title), index offset by 2
+      var cbIdx = colIndex - 2;
+      if (checkboxes[cbIdx]) checkboxes[cbIdx].checked = false;
+      toggleColumn(colIndex);
+    });
+  }, 100);
+})();
+
+// ===== ENHANCED INLINE EDIT =====
+// Override makeEditable to add validation + success flash
+// We wrap it after the shared script loads
+window.addEventListener('load', function() {
+  var _origMakeEditable = window.makeEditable;
+  if (!_origMakeEditable) return;
+  window.makeEditable = function(cell, type) {
+    if (cell.classList.contains('editing')) return;
+    var originalValue = cell.textContent.trim();
+    cell.classList.add('editing');
+    var input = document.createElement('input');
+    input.value = originalValue;
+    input.className = 'font-mono text-sm';
+    if (type === 'price') input.style.textAlign = 'right';
+    cell.textContent = '';
+    cell.appendChild(input);
+    input.focus();
+    input.select();
+    var save = function() {
+      var newValue = input.value.trim();
+      // Validation
+      if (type === 'price') {
+        var numeric = parseFloat(newValue.replace(/[^0-9.]/g, ''));
+        if (isNaN(numeric) || numeric < 0) {
+          input.style.borderColor = 'var(--danger)';
+          input.style.outline = '2px solid var(--danger)';
+          return;
+        }
+      }
+      if (type === 'number') {
+        var intVal = parseInt(newValue, 10);
+        if (isNaN(intVal) || intVal < 0) {
+          input.style.borderColor = 'var(--danger)';
+          input.style.outline = '2px solid var(--danger)';
+          return;
+        }
+      }
+      cell.classList.remove('editing');
+      cell.textContent = newValue || originalValue;
+      // Success flash
+      cell.style.background = 'var(--success-bg)';
+      cell.style.transition = 'background 0.3s';
+      setTimeout(function() { cell.style.background = ''; }, 800);
+      showAutosaving();
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') { cell.classList.remove('editing'); cell.textContent = originalValue; }
+    });
+  };
+});
 </script>
 </body>
 </html>

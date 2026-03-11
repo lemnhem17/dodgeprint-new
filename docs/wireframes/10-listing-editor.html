@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Listing Editor</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: { extend: {
+    colors: { page:'#F9FAFB', blue:{DEFAULT:'#3B82F6',light:'#60A5FA',bg:'#EFF6FF',dark:'#2563EB'}, orange:{DEFAULT:'#F97316',bg:'#FFF7ED'}, cyan:{DEFAULT:'#06B6D4',bg:'#ECFEFF'}, muted:'#F3F4F6', 'border-c':'#E5E7EB', 'border-light':'#F3F4F6', txt:'#111827', 'txt-s':'#6B7280', 'txt-t':'#9CA3AF', danger:{DEFAULT:'#EF4444',bg:'#FEF2F2'}, success:{DEFAULT:'#22C55E',bg:'#F0FDF4'}, info:{DEFAULT:'#3B82F6',bg:'#EFF6FF'}, purple:{DEFAULT:'#8B5CF6',bg:'#F5F3FF'}, etsy:'#F1641E', shopify:'#96BF48', amazon:'#FF9900', tiktok:'#000000' },
+    fontFamily: { jakarta:['"Plus Jakarta Sans"','sans-serif'], mono:['"JetBrains Mono"','monospace'] },
+    borderRadius: { sm:'8px', md:'12px', lg:'16px', xl:'20px' }
+  }}
+}
+</script>
+<style>
+.editor-tab { display:flex; align-items:center; gap:8px; width:100%; padding:10px 12px; border-radius:8px; font-size:13px; font-weight:500; color:var(--text-secondary); border:none; background:none; cursor:pointer; transition:all 0.12s; position:relative; text-align:left; }
+.editor-tab:hover { background:var(--bg-muted); color:var(--text-primary); }
+.editor-tab.active { background:var(--brand-primary-bg); color:var(--brand-primary); font-weight:600; }
+.change-dot { width:6px; height:6px; border-radius:50%; background:var(--brand-secondary); position:absolute; right:10px; top:50%; transform:translateY(-50%); }
+.photo-tile { position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); cursor:grab; aspect-ratio:1; background:var(--bg-muted); }
+.photo-tile.dragging { opacity:0.5; border:2px dashed var(--brand-primary); }
+.photo-tile.drag-over { border:2px dashed var(--brand-accent); background:var(--brand-primary-bg); }
+.photo-tile-img { width:100%; height:100%; object-fit:cover; }
+.photo-tile-badge { position:absolute; top:6px; left:6px; font-size:10px; font-weight:600; background:var(--brand-primary); color:#fff; padding:2px 6px; border-radius:6px; }
+.photo-tile-actions { position:absolute; bottom:6px; right:6px; display:none; gap:4px; }
+.photo-tile:hover .photo-tile-actions { display:flex; }
+.photo-action-btn { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.9); border:none; cursor:pointer; color:var(--text-secondary); }
+.photo-action-btn.danger:hover { background:var(--danger-bg); color:var(--danger); }
+.photo-tile-drag { position:absolute; top:6px; right:6px; display:none; color:rgba(255,255,255,0.8); }
+.photo-tile:hover .photo-tile-drag { display:block; }
+.richtext-btn { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; border:none; background:none; cursor:pointer; color:var(--text-secondary); transition:all 0.12s; }
+.richtext-btn:hover { background:var(--bg-card); color:var(--text-primary); }
+.richtext-btn.active { background:var(--brand-primary-bg); color:var(--brand-primary); }
+.tag-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px 3px 10px; border-radius:20px; font-size:12px; font-weight:500; background:var(--bg-muted); color:var(--text-secondary); border:1px solid var(--border); }
+.tag-chip button { background:none; border:none; cursor:pointer; padding:0; color:var(--text-tertiary); line-height:1; }
+.tag-chip button:hover { color:var(--danger); }
+.upload-zone { border:2px dashed var(--border); border-radius:12px; cursor:pointer; transition:all 0.15s; }
+.upload-zone:hover { border-color:var(--brand-primary); background:var(--brand-primary-bg); }
+.form-input { width:100%; height:38px; padding:0 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--bg-card); color:var(--text-primary); transition:border-color 0.12s; }
+.form-input:focus { outline:none; border-color:var(--brand-primary); }
+.form-select { width:100%; height:38px; padding:0 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--bg-card); color:var(--text-primary); cursor:pointer; }
+.form-label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em; }
+.form-group { margin-bottom:20px; }
+.breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-tertiary); }
+.breadcrumb a { color:var(--text-secondary); text-decoration:none; }
+.breadcrumb a:hover { color:var(--brand-primary); }
+.breadcrumb-current { color:var(--text-primary); font-weight:500; }
+.editor-panel { display:none; }
+.editor-panel.active { display:block; animation:fadeIn 0.18s ease-out; }
+.toggle-switch { position:relative; width:36px; height:20px; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:var(--border); border-radius:20px; transition:0.2s; }
+.toggle-slider:before { position:absolute; content:''; height:14px; width:14px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.2s; }
+.toggle-switch input:checked + .toggle-slider { background:var(--brand-primary); }
+.toggle-switch input:checked + .toggle-slider:before { transform:translateX(16px); }
+.profit-row { padding:10px 12px; border-radius:8px; background:var(--success-bg); border:1px solid var(--success); }
+.variant-cell { padding:6px 8px; border:1px solid var(--border); text-align:center; font-size:12px; }
+.variant-cell input { width:70px; height:28px; text-align:center; border:1px solid var(--border); border-radius:6px; font-size:12px; background:var(--bg-card); color:var(--text-primary); }
+</style>
+</head>
+<body style="background:var(--bg-page)">
+
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <div class="px-3 pb-2">
+      <button class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1" style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a href="01-dashboard.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Dashboard</span>
+          </a>
+          <a href="04-listings.html" class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Listings</span>
+          </a>
+          <a href="05-orders.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1" style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a href="06-research.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Research</span>
+          </a>
+          <a href="07-pod-hub.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1" style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a href="08-analytics.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a href="09-settings.html" class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium" style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200 flex flex-col" id="mainArea">
+
+    <!-- Top header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="relative w-9 h-9 flex items-center justify-center rounded-lg" style="color:var(--text-secondary)">
+          <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- EDITOR CONTENT -->
+    <main class="flex-1 flex flex-col p-6">
+
+      <!-- Page header: breadcrumb + actions -->
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <div class="breadcrumb mb-1.5">
+            <a href="04-listings.html">Listings</a>
+            <span style="color:var(--text-tertiary)"><i data-lucide="chevron-right" class="w-3.5 h-3.5 inline-block align-middle"></i></span>
+            <span class="breadcrumb-current">Edit: Sunset Mountain Mug</span>
+          </div>
+          <h1 class="text-xl font-extrabold tracking-tight" style="letter-spacing:-0.3px">Listing Editor</h1>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <!-- Auto-save pill (C2) -->
+          <div id="autoSaveStatus" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style="background:var(--success-bg);color:var(--success)">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+            <span>All changes saved</span>
+          </div>
+          <button onclick="togglePreview()" id="previewToggleBtn" class="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+            <i data-lucide="eye" class="w-4 h-4"></i> Preview
+          </button>
+          <button class="btn-primary flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg">
+            <i data-lucide="send" class="w-4 h-4"></i> Publish
+          </button>
+        </div>
+      </div>
+
+      <!-- THREE-COLUMN EDITOR LAYOUT -->
+      <div class="flex gap-0 flex-1 rounded-xl overflow-hidden" style="border:1px solid var(--border);min-height:calc(100vh - 200px)">
+
+        <!-- Col 1: Vertical tabs (200px) -->
+        <div class="flex-shrink-0" style="width:200px;border-right:1px solid var(--border);background:var(--bg-card)">
+          <nav class="p-3 space-y-0.5">
+            <button class="editor-tab active" onclick="switchEditorTab(this,'basics')">
+              <i data-lucide="file-text" class="w-4 h-4 flex-shrink-0"></i><span>Basics</span>
+              <span class="change-dot" id="dot-basics" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'photos')">
+              <i data-lucide="image" class="w-4 h-4 flex-shrink-0"></i><span>Photos</span>
+              <span class="change-dot" id="dot-photos" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'pricing')">
+              <i data-lucide="dollar-sign" class="w-4 h-4 flex-shrink-0"></i><span>Pricing</span>
+              <span class="change-dot" id="dot-pricing" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'inventory')">
+              <i data-lucide="package" class="w-4 h-4 flex-shrink-0"></i><span>Inventory</span>
+              <span class="change-dot" id="dot-inventory" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'seo')">
+              <i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i><span>SEO &amp; Tags</span>
+              <span class="change-dot" id="dot-seo" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'shipping')">
+              <i data-lucide="truck" class="w-4 h-4 flex-shrink-0"></i><span>Shipping</span>
+              <span class="change-dot" id="dot-shipping" style="display:none"></span>
+            </button>
+            <button class="editor-tab" onclick="switchEditorTab(this,'variations')">
+              <i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i><span>Variations</span>
+              <span class="change-dot" id="dot-variations" style="display:none"></span>
+            </button>
+          </nav>
+          <div class="mx-3 mt-3 pt-3" style="border-top:1px solid var(--border)">
+            <div class="text-[10px] font-semibold uppercase tracking-wider px-2 mb-2" style="color:var(--text-tertiary)">Status</div>
+            <div class="px-2 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i> Draft
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 2: Tab panels (flex-1) -->
+        <div class="flex-1 overflow-y-auto" style="background:var(--bg-page)">
+          <div class="p-6">
+
+            <!-- BASICS -->
+            <div class="editor-panel active" id="panel-basics">
+              <h2 class="text-base font-bold mb-5">Basic Information</h2>
+              <div class="form-group">
+                <label class="form-label">Title <span style="color:var(--danger)">*</span></label>
+                <input type="text" id="listingTitle" value="Sunset Mountain Mug — Ceramic Coffee Cup, Nature Lover Gift" class="form-input"
+                       oninput="updateCharCount(this,'titleCount',140); markChanged('basics'); updatePreview()">
+                <div class="flex justify-between mt-1.5">
+                  <span id="titleError" class="text-xs" style="color:var(--danger);display:none">Title is required</span>
+                  <span></span>
+                  <span id="titleCount" class="text-xs font-mono" style="color:var(--text-tertiary)">58 / 140</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <div class="flex items-center gap-0.5 p-1.5 rounded-t-lg border border-b-0" style="border-color:var(--border);background:var(--bg-muted)">
+                  <button class="richtext-btn" onclick="this.classList.toggle('active')" title="Bold"><i data-lucide="bold" class="w-3.5 h-3.5"></i></button>
+                  <button class="richtext-btn" onclick="this.classList.toggle('active')" title="Italic"><i data-lucide="italic" class="w-3.5 h-3.5"></i></button>
+                  <button class="richtext-btn" onclick="this.classList.toggle('active')" title="Underline"><i data-lucide="underline" class="w-3.5 h-3.5"></i></button>
+                  <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
+                  <button class="richtext-btn" title="Bullet list"><i data-lucide="list" class="w-3.5 h-3.5"></i></button>
+                  <button class="richtext-btn" title="Numbered list"><i data-lucide="list-ordered" class="w-3.5 h-3.5"></i></button>
+                  <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
+                  <button class="richtext-btn" title="Heading"><i data-lucide="heading" class="w-3.5 h-3.5"></i></button>
+                  <button class="richtext-btn ml-auto flex items-center gap-1 px-2" style="width:auto;color:var(--brand-primary)" title="AI enhance">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span style="font-size:11px;font-weight:600">AI Enhance</span>
+                  </button>
+                </div>
+                <textarea rows="6" class="w-full px-3 py-2.5 rounded-b-lg border text-sm" style="border-color:var(--border);resize:vertical;background:var(--bg-card);color:var(--text-primary)" oninput="markChanged('basics')">Beautiful handcrafted ceramic mug featuring a stunning sunset mountain landscape. Perfect for morning coffee or evening tea. Microwave &amp; dishwasher safe.</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Category</label>
+                <select class="form-select" onchange="markChanged('basics')">
+                  <option>Home &amp; Living › Kitchen &amp; Dining › Drinkware › Mugs</option>
+                  <option>Home &amp; Living › Kitchen &amp; Dining › Drinkware › Travel Mugs</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Listing Type</label>
+                <div class="flex gap-4">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" name="listingType" checked style="accent-color:var(--brand-primary)"> Physical item
+                  </label>
+                  <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="radio" name="listingType" style="accent-color:var(--brand-primary)"> Digital download
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- PHOTOS (C6) -->
+            <div class="editor-panel" id="panel-photos">
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-base font-bold">Photos</h2>
+                <span class="text-xs" style="color:var(--text-secondary)">4 / 10 photos</span>
+              </div>
+              <p class="text-xs mb-4" style="color:var(--text-secondary)">Drag to reorder. First image is the primary listing photo.</p>
+              <div class="grid grid-cols-4 gap-3" id="photoGrid">
+                <div class="photo-tile" draggable="true" ondragstart="dragStart(event,this)" ondragover="dragOver(event,this)" ondrop="drop(event,this)" ondragleave="dragLeave(this)">
+                  <div class="photo-tile-badge">Primary</div>
+                  <div class="photo-tile-img" style="background:linear-gradient(135deg,#FB923C,#EA580C)"></div>
+                  <div class="photo-tile-actions">
+                    <button class="photo-action-btn" title="Replace"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                    <button class="photo-action-btn danger" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                  <div class="photo-tile-drag"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div>
+                </div>
+                <div class="photo-tile" draggable="true" ondragstart="dragStart(event,this)" ondragover="dragOver(event,this)" ondrop="drop(event,this)" ondragleave="dragLeave(this)">
+                  <div class="photo-tile-img" style="background:linear-gradient(135deg,#60A5FA,#2563EB)"></div>
+                  <div class="photo-tile-actions">
+                    <button class="photo-action-btn" title="Replace"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                    <button class="photo-action-btn danger" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                  <div class="photo-tile-drag"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div>
+                </div>
+                <div class="photo-tile" draggable="true" ondragstart="dragStart(event,this)" ondragover="dragOver(event,this)" ondrop="drop(event,this)" ondragleave="dragLeave(this)">
+                  <div class="photo-tile-img" style="background:linear-gradient(135deg,#4ADE80,#16A34A)"></div>
+                  <div class="photo-tile-actions">
+                    <button class="photo-action-btn" title="Replace"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                    <button class="photo-action-btn danger" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                  <div class="photo-tile-drag"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div>
+                </div>
+                <div class="photo-tile" draggable="true" ondragstart="dragStart(event,this)" ondragover="dragOver(event,this)" ondrop="drop(event,this)" ondragleave="dragLeave(this)">
+                  <div class="photo-tile-img" style="background:linear-gradient(135deg,#C084FC,#9333EA)"></div>
+                  <div class="photo-tile-actions">
+                    <button class="photo-action-btn" title="Replace"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+                    <button class="photo-action-btn danger" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                  </div>
+                  <div class="photo-tile-drag"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div>
+                </div>
+                <div class="upload-zone flex flex-col items-center justify-center" style="aspect-ratio:1;min-height:100px">
+                  <i data-lucide="plus" class="w-6 h-6 mb-1" style="color:var(--text-tertiary)"></i>
+                  <span class="text-xs" style="color:var(--text-tertiary)">Add photo</span>
+                </div>
+              </div>
+              <p class="mt-3 text-xs" style="color:var(--text-tertiary)">Supported: JPG, PNG, WEBP · Max 20MB</p>
+            </div>
+
+            <!-- PRICING -->
+            <div class="editor-panel" id="panel-pricing">
+              <h2 class="text-base font-bold mb-5">Pricing</h2>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="form-group mb-0">
+                  <label class="form-label">Price <span style="color:var(--danger)">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style="color:var(--text-secondary)">$</span>
+                    <input type="number" id="priceInput" value="24.99" min="0" step="0.01" class="form-input pl-7" oninput="calcProfit(); markChanged('pricing'); updatePreview()">
+                  </div>
+                </div>
+                <div class="form-group mb-0">
+                  <label class="form-label">Compare-at Price</label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style="color:var(--text-secondary)">$</span>
+                    <input type="number" value="34.99" min="0" step="0.01" class="form-input pl-7" oninput="markChanged('pricing')">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cost per Item</label>
+                <div class="relative" style="max-width:200px">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style="color:var(--text-secondary)">$</span>
+                  <input type="number" id="costInput" value="8.50" min="0" step="0.01" class="form-input pl-7" oninput="calcProfit(); markChanged('pricing')">
+                </div>
+                <p class="text-xs mt-1" style="color:var(--text-tertiary)">Visible only to you</p>
+              </div>
+              <div class="profit-row">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold" style="color:var(--success)">Estimated Profit</span>
+                  <div class="text-right">
+                    <div class="text-lg font-bold font-mono" id="profitDisplay" style="color:var(--success)">$16.49</div>
+                    <div class="text-xs mt-0.5" id="marginDisplay" style="color:var(--success)">66% margin</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- INVENTORY -->
+            <div class="editor-panel" id="panel-inventory">
+              <h2 class="text-base font-bold mb-5">Inventory</h2>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="form-group mb-0">
+                  <label class="form-label">SKU</label>
+                  <input type="text" value="SMM-CER-001" class="form-input font-mono text-sm" oninput="markChanged('inventory')">
+                </div>
+                <div class="form-group mb-0">
+                  <label class="form-label">Quantity</label>
+                  <input type="number" value="50" min="0" class="form-input" oninput="markChanged('inventory')">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Low Stock Threshold</label>
+                <input type="number" value="10" min="0" class="form-input" style="max-width:200px" oninput="markChanged('inventory')">
+                <p class="text-xs mt-1" style="color:var(--text-tertiary)">Alert when quantity falls below this number</p>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-lg mb-3" style="border:1px solid var(--border);background:var(--bg-card)">
+                <div>
+                  <div class="text-sm font-semibold">Track inventory</div>
+                  <div class="text-xs mt-0.5" style="color:var(--text-secondary)">Auto-update stock when orders placed</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" checked onchange="markChanged('inventory')"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="flex items-center justify-between p-4 rounded-lg" style="border:1px solid var(--border);background:var(--bg-card)">
+                <div>
+                  <div class="text-sm font-semibold">Allow backorders</div>
+                  <div class="text-xs mt-0.5" style="color:var(--text-secondary)">Accept orders when out of stock</div>
+                </div>
+                <label class="toggle-switch"><input type="checkbox" onchange="markChanged('inventory')"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+
+            <!-- SEO & TAGS -->
+            <div class="editor-panel" id="panel-seo">
+              <div class="flex items-center gap-2 mb-5">
+                <h2 class="text-base font-bold">SEO &amp; Tags</h2>
+                <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+                  <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                  <div class="help-tooltip">Add up to 13 tags. Use specific, long-tail keywords for better discoverability.</div>
+                </button>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tags</label>
+                <div class="flex flex-wrap gap-1.5 p-2 rounded-lg border min-h-[44px]" id="tagsContainer"
+                     style="border-color:var(--border);background:var(--bg-card)" onclick="document.getElementById('tagInput').focus()">
+                  <span class="tag-chip">mountain mug<button onclick="removeTag(this)" type="button">×</button></span>
+                  <span class="tag-chip">ceramic cup<button onclick="removeTag(this)" type="button">×</button></span>
+                  <span class="tag-chip">nature gift<button onclick="removeTag(this)" type="button">×</button></span>
+                  <span class="tag-chip">sunset art<button onclick="removeTag(this)" type="button">×</button></span>
+                  <span class="tag-chip">coffee lover<button onclick="removeTag(this)" type="button">×</button></span>
+                  <input type="text" id="tagInput" placeholder="Add tag..." class="text-xs border-none outline-none bg-transparent flex-1 min-w-[100px]" style="color:var(--text-primary)" onkeydown="handleTagInput(event)">
+                </div>
+                <p class="text-xs mt-1" style="color:var(--text-tertiary)">Press Enter or comma to add. Up to 13 tags.</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Meta Title</label>
+                <input type="text" id="metaTitle" value="Sunset Mountain Mug — Handmade Ceramic Coffee Cup | Nature Gift" class="form-input"
+                       oninput="updateCharCount(this,'metaTitleCount',60); markChanged('seo')">
+                <div class="flex justify-between mt-1.5">
+                  <span class="text-xs" style="color:var(--text-tertiary)">Used by search engines</span>
+                  <span id="metaTitleCount" class="text-xs font-mono" style="color:var(--text-tertiary)">60 / 60</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Meta Description</label>
+                <textarea rows="3" id="metaDesc" class="w-full px-3 py-2.5 rounded-lg border text-sm" style="border-color:var(--border);resize:vertical;background:var(--bg-card);color:var(--text-primary)"
+                          oninput="updateCharCount(this,'metaDescCount',160); markChanged('seo')">Handcrafted ceramic mug with a beautiful sunset mountain print. 11oz, microwave and dishwasher safe. Perfect gift for nature lovers.</textarea>
+                <div class="flex justify-between mt-1.5">
+                  <span class="text-xs" style="color:var(--text-tertiary)">Used by search engines</span>
+                  <span id="metaDescCount" class="text-xs font-mono" style="color:var(--text-tertiary)">131 / 160</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SHIPPING -->
+            <div class="editor-panel" id="panel-shipping">
+              <h2 class="text-base font-bold mb-5">Shipping</h2>
+              <div class="form-group">
+                <label class="form-label">Weight</label>
+                <div class="flex gap-2 items-center">
+                  <input type="number" value="0.45" min="0" step="0.01" class="form-input" style="max-width:140px" oninput="markChanged('shipping')">
+                  <select class="form-select" style="max-width:100px"><option>kg</option><option>lb</option><option>oz</option></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dimensions (cm)</label>
+                <div class="flex gap-2 items-center">
+                  <div class="relative"><input type="number" value="12" class="form-input text-center" style="width:80px" oninput="markChanged('shipping')"><span class="absolute -bottom-4 left-0 right-0 text-center text-[10px]" style="color:var(--text-tertiary)">L</span></div>
+                  <span style="color:var(--text-tertiary)">×</span>
+                  <div class="relative"><input type="number" value="12" class="form-input text-center" style="width:80px" oninput="markChanged('shipping')"><span class="absolute -bottom-4 left-0 right-0 text-center text-[10px]" style="color:var(--text-tertiary)">W</span></div>
+                  <span style="color:var(--text-tertiary)">×</span>
+                  <div class="relative"><input type="number" value="10" class="form-input text-center" style="width:80px" oninput="markChanged('shipping')"><span class="absolute -bottom-4 left-0 right-0 text-center text-[10px]" style="color:var(--text-tertiary)">H</span></div>
+                </div>
+              </div>
+              <div class="form-group mt-6">
+                <label class="form-label">Shipping Profile</label>
+                <select class="form-select" onchange="markChanged('shipping')">
+                  <option>Standard Shipping — Free domestic, $8 international</option>
+                  <option>Express Shipping — $5 domestic, $15 international</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Processing Time</label>
+                <select class="form-select" style="max-width:260px" onchange="markChanged('shipping')">
+                  <option>1-2 business days</option><option>3-5 business days</option><option>1-2 weeks</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- VARIATIONS -->
+            <div class="editor-panel" id="panel-variations">
+              <div class="flex items-center justify-between mb-5">
+                <h2 class="text-base font-bold">Variations</h2>
+                <button class="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add attribute
+                </button>
+              </div>
+              <div class="flex gap-4 mb-5">
+                <div class="flex-1">
+                  <label class="form-label">Size</label>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span class="tag-chip">11oz</span><span class="tag-chip">15oz</span><span class="tag-chip">20oz</span>
+                    <button class="text-xs px-2 py-1 rounded-lg border border-dashed" style="border-color:var(--border);color:var(--text-tertiary)">+ Add</button>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <label class="form-label">Color</label>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span class="tag-chip">White</span><span class="tag-chip">Black</span>
+                    <button class="text-xs px-2 py-1 rounded-lg border border-dashed" style="border-color:var(--border);color:var(--text-tertiary)">+ Add</button>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-lg overflow-hidden" style="border:1px solid var(--border)">
+                <table class="w-full text-sm">
+                  <thead><tr style="background:var(--bg-muted)">
+                    <th class="variant-cell text-left text-xs font-semibold py-2.5 px-3" style="color:var(--text-secondary)">Size</th>
+                    <th class="variant-cell text-left text-xs font-semibold py-2.5 px-3" style="color:var(--text-secondary)">Color</th>
+                    <th class="variant-cell text-xs font-semibold py-2.5" style="color:var(--text-secondary)">Price</th>
+                    <th class="variant-cell text-xs font-semibold py-2.5" style="color:var(--text-secondary)">Stock</th>
+                    <th class="variant-cell text-xs font-semibold py-2.5" style="color:var(--text-secondary)">SKU</th>
+                    <th class="variant-cell text-xs font-semibold py-2.5" style="color:var(--text-secondary)">On</th>
+                  </tr></thead>
+                  <tbody id="variantRows">
+                    <!-- Rows generated by JS to reduce HTML repetition -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Col 3: Preview panel (C4) — 350px, hidden by default -->
+        <div id="previewPanel" class="flex-shrink-0 overflow-y-auto" style="width:350px;border-left:1px solid var(--border);background:var(--bg-card);display:none">
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-secondary)">Marketplace Preview</span>
+              <div class="flex items-center gap-2">
+                <select id="previewPlatform" class="text-xs border rounded-md px-2 py-1" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+                  <option value="etsy">Etsy</option><option value="shopify">Shopify</option>
+                </select>
+                <button onclick="togglePreview()" style="color:var(--text-tertiary)"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+            <div class="rounded-xl overflow-hidden" style="border:1px solid var(--border)">
+              <div style="aspect-ratio:4/3;background:linear-gradient(135deg,#FB923C,#EA580C)" class="flex items-center justify-center">
+                <span class="text-xs text-white opacity-60">Primary photo</span>
+              </div>
+              <div class="p-3" style="background:var(--bg-card)">
+                <div class="text-sm font-semibold mb-1 leading-snug" id="previewTitle" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+                  Sunset Mountain Mug — Ceramic Coffee Cup, Nature Lover Gift
+                </div>
+                <div class="flex items-baseline gap-2 mt-2">
+                  <span class="text-lg font-bold font-mono" id="previewPrice">$24.99</span>
+                  <span class="text-sm line-through" style="color:var(--text-tertiary)">$34.99</span>
+                </div>
+                <div class="text-xs mt-1.5 flex items-center gap-1" style="color:var(--text-tertiary)">
+                  <i data-lucide="star" class="w-3 h-3" style="color:#FBBF24;fill:#FBBF24"></i>
+                  4.8 (142 reviews) · Free shipping
+                </div>
+                <div class="mt-2 pt-2 flex items-center gap-1.5" style="border-top:1px solid var(--border-light)">
+                  <div class="w-5 h-5 rounded-full" style="background:var(--brand-primary-bg)"></div>
+                  <span class="text-xs" style="color:var(--text-tertiary)">MountainCraftsShop</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 rounded-lg p-3" style="border:1px solid var(--border);background:var(--bg-page)">
+              <div class="text-xs font-semibold mb-2" style="color:var(--text-secondary)">Search snippet preview</div>
+              <div class="text-xs font-medium mb-0.5" style="color:#1a0dab">Sunset Mountain Mug — Handmade Ceramic...</div>
+              <div class="text-xs mb-0.5" style="color:#006621">etsy.com › listing › sunset-mountain-mug</div>
+              <div class="text-xs leading-relaxed" style="color:var(--text-secondary)">Handcrafted ceramic mug with a beautiful sunset mountain print. 11oz capacity, microwave...</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end three-column -->
+    </main>
+  </div><!-- end main area -->
+</div>
+
+<script src="_shared-navigation.js"></script>
+<script>
+/* Auto-save (C2) */
+var saveTimer = null;
+function markChanged(tabName) {
+  var dot = document.getElementById('dot-' + tabName);
+  if (dot) dot.style.display = '';
+  var status = document.getElementById('autoSaveStatus');
+  status.style.background = 'var(--brand-secondary-bg)';
+  status.style.color = 'var(--brand-secondary)';
+  status.querySelector('span').textContent = 'Unsaved changes';
+  var icon = status.querySelector('i');
+  if (icon) { icon.setAttribute('data-lucide','loader'); if (window.lucide) lucide.createIcons(); }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function() {
+    status.style.background = 'var(--success-bg)';
+    status.style.color = 'var(--success)';
+    status.querySelector('span').textContent = 'All changes saved';
+    var icon2 = status.querySelector('i');
+    if (icon2) { icon2.setAttribute('data-lucide','check-circle'); if (window.lucide) lucide.createIcons(); }
+  }, 1500);
+}
+
+/* Char count (C5) */
+function updateCharCount(input, countId, max) {
+  var count = input.value.length;
+  var el = document.getElementById(countId);
+  if (!el) return;
+  el.textContent = count + ' / ' + max;
+  el.style.color = count > max ? 'var(--danger)' : 'var(--text-tertiary)';
+  input.style.borderColor = count > max ? 'var(--danger)' : 'var(--border)';
+}
+
+/* Vertical tab switching */
+function switchEditorTab(btn, tabName) {
+  document.querySelectorAll('.editor-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.editor-panel').forEach(function(p) { p.classList.remove('active'); });
+  btn.classList.add('active');
+  var panel = document.getElementById('panel-' + tabName);
+  if (panel) panel.classList.add('active');
+}
+
+/* Profit calc */
+function calcProfit() {
+  var price = parseFloat(document.getElementById('priceInput').value) || 0;
+  var cost = parseFloat(document.getElementById('costInput').value) || 0;
+  var profit = price - cost;
+  var margin = price > 0 ? Math.round((profit / price) * 100) : 0;
+  var profitEl = document.getElementById('profitDisplay');
+  var marginEl = document.getElementById('marginDisplay');
+  if (profitEl) profitEl.textContent = '$' + profit.toFixed(2);
+  if (marginEl) marginEl.textContent = margin + '% margin';
+}
+
+/* Preview toggle (C4) */
+function togglePreview() {
+  var panel = document.getElementById('previewPanel');
+  var btn = document.getElementById('previewToggleBtn');
+  if (!panel) return;
+  var isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? '' : 'none';
+  if (btn) { btn.style.background = isHidden ? 'var(--brand-primary-bg)' : ''; btn.style.color = isHidden ? 'var(--brand-primary)' : ''; }
+  updatePreview();
+}
+
+function updatePreview() {
+  var titleEl = document.getElementById('previewTitle');
+  var priceEl = document.getElementById('previewPrice');
+  var titleInput = document.getElementById('listingTitle');
+  var priceInput = document.getElementById('priceInput');
+  if (titleEl && titleInput) titleEl.textContent = titleInput.value || 'Listing title...';
+  if (priceEl && priceInput) priceEl.textContent = '$' + (parseFloat(priceInput.value) || 0).toFixed(2);
+}
+
+/* Tag chip management (SEO tab) */
+function handleTagInput(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    var input = document.getElementById('tagInput');
+    var val = input.value.replace(',','').trim();
+    if (!val) return;
+    var chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.innerHTML = val + '<button onclick="removeTag(this)" type="button">×</button>';
+    document.getElementById('tagsContainer').insertBefore(chip, input);
+    input.value = '';
+    markChanged('seo');
+  }
+}
+function removeTag(btn) { btn.closest('.tag-chip').remove(); markChanged('seo'); }
+
+/* Photo drag-to-reorder (C6) */
+var dragSrc = null;
+function dragStart(e, el) { dragSrc = el; el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function dragOver(e, el) { e.preventDefault(); if (el !== dragSrc) el.classList.add('drag-over'); }
+function dragLeave(el) { el.classList.remove('drag-over'); }
+function drop(e, el) {
+  e.preventDefault(); el.classList.remove('drag-over');
+  if (!dragSrc || dragSrc === el) return;
+  var grid = document.getElementById('photoGrid');
+  var tiles = Array.from(grid.querySelectorAll('.photo-tile'));
+  var srcIdx = tiles.indexOf(dragSrc), tgtIdx = tiles.indexOf(el);
+  grid.insertBefore(dragSrc, srcIdx < tgtIdx ? el.nextSibling : el);
+  dragSrc.classList.remove('dragging');
+  grid.querySelectorAll('.photo-tile-badge').forEach(function(b) { b.remove(); });
+  var first = grid.querySelector('.photo-tile');
+  if (first) { var badge = document.createElement('div'); badge.className = 'photo-tile-badge'; badge.textContent = 'Primary'; first.insertBefore(badge, first.firstChild); }
+  dragSrc = null;
+  markChanged('photos');
+}
+document.addEventListener('dragend', function() {
+  document.querySelectorAll('.photo-tile').forEach(function(t) { t.classList.remove('dragging','drag-over'); });
+});
+
+/* Variant matrix rows — generated to reduce HTML */
+(function buildVariants() {
+  var variants = [
+    {size:'11oz',color:'White',price:'$24.99',stock:25,sku:'SMM-11-W',on:true},
+    {size:'11oz',color:'Black',price:'$24.99',stock:25,sku:'SMM-11-B',on:true},
+    {size:'15oz',color:'White',price:'$27.99',stock:20,sku:'SMM-15-W',on:true},
+    {size:'15oz',color:'Black',price:'$27.99',stock:20,sku:'SMM-15-B',on:true},
+    {size:'20oz',color:'White',price:'$32.99',stock:15,sku:'SMM-20-W',on:true},
+    {size:'20oz',color:'Black',price:'$32.99',stock:15,sku:'SMM-20-B',on:false},
+  ];
+  var tbody = document.getElementById('variantRows');
+  if (!tbody) return;
+  variants.forEach(function(v, i) {
+    var bg = i % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-page)';
+    tbody.innerHTML += '<tr style="background:'+bg+'"><td class="variant-cell px-3 py-2 font-medium text-xs">'+v.size+'</td><td class="variant-cell px-3 py-2 text-xs">'+v.color+'</td><td class="variant-cell py-2"><input type="text" value="'+v.price+'" class="variant-cell input" oninput="markChanged(\'variations\')"></td><td class="variant-cell py-2"><input type="number" value="'+v.stock+'" class="variant-cell input" oninput="markChanged(\'variations\')"></td><td class="variant-cell py-2"><input type="text" value="'+v.sku+'" class="variant-cell input font-mono" style="width:90px" oninput="markChanged(\'variations\')"></td><td class="variant-cell py-2 text-center"><input type="checkbox"'+(v.on?' checked':'')+' style="accent-color:var(--brand-primary)"></td></tr>';
+  });
+})();
+
+/* Init */
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.lucide) lucide.createIcons();
+  calcProfit();
+});
+</script>
+</body>
+</html>

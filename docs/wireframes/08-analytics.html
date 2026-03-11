@@ -152,6 +152,16 @@
     <!-- Page Content -->
     <main class="p-7">
 
+      <!-- Empty state — hidden when data available -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="bar-chart-3" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">Need 7 days of data</div>
+        <div class="empty-state-desc">Analytics require at least one week of sales data to generate meaningful trends.</div>
+        <button class="btn-primary px-4 py-2 text-xs font-semibold" onclick="navigate('dashboard')">View Dashboard</button>
+      </div>
+
       <!-- Title + Time Range -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
@@ -257,7 +267,12 @@
           <div class="text-[10px] mt-1" style="color:var(--text-tertiary)">$13.60 last period</div>
         </div>
         <div class="card-static rounded-xl p-4" style="border:1px solid var(--border)">
-          <span class="text-xs font-medium" style="color:var(--text-secondary)">Conversion Rate</span>
+          <span class="text-xs font-medium inline-flex items-center gap-1" style="color:var(--text-secondary)">Conversion Rate
+            <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+              <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+              <div class="help-tooltip">Percentage of visitors who made a purchase in the selected period.</div>
+            </button>
+          </span>
           <div class="flex items-end gap-2 mt-1">
             <span class="text-xl font-bold font-mono" style="color:var(--text-primary)">5.0%</span>
             <span class="text-[11px] font-medium" style="color:var(--danger)">↓ 0.3%</span>

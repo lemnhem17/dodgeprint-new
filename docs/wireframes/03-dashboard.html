@@ -39,8 +39,23 @@ tailwind.config = {
   }
 }
 </script>
+<style>
+/* ===== Calendar Component Styles ===== */
+.cal-view-btn { padding: 4px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 500; cursor: pointer; background: transparent; color: var(--text-secondary); transition: all 0.12s; }
+.cal-view-btn.active { background: var(--bg-card); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.cal-header { padding: 8px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text-tertiary); background: var(--bg-muted); border-bottom: 1px solid var(--border); }
+.cal-day { min-height: 80px; padding: 6px 8px; font-size: 12px; font-weight: 600; border: 0.5px solid var(--border-light); color: var(--text-primary); cursor: pointer; transition: background 0.1s; }
+.cal-day:hover { background: var(--bg-muted); }
+.cal-day.dim { color: var(--text-tertiary); }
+.cal-day.today { background: var(--brand-primary-bg); font-weight: 700; }
+.cal-event { font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 4px; margin-top: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-event.sage { background: var(--success-bg); color: var(--success); }
+.cal-event.gold { background: var(--brand-secondary-bg); color: var(--brand-secondary); }
+.cal-event.coral { background: var(--danger-bg); color: var(--danger); }
+.cal-event.purple { background: var(--purple-bg); color: var(--purple); }
+</style>
 </head>
-<body>
+<body data-page="dashboard">
 
 <!-- Toast container -->
 <div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
@@ -158,6 +173,7 @@ tailwind.config = {
   <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
 
     <!-- Header -->
+
     <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
       <div class="flex items-center gap-4">
         <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
@@ -167,6 +183,10 @@ tailwind.config = {
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <button onclick="startTour()" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5" title="Start onboarding tour">
+          <i data-lucide="map" class="w-3.5 h-3.5"></i>
+          <span class="hidden md:inline">Tour</span>
+        </button>
         <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
           <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
           <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
@@ -177,6 +197,52 @@ tailwind.config = {
 
     <!-- ===== DASHBOARD CONTENT ===== -->
     <main class="p-6">
+
+      <!-- Setup progress checklist — shown for new accounts -->
+      <div id="setupChecklist" class="card-static rounded-xl p-5 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="rocket" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+            <h3 class="text-sm font-bold">Get Started</h3>
+          </div>
+          <button class="text-xs" style="color:var(--text-tertiary)" onclick="dismissChecklist()">Dismiss</button>
+        </div>
+        <!-- Progress bar -->
+        <div class="h-1.5 rounded-full mb-4" style="background:var(--bg-muted)">
+          <div class="h-full rounded-full" style="width:25%;background:var(--brand-primary)"></div>
+        </div>
+        <div class="space-y-2.5">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+              style="border-color:var(--brand-primary);background:var(--brand-primary)">
+              <i data-lucide="check" class="w-3 h-3 text-white"></i>
+            </div>
+            <span class="text-xs font-medium line-through" style="color:var(--text-tertiary)">Create your account</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <div class="w-5 h-5 rounded-full border-2" style="border-color:var(--border)"></div>
+            <span class="text-xs font-medium">Connect your first shop</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <div class="w-5 h-5 rounded-full border-2" style="border-color:var(--border)"></div>
+            <span class="text-xs font-medium">Import or create a listing</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer">
+            <div class="w-5 h-5 rounded-full border-2" style="border-color:var(--border)"></div>
+            <span class="text-xs font-medium">Run your first AI optimization</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Empty state — hidden when shops connected -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="layout-dashboard" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">Connect your first shop</div>
+        <div class="empty-state-desc">Import your listings and start tracking performance across all channels.</div>
+        <button class="btn-primary px-4 py-2 text-xs font-semibold" onclick="navigate('settings')">Connect Shop</button>
+      </div>
 
       <!-- Page Title + Sync Pulse -->
       <div class="flex items-start justify-between mb-5">
@@ -191,7 +257,7 @@ tailwind.config = {
       </div>
 
       <!-- KPI Row — 4 cards with sparklines + trend arrows -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div id="kpiRow" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <!-- Revenue -->
         <div class="kpi-card card-static rounded-xl p-4">
           <div class="flex items-center justify-between mb-1">
@@ -252,21 +318,101 @@ tailwind.config = {
             </div>
           </div>
         </div>
-        <!-- Sync Status -->
+        <!-- Active Shops -->
         <div class="kpi-card card-static rounded-xl p-4">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-medium" style="color:var(--text-secondary)">Sync Status</span>
-            <i data-lucide="refresh-cw" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            <span class="text-xs font-medium" style="color:var(--text-secondary)">Active Shops</span>
+            <i data-lucide="store" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
           </div>
           <div class="flex items-end gap-3">
-            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">3/4</span>
-            <span class="text-xs font-medium mb-1" style="color:var(--brand-secondary)">1 pending</span>
+            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">130/130</span>
+            <span class="text-xs font-medium mb-1" style="color:var(--success)">All synced</span>
           </div>
           <div class="flex items-center justify-between mt-2">
-            <span class="text-[11px]" style="color:var(--text-tertiary)">shops connected</span>
+            <span class="text-[11px]" style="color:var(--text-tertiary)">across 5 platforms</span>
             <button onclick="showToast('Syncing all shops...','success')" class="text-[11px] font-medium cursor-pointer" style="color:var(--brand-primary)">Sync All</button>
           </div>
         </div>
+      </div>
+
+      <!-- ===== Level 2: Platform Summary Cards ===== -->
+      <div class="grid grid-cols-5 gap-4 mb-6">
+
+        <!-- Etsy -->
+        <div class="card-static rounded-2xl p-4 cursor-pointer hover:border-blue-400 transition-colors"
+             style="border:1px solid var(--border)"
+             onclick="showToast('Etsy: 100 shops — $85,200 revenue','info')">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#F1641E">E</div>
+            <span class="font-semibold" style="font-size:13px;color:var(--text-primary)">Etsy</span>
+          </div>
+          <div class="font-bold" style="font-size:16px;color:var(--text-primary)">$85,200</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-secondary)">1,240 orders</div>
+          <div class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[11px] font-medium"
+               style="background:var(--bg-muted);color:var(--text-secondary)">100 shops</div>
+        </div>
+
+        <!-- Shopify -->
+        <div class="card-static rounded-2xl p-4 cursor-pointer hover:border-blue-400 transition-colors"
+             style="border:1px solid var(--border)"
+             onclick="showToast('Shopify: 0 shops — $12,450 revenue','info')">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#96BF48">S</div>
+            <span class="font-semibold" style="font-size:13px;color:var(--text-primary)">Shopify</span>
+          </div>
+          <div class="font-bold" style="font-size:16px;color:var(--text-primary)">$12,450</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-secondary)">180 orders</div>
+          <div class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[11px] font-medium"
+               style="background:var(--bg-muted);color:var(--text-secondary)">0 shops</div>
+        </div>
+
+        <!-- Amazon -->
+        <div class="card-static rounded-2xl p-4 cursor-pointer hover:border-blue-400 transition-colors"
+             style="border:1px solid var(--border)"
+             onclick="showToast('Amazon: 10 shops — $34,100 revenue','info')">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#FF9900">A</div>
+            <span class="font-semibold" style="font-size:13px;color:var(--text-primary)">Amazon</span>
+          </div>
+          <div class="font-bold" style="font-size:16px;color:var(--text-primary)">$34,100</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-secondary)">420 orders</div>
+          <div class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[11px] font-medium"
+               style="background:var(--bg-muted);color:var(--text-secondary)">10 shops</div>
+        </div>
+
+        <!-- TikTok Shop -->
+        <div class="card-static rounded-2xl p-4 cursor-pointer hover:border-blue-400 transition-colors"
+             style="border:1px solid var(--border)"
+             onclick="showToast('TikTok: 10 shops — $5,800 revenue','info')">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#1C1C1C">T</div>
+            <span class="font-semibold" style="font-size:13px;color:var(--text-primary)">TikTok</span>
+          </div>
+          <div class="font-bold" style="font-size:16px;color:var(--text-primary)">$5,800</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-secondary)">95 orders</div>
+          <div class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[11px] font-medium"
+               style="background:var(--bg-muted);color:var(--text-secondary)">10 shops</div>
+        </div>
+
+        <!-- eBay -->
+        <div class="card-static rounded-2xl p-4 cursor-pointer hover:border-blue-400 transition-colors"
+             style="border:1px solid var(--border)"
+             onclick="showToast('eBay: 10 shops — $1,565 revenue','info')">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
+                 style="background:#0064D2">eB</div>
+            <span class="font-semibold" style="font-size:13px;color:var(--text-primary)">eBay</span>
+          </div>
+          <div class="font-bold" style="font-size:16px;color:var(--text-primary)">$1,565</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-secondary)">25 orders</div>
+          <div class="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-[11px] font-medium"
+               style="background:var(--bg-muted);color:var(--text-secondary)">10 shops</div>
+        </div>
+
       </div>
 
       <!-- Quick Actions + AI Insight Row -->
@@ -310,55 +456,107 @@ tailwind.config = {
 
         <!-- Top Products (2/3) -->
         <div class="lg:col-span-2 card-static rounded-xl p-5" style="border:1px solid var(--border)">
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold" style="color:var(--text-primary)">Top Products</h3>
-            <button onclick="navigate('analytics')" class="text-xs font-medium cursor-pointer" style="color:var(--brand-primary)">View all →</button>
+            <div class="flex items-center gap-3">
+              <!-- Time filter -->
+              <div class="flex items-center gap-0.5 p-0.5 rounded-lg" style="background:var(--bg-muted)">
+                <button id="tpf-7d" onclick="switchTopProductsFilter('7d')" class="px-2.5 py-1 text-[10px] font-medium rounded-md transition-colors" style="background:var(--brand-primary);color:#fff">7d</button>
+                <button id="tpf-30d" onclick="switchTopProductsFilter('30d')" class="px-2.5 py-1 text-[10px] font-medium rounded-md transition-colors" style="color:var(--text-secondary)">30d</button>
+                <button id="tpf-all" onclick="switchTopProductsFilter('all')" class="px-2.5 py-1 text-[10px] font-medium rounded-md transition-colors" style="color:var(--text-secondary)">All time</button>
+              </div>
+              <button onclick="navigate('listings')" class="text-xs font-medium cursor-pointer" style="color:var(--brand-primary)">View all →</button>
+            </div>
           </div>
           <table class="w-full text-left">
             <thead>
-              <tr class="text-[11px] font-medium" style="color:var(--text-tertiary)">
-                <th class="pb-2 font-medium">#</th>
-                <th class="pb-2 font-medium">Product</th>
-                <th class="pb-2 font-medium">Platform</th>
-                <th class="pb-2 font-medium text-right">Revenue</th>
-                <th class="pb-2 font-medium text-right">Sales</th>
+              <tr class="text-[10px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">
+                <th class="pb-2.5 font-semibold w-6">#</th>
+                <th class="pb-2.5 font-semibold">Product</th>
+                <th class="pb-2.5 font-semibold">Shop</th>
+                <th class="pb-2.5 font-semibold">Platform</th>
+                <th class="pb-2.5 font-semibold text-right">Revenue</th>
+                <th class="pb-2.5 font-semibold text-right">Sales</th>
+                <th class="pb-2.5 font-semibold text-right">Views</th>
               </tr>
             </thead>
             <tbody class="text-xs">
+              <!-- Rank 1 -->
               <tr style="border-bottom:1px solid var(--border-light)">
-                <td class="py-2.5 font-mono" style="color:var(--text-tertiary)">1</td>
-                <td class="py-2.5 font-medium">Scrunchie Set (5-pack)</td>
+                <td class="py-2.5 font-mono font-bold" style="color:var(--brand-secondary)">1</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md flex-shrink-0" style="background:var(--bg-muted);border:1px solid var(--border)">
+                      <div class="w-full h-full rounded-md" style="background:linear-gradient(135deg,#f97316 0%,#fb923c 100%)"></div>
+                    </div>
+                    <span class="font-medium truncate max-w-[140px]">Scrunchie Set (5-pack)</span>
+                  </div>
+                </td>
+                <td class="py-2.5 text-[11px]" style="color:var(--text-secondary)">CozyPrints</td>
                 <td class="py-2.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="py-2.5 text-right font-mono font-semibold">$1,240</td>
                 <td class="py-2.5 text-right font-mono" style="color:var(--text-secondary)">47</td>
+                <td class="py-2.5 text-right font-mono text-[11px]" style="color:var(--text-tertiary)">3.2K</td>
               </tr>
+              <!-- Rank 2 -->
               <tr style="border-bottom:1px solid var(--border-light)">
-                <td class="py-2.5 font-mono" style="color:var(--text-tertiary)">2</td>
-                <td class="py-2.5 font-medium">Vintage Tote Bag</td>
+                <td class="py-2.5 font-mono font-bold" style="color:var(--text-secondary)">2</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md flex-shrink-0" style="background:linear-gradient(135deg,#96BF48 0%,#a8d558 100%);border:1px solid var(--border)"></div>
+                    <span class="font-medium truncate max-w-[140px]">Vintage Tote Bag</span>
+                  </div>
+                </td>
+                <td class="py-2.5 text-[11px]" style="color:var(--text-secondary)">Main Store</td>
                 <td class="py-2.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
                 <td class="py-2.5 text-right font-mono font-semibold">$890</td>
                 <td class="py-2.5 text-right font-mono" style="color:var(--text-secondary)">23</td>
+                <td class="py-2.5 text-right font-mono text-[11px]" style="color:var(--text-tertiary)">1.8K</td>
               </tr>
+              <!-- Rank 3 -->
               <tr style="border-bottom:1px solid var(--border-light)">
-                <td class="py-2.5 font-mono" style="color:var(--text-tertiary)">3</td>
-                <td class="py-2.5 font-medium">Boho Wall Art Print</td>
+                <td class="py-2.5 font-mono font-bold" style="color:var(--text-secondary)">3</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md flex-shrink-0" style="background:linear-gradient(135deg,#8b5cf6 0%,#a78bfa 100%);border:1px solid var(--border)"></div>
+                    <span class="font-medium truncate max-w-[140px]">Boho Wall Art Print</span>
+                  </div>
+                </td>
+                <td class="py-2.5 text-[11px]" style="color:var(--text-secondary)">VintageVibes</td>
                 <td class="py-2.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" style="background:rgba(241,100,30,.08);color:#F1641E">Etsy</span></td>
                 <td class="py-2.5 text-right font-mono font-semibold">$760</td>
                 <td class="py-2.5 text-right font-mono" style="color:var(--text-secondary)">19</td>
+                <td class="py-2.5 text-right font-mono text-[11px]" style="color:var(--text-tertiary)">2.1K</td>
               </tr>
+              <!-- Rank 4 -->
               <tr style="border-bottom:1px solid var(--border-light)">
-                <td class="py-2.5 font-mono" style="color:var(--text-tertiary)">4</td>
-                <td class="py-2.5 font-medium">Ceramic Mug Set</td>
+                <td class="py-2.5 font-mono font-bold" style="color:var(--text-secondary)">4</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md flex-shrink-0" style="background:linear-gradient(135deg,#FF9900 0%,#ffb340 100%);border:1px solid var(--border)"></div>
+                    <span class="font-medium truncate max-w-[140px]">Ceramic Mug Set</span>
+                  </div>
+                </td>
+                <td class="py-2.5 text-[11px]" style="color:var(--text-secondary)">Amazon US</td>
                 <td class="py-2.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" style="background:rgba(255,153,0,.08);color:#FF9900">Amazon</span></td>
                 <td class="py-2.5 text-right font-mono font-semibold">$563</td>
                 <td class="py-2.5 text-right font-mono" style="color:var(--text-secondary)">15</td>
+                <td class="py-2.5 text-right font-mono text-[11px]" style="color:var(--text-tertiary)">940</td>
               </tr>
+              <!-- Rank 5 -->
               <tr>
-                <td class="py-2.5 font-mono" style="color:var(--text-tertiary)">5</td>
-                <td class="py-2.5 font-medium">Soy Candle Bundle</td>
+                <td class="py-2.5 font-mono font-bold" style="color:var(--text-secondary)">5</td>
+                <td class="py-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-md flex-shrink-0" style="background:linear-gradient(135deg,#06b6d4 0%,#22d3ee 100%);border:1px solid var(--border)"></div>
+                    <span class="font-medium truncate max-w-[140px]">Soy Candle Bundle</span>
+                  </div>
+                </td>
+                <td class="py-2.5 text-[11px]" style="color:var(--text-secondary)">Main Store</td>
                 <td class="py-2.5"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium" style="background:rgba(150,191,72,.08);color:#96BF48">Shopify</span></td>
                 <td class="py-2.5 text-right font-mono font-semibold">$420</td>
                 <td class="py-2.5 text-right font-mono" style="color:var(--text-secondary)">12</td>
+                <td class="py-2.5 text-right font-mono text-[11px]" style="color:var(--text-tertiary)">715</td>
               </tr>
             </tbody>
           </table>
@@ -456,6 +654,248 @@ tailwind.config = {
         </div>
       </div>
 
+      <!-- Schedule Widget -->
+      <div class="card-static rounded-xl p-5 mb-5" id="scheduleWidget" style="border:1px solid var(--border)">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold">Upcoming Schedule</h3>
+            <p class="text-xs mt-0.5" style="color:var(--text-tertiary)">Next 7 days</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Timezone indicator (E3) -->
+            <span class="text-xs px-2 py-1 rounded-md" style="background:var(--bg-muted);color:var(--text-tertiary)">
+              <i data-lucide="globe" class="w-3 h-3 inline mr-0.5"></i> PST (UTC-8)
+            </span>
+            <button class="btn-ghost px-3 py-1.5 text-xs font-medium" onclick="openModal('calendarModal')">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 mr-1"></i> Full Calendar
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini schedule list -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-3 p-2.5 rounded-lg" style="background:var(--bg-muted)">
+            <div class="text-center flex-shrink-0" style="width:40px">
+              <div class="text-xs font-bold" style="color:var(--brand-primary)">Mar</div>
+              <div class="text-lg font-extrabold">12</div>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-semibold">Publish 5 Spring Collection listings</div>
+              <div class="text-xs" style="color:var(--text-tertiary)">9:00 AM · Etsy — CozyPrints</div>
+            </div>
+            <span class="status-pending">Scheduled</span>
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-lg" style="background:var(--bg-muted)">
+            <div class="text-center flex-shrink-0" style="width:40px">
+              <div class="text-xs font-bold" style="color:var(--brand-primary)">Mar</div>
+              <div class="text-lg font-extrabold">14</div>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-semibold">Price update: Holiday Mugs -15%</div>
+              <div class="text-xs" style="color:var(--text-tertiary)">12:00 PM · All Shops</div>
+            </div>
+            <span class="status-pending">Scheduled</span>
+          </div>
+          <div class="flex items-center gap-3 p-2.5 rounded-lg" style="background:var(--bg-muted)">
+            <div class="text-center flex-shrink-0" style="width:40px">
+              <div class="text-xs font-bold" style="color:var(--brand-primary)">Mar</div>
+              <div class="text-lg font-extrabold">17</div>
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-semibold">AI optimization: 23 listings</div>
+              <div class="text-xs" style="color:var(--text-tertiary)">6:00 AM · Shopify</div>
+            </div>
+            <span class="status-synced">Confirmed</span>
+          </div>
+        </div>
+
+        <!-- Empty state (commented alternative) -->
+        <!--
+        <div class="empty-state">
+          <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+            <i data-lucide="calendar-plus" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+          </div>
+          <div class="empty-state-title">No scheduled actions</div>
+          <div class="empty-state-desc">Schedule listing publishes, price updates, or AI optimizations to run automatically.</div>
+          <button class="btn-primary px-4 py-2 text-xs font-semibold">
+            <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> Schedule Action
+          </button>
+        </div>
+        -->
+      </div>
+
+      <!-- ===== Level 3: All Shops Performance Table ===== -->
+      <div class="card-static rounded-xl p-5 mt-5" style="border:1px solid var(--border)">
+        <!-- Table Header -->
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h3 class="text-sm font-semibold" style="color:var(--text-primary)">All Shops Performance</h3>
+          <div class="flex items-center gap-2">
+            <!-- Search -->
+            <div class="relative">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+              <input type="text" id="shopSearchInput" placeholder="Search shops..."
+                     oninput="searchShopTable(this.value)"
+                     class="h-8 pl-8 pr-3 text-xs rounded-lg border"
+                     style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);width:180px">
+            </div>
+            <!-- Platform filter -->
+            <select onchange="filterShopTable(this.value)"
+                    class="h-8 px-2 text-xs rounded-lg border"
+                    style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+              <option value="">All Platforms</option>
+              <option value="Etsy">Etsy</option>
+              <option value="Amazon">Amazon</option>
+              <option value="TikTok">TikTok</option>
+              <option value="eBay">eBay</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left" id="shopsTable">
+            <thead>
+              <tr class="text-[11px] font-semibold uppercase tracking-wide"
+                  style="background:var(--bg-muted);color:var(--text-tertiary)">
+                <th class="px-3 py-2.5 font-semibold rounded-l-lg">Shop Name</th>
+                <th class="px-3 py-2.5 font-semibold">Platform</th>
+                <th class="px-3 py-2.5 font-semibold text-right">Revenue</th>
+                <th class="px-3 py-2.5 font-semibold text-right">Orders</th>
+                <th class="px-3 py-2.5 font-semibold">Status</th>
+                <th class="px-3 py-2.5 font-semibold rounded-r-lg">Last Sync</th>
+              </tr>
+            </thead>
+            <tbody class="text-xs" id="shopsTableBody">
+              <!-- Row 1: Etsy -->
+              <tr class="shop-row" data-shop="CozyPrints Studio" data-platform="Etsy">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">CozyPrints Studio</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#F1641E">E</span>
+                    <span style="color:var(--text-secondary)">Etsy</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$18,450</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">284</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">2m ago</td>
+              </tr>
+              <!-- Row 2: Etsy -->
+              <tr class="shop-row" data-shop="BohoBloom Shop" data-platform="Etsy">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">BohoBloom Shop</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#F1641E">E</span>
+                    <span style="color:var(--text-secondary)">Etsy</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$14,230</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">219</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">5m ago</td>
+              </tr>
+              <!-- Row 3: Amazon -->
+              <tr class="shop-row" data-shop="HomeDecor Pro" data-platform="Amazon">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">HomeDecor Pro</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#FF9900">A</span>
+                    <span style="color:var(--text-secondary)">Amazon</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$11,780</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">143</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">12m ago</td>
+              </tr>
+              <!-- Row 4: Etsy -->
+              <tr class="shop-row" data-shop="VintageVault Prints" data-platform="Etsy">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">VintageVault Prints</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#F1641E">E</span>
+                    <span style="color:var(--text-secondary)">Etsy</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$9,640</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">157</td>
+                <td class="px-3 py-3"><span class="status-error">Error</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">3h ago</td>
+              </tr>
+              <!-- Row 5: TikTok -->
+              <tr class="shop-row" data-shop="TrendyThreads TK" data-platform="TikTok">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">TrendyThreads TK</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#1C1C1C">T</span>
+                    <span style="color:var(--text-secondary)">TikTok</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$5,800</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">95</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">8m ago</td>
+              </tr>
+              <!-- Row 6: Amazon -->
+              <tr class="shop-row" data-shop="ArtHouse FBA" data-platform="Amazon">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">ArtHouse FBA</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#FF9900">A</span>
+                    <span style="color:var(--text-secondary)">Amazon</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$4,920</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">61</td>
+                <td class="px-3 py-3"><span class="status-error">Error</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">1h ago</td>
+              </tr>
+              <!-- Row 7: eBay -->
+              <tr class="shop-row" data-shop="CraftKing eBay" data-platform="eBay">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">CraftKing eBay</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#0064D2">eB</span>
+                    <span style="color:var(--text-secondary)">eBay</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$1,565</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">25</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">30m ago</td>
+              </tr>
+              <!-- Row 8: Etsy -->
+              <tr class="shop-row" data-shop="SunsetCraft Co" data-platform="Etsy">
+                <td class="px-3 py-3 font-medium" style="color:var(--text-primary)">SunsetCraft Co</td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+                          style="background:#F1641E">E</span>
+                    <span style="color:var(--text-secondary)">Etsy</span>
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-right font-mono font-semibold" style="color:var(--text-primary)">$3,210</td>
+                <td class="px-3 py-3 text-right font-mono" style="color:var(--text-secondary)">48</td>
+                <td class="px-3 py-3"><span class="status-synced">Synced</span></td>
+                <td class="px-3 py-3 font-mono text-[11px]" style="color:var(--text-tertiary)">45m ago</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty search state -->
+        <div id="shopsTableEmpty" class="hidden py-8 text-center text-xs" style="color:var(--text-tertiary)">
+          No shops match your search.
+        </div>
+      </div>
+
       <!-- Conditional Onboarding Overlay (hidden when shops connected) -->
       <div id="dashboardOnboarding" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,0.3)">
         <div class="card-static rounded-2xl p-8 text-center max-w-md" style="border:2px dashed var(--border)">
@@ -484,8 +924,206 @@ tailwind.config = {
   </div>
 </nav>
 
+<!-- ===== FULL CALENDAR MODAL ===== -->
+<div class="modal-overlay" id="calendarModal">
+  <div class="rounded-xl" style="background:var(--bg-card);width:900px;max-height:85vh;overflow:hidden;border:1px solid var(--border)">
+
+    <!-- Calendar header -->
+    <div class="flex items-center justify-between p-4 border-b" style="border-color:var(--border)">
+      <div class="flex items-center gap-3">
+        <button onclick="closeModal('calendarModal')" style="color:var(--text-secondary)">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <h2 class="text-base font-bold">Schedule Calendar</h2>
+        <!-- Timezone (E3) -->
+        <span class="text-xs px-2 py-0.5 rounded-md" style="background:var(--bg-muted);color:var(--text-tertiary)">
+          PST (UTC-8)
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- View toggle (E1) -->
+        <div class="flex items-center gap-0.5 p-0.5 rounded-lg" style="background:var(--bg-muted)">
+          <button class="cal-view-btn" onclick="switchCalView(this,'day')">Day</button>
+          <button class="cal-view-btn" onclick="switchCalView(this,'week')">Week</button>
+          <button class="cal-view-btn active" onclick="switchCalView(this,'month')">Month</button>
+        </div>
+        <!-- Month navigation -->
+        <div class="flex items-center gap-1 ml-3">
+          <button class="btn-ghost px-2 py-1"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <span class="text-sm font-semibold px-2">March 2026</span>
+          <button class="btn-ghost px-2 py-1"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+        </div>
+        <button class="btn-ghost px-3 py-1.5 text-xs font-medium ml-2">Today</button>
+      </div>
+    </div>
+
+    <!-- Calendar body -->
+    <div class="p-4 overflow-y-auto" style="max-height:calc(85vh - 70px)" id="calendarBody">
+      <div class="flex gap-4">
+
+        <!-- Unscheduled listings sidebar (E2) -->
+        <div class="flex-shrink-0" style="width:180px">
+          <div class="text-xs font-semibold mb-2" style="color:var(--text-secondary)">Unscheduled</div>
+          <div class="space-y-1.5">
+            <div class="p-2 rounded-lg border text-xs cursor-grab"
+                 style="border-color:var(--border);background:var(--bg-muted)" draggable="true">
+              <div class="font-medium truncate">New Mug Design</div>
+              <div style="color:var(--text-tertiary)">Ready to publish</div>
+            </div>
+            <div class="p-2 rounded-lg border text-xs cursor-grab"
+                 style="border-color:var(--border);background:var(--bg-muted)" draggable="true">
+              <div class="font-medium truncate">Spring T-Shirts (4)</div>
+              <div style="color:var(--text-tertiary)">Draft</div>
+            </div>
+            <div class="p-2 rounded-lg border text-xs cursor-grab"
+                 style="border-color:var(--border);background:var(--bg-muted)" draggable="true">
+              <div class="font-medium truncate">Boho Poster Set</div>
+              <div style="color:var(--text-tertiary)">Needs review</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month grid -->
+        <div class="flex-1">
+          <div class="grid grid-cols-7 gap-0 border rounded-lg overflow-hidden" style="border-color:var(--border)">
+            <!-- Day headers -->
+            <div class="cal-header">Sun</div>
+            <div class="cal-header">Mon</div>
+            <div class="cal-header">Tue</div>
+            <div class="cal-header">Wed</div>
+            <div class="cal-header">Thu</div>
+            <div class="cal-header">Fri</div>
+            <div class="cal-header">Sat</div>
+
+            <!-- Week 1 — Feb spillover (dim) + March 1 -->
+            <div class="cal-day dim">23</div>
+            <div class="cal-day dim">24</div>
+            <div class="cal-day dim">25</div>
+            <div class="cal-day dim">26</div>
+            <div class="cal-day dim">27</div>
+            <div class="cal-day dim">28</div>
+            <div class="cal-day">1</div>
+
+            <!-- Week 2 -->
+            <div class="cal-day">2</div>
+            <div class="cal-day">3</div>
+            <div class="cal-day">4</div>
+            <div class="cal-day">5</div>
+            <div class="cal-day">6</div>
+            <div class="cal-day">7</div>
+            <div class="cal-day">8</div>
+
+            <!-- Week 3 — with events, today = 11 -->
+            <div class="cal-day">9</div>
+            <div class="cal-day">10</div>
+            <div class="cal-day today">
+              11
+              <div class="cal-event sage">2 publishes</div>
+            </div>
+            <div class="cal-day">
+              12
+              <div class="cal-event sage">5 listings</div>
+            </div>
+            <div class="cal-day">13</div>
+            <div class="cal-day">
+              14
+              <div class="cal-event gold">Price update</div>
+            </div>
+            <div class="cal-day">15</div>
+
+            <!-- Week 4 -->
+            <div class="cal-day">16</div>
+            <div class="cal-day">
+              17
+              <div class="cal-event coral">AI optimize</div>
+            </div>
+            <div class="cal-day">18</div>
+            <div class="cal-day">19</div>
+            <div class="cal-day">20</div>
+            <div class="cal-day">
+              21
+              <div class="cal-event sage">3 publishes</div>
+            </div>
+            <div class="cal-day">22</div>
+
+            <!-- Week 5 -->
+            <div class="cal-day">23</div>
+            <div class="cal-day">24</div>
+            <div class="cal-day">
+              25
+              <div class="cal-event purple">Seasonal sale</div>
+            </div>
+            <div class="cal-day">26</div>
+            <div class="cal-day">27</div>
+            <div class="cal-day">28</div>
+            <div class="cal-day">29</div>
+
+            <!-- Week 6 — remaining March + April spillover (dim) -->
+            <div class="cal-day">30</div>
+            <div class="cal-day">31</div>
+            <div class="cal-day dim">1</div>
+            <div class="cal-day dim">2</div>
+            <div class="cal-day dim">3</div>
+            <div class="cal-day dim">4</div>
+            <div class="cal-day dim">5</div>
+          </div>
+
+          <!-- Legend -->
+          <div class="flex items-center gap-4 mt-3 text-xs" style="color:var(--text-tertiary)">
+            <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:var(--success)"></span>Publish</span>
+            <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:var(--brand-secondary)"></span>Price Update</span>
+            <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:var(--danger)"></span>AI Optimize</span>
+            <span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:var(--purple)"></span>Special</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding tour overlay — shown once for new users -->
+<div id="onboardingTour" class="fixed inset-0 z-[800]" style="display:none">
+  <!-- Dimmed backdrop -->
+  <div class="absolute inset-0" style="background:rgba(0,0,0,0.5)"></div>
+  <!-- Tour tooltip -->
+  <div id="tourTooltip" class="absolute z-[801] rounded-xl p-4"
+    style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg);width:300px;top:120px;left:260px">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+        style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+        Step <span id="tourStepNum">1</span> of 4
+      </span>
+      <button class="text-xs" style="color:var(--text-tertiary)" onclick="dismissTour()">Skip tour</button>
+    </div>
+    <h4 class="text-sm font-bold mb-1" id="tourTitle">Your Dashboard</h4>
+    <p class="text-xs mb-3" style="color:var(--text-secondary)" id="tourDesc">
+      This is your command center. Monitor sales, sync status, and key metrics at a glance.
+    </p>
+    <div class="flex items-center justify-between">
+      <button class="text-xs font-medium" style="color:var(--text-tertiary)" id="tourPrev" onclick="tourStep(-1)">Back</button>
+      <button class="btn-primary px-4 py-1.5 text-xs font-semibold" onclick="tourStep(1)">Next</button>
+    </div>
+  </div>
+</div>
+
 <script src="_shared-navigation.js"></script>
 <script>
+// Top Products time filter
+function switchTopProductsFilter(period) {
+  var filters = ['7d', '30d', 'all'];
+  filters.forEach(function(f) {
+    var btn = document.getElementById('tpf-' + f);
+    if (!btn) return;
+    if (f === period) {
+      btn.style.background = 'var(--brand-primary)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--text-secondary)';
+    }
+  });
+}
+
 // Chart range tab switcher
 function selectChartRange(el) {
   document.querySelectorAll('.chart-range-tab').forEach(function(tab) {
@@ -498,6 +1136,90 @@ function selectChartRange(el) {
   el.style.color = '#fff';
   el.classList.remove('font-medium');
   el.classList.add('font-semibold');
+}
+
+// ===== ONBOARDING TOUR =====
+var TOUR_STEPS = [
+  { title: 'Your Dashboard', desc: 'Monitor sales, sync status, and key metrics at a glance.', position: 'bottom' },
+  { title: 'Manage Listings', desc: 'View, edit, and bulk-update all your listings across shops.', position: 'right' },
+  { title: 'Research & Discover', desc: 'Find trending niches, analyze competitors, and optimize your SEO.', position: 'right' },
+  { title: 'Schedule Actions', desc: 'Automate publishes, price updates, and AI optimizations.', position: 'top' }
+];
+var currentTourStep = 0;
+
+function startTour() {
+  var tour = document.getElementById('onboardingTour');
+  if (tour) { tour.style.display = 'block'; updateTourTooltip(); if (window.lucide) lucide.createIcons(); }
+}
+function dismissTour() {
+  var tour = document.getElementById('onboardingTour');
+  if (tour) tour.style.display = 'none';
+}
+function tourStep(delta) {
+  currentTourStep = Math.max(0, Math.min(TOUR_STEPS.length - 1, currentTourStep + delta));
+  updateTourTooltip();
+  if (currentTourStep === TOUR_STEPS.length - 1 && delta > 0) {
+    dismissTour();
+    showToast('Tour complete! Enjoy Dodgeprint.', 'success');
+  }
+}
+function updateTourTooltip() {
+  var step = TOUR_STEPS[currentTourStep];
+  var stepNum = document.getElementById('tourStepNum');
+  var title = document.getElementById('tourTitle');
+  var desc = document.getElementById('tourDesc');
+  var prev = document.getElementById('tourPrev');
+  if (stepNum) stepNum.textContent = currentTourStep + 1;
+  if (title) title.textContent = step.title;
+  if (desc) desc.textContent = step.desc;
+  if (prev) prev.style.visibility = currentTourStep === 0 ? 'hidden' : 'visible';
+}
+
+// ===== SETUP CHECKLIST =====
+function dismissChecklist() {
+  var el = document.getElementById('setupChecklist');
+  if (el) el.style.display = 'none';
+}
+
+// Calendar view toggle (E1) — visual only in wireframe
+function switchCalView(btn, view) {
+  document.querySelectorAll('.cal-view-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  showToast('Switched to ' + view + ' view', 'info');
+}
+
+// ===== ALL SHOPS TABLE — Search & Filter =====
+var _shopPlatformFilter = '';
+
+function searchShopTable(query) {
+  var q = (query || '').toLowerCase().trim();
+  _applyShopTableFilters(q, _shopPlatformFilter);
+}
+
+function filterShopTable(platform) {
+  _shopPlatformFilter = platform || '';
+  var searchInput = document.getElementById('shopSearchInput');
+  var q = searchInput ? (searchInput.value || '').toLowerCase().trim() : '';
+  _applyShopTableFilters(q, _shopPlatformFilter);
+}
+
+function _applyShopTableFilters(query, platform) {
+  var rows = document.querySelectorAll('#shopsTableBody .shop-row');
+  var visibleCount = 0;
+  rows.forEach(function(row) {
+    var shopName = (row.getAttribute('data-shop') || '').toLowerCase();
+    var shopPlatform = (row.getAttribute('data-platform') || '');
+    var matchesQuery = !query || shopName.indexOf(query) !== -1;
+    var matchesPlatform = !platform || shopPlatform === platform;
+    if (matchesQuery && matchesPlatform) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  var emptyEl = document.getElementById('shopsTableEmpty');
+  if (emptyEl) emptyEl.classList.toggle('hidden', visibleCount > 0);
 }
 </script>
 </body>

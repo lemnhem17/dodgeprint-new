@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Smart Homepage</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+        etsy: '#F1641E', shopify: '#96BF48', amazon: '#FF9900',
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* View transition */
+.homepage-view {
+  transition: opacity 0.2s ease;
+}
+.homepage-view.hidden-view {
+  display: none;
+  opacity: 0;
+}
+.homepage-view.active-view {
+  display: block;
+  opacity: 1;
+}
+/* Demo toggle bar */
+.demo-toggle-bar {
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border);
+}
+.demo-pill {
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.demo-pill.active {
+  background: var(--brand-primary);
+  color: #fff;
+}
+</style>
+</head>
+<body data-page="home">
+
+<!-- Nav progress bar -->
+<div id="nav-progress-bar"></div>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="home" data-tooltip="Home" onclick="navigate('home')"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="home" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Home</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Demo Toggle Bar -->
+    <div class="demo-toggle-bar flex items-center gap-3 px-6 py-2">
+      <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Demo Mode:</span>
+      <button class="demo-pill active" id="pillNew" onclick="switchView('new')">New User</button>
+      <button class="demo-pill" id="pillReturning" onclick="switchView('returning')">Returning User</button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NEW USER VIEW -->
+    <!-- ============================================================ -->
+    <div id="view-new-user" class="homepage-view active-view">
+      <main class="p-6">
+
+        <!-- Welcome Header -->
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h1 class="text-xl font-bold tracking-tight">Welcome to Dodgeprint</h1>
+            <p class="text-[13px] mt-0.5" style="color:var(--text-secondary)">Let's get your print-on-demand business up and running.</p>
+          </div>
+          <button onclick="switchView('returning')" class="btn-ghost px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5">
+            Skip to Dashboard
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Getting Started Card -->
+        <div class="card-static rounded-xl p-5 mb-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--brand-primary-bg)">
+              <i data-lucide="rocket" class="w-4.5 h-4.5" style="color:var(--brand-primary)"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold">Getting Started</h2>
+              <p class="text-[11px]" style="color:var(--text-tertiary)">2 of 5 complete</p>
+            </div>
+          </div>
+          <!-- Progress bar -->
+          <div class="h-1.5 rounded-full mb-4" style="background:var(--bg-muted)">
+            <div class="h-full rounded-full transition-all duration-500" style="width:40%;background:var(--brand-primary)"></div>
+          </div>
+          <!-- Checklist -->
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                   style="background:var(--success);border:2px solid var(--success)">
+                <i data-lucide="check" class="w-3 h-3 text-white"></i>
+              </div>
+              <span class="text-[13px] font-medium line-through" style="color:var(--text-tertiary)">Create your account</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                   style="background:var(--success);border:2px solid var(--success)">
+                <i data-lucide="check" class="w-3 h-3 text-white"></i>
+              </div>
+              <span class="text-[13px] font-medium line-through" style="color:var(--text-tertiary)">Complete your profile</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex-shrink-0" style="border:2px solid var(--brand-primary)"></div>
+              <span class="text-[13px] font-medium">Connect your first shop</span>
+              <button class="btn-primary px-3 py-1 text-[11px] font-semibold ml-auto"
+                      onclick="showToast('Navigating to Shop Settings...','info')">
+                Connect Now <i data-lucide="arrow-right" class="w-3 h-3 inline"></i>
+              </button>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex-shrink-0" style="border:2px solid var(--border)"></div>
+              <span class="text-[13px] font-medium" style="color:var(--text-secondary)">Create your first product</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-5 h-5 rounded-full flex-shrink-0" style="border:2px solid var(--border)"></div>
+              <span class="text-[13px] font-medium" style="color:var(--text-secondary)">Deploy to marketplace</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Start Templates -->
+        <div class="mb-5">
+          <h2 class="text-sm font-bold mb-3">Quick Start Templates</h2>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="card-static rounded-xl p-5 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background:var(--brand-primary-bg)">
+                <i data-lucide="shirt" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+              </div>
+              <h3 class="text-sm font-bold mb-0.5">T-shirt Bundle</h3>
+              <p class="text-[11px] mb-3" style="color:var(--text-tertiary)">5 items included</p>
+              <button class="btn-ghost px-3 py-1.5 text-[11px] font-semibold w-full"
+                      onclick="showToast('Template applied!','success')">Use Template</button>
+            </div>
+            <div class="card-static rounded-xl p-5 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background:var(--brand-secondary-bg)">
+                <i data-lucide="coffee" class="w-5 h-5" style="color:var(--brand-secondary)"></i>
+              </div>
+              <h3 class="text-sm font-bold mb-0.5">Mug Bundle</h3>
+              <p class="text-[11px] mb-3" style="color:var(--text-tertiary)">3 items included</p>
+              <button class="btn-ghost px-3 py-1.5 text-[11px] font-semibold w-full"
+                      onclick="showToast('Template applied!','success')">Use Template</button>
+            </div>
+            <div class="card-static rounded-xl p-5 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style="background:var(--purple-bg)">
+                <i data-lucide="image" class="w-5 h-5" style="color:var(--purple)"></i>
+              </div>
+              <h3 class="text-sm font-bold mb-0.5">Poster Bundle</h3>
+              <p class="text-[11px] mb-3" style="color:var(--text-tertiary)">4 items included</p>
+              <button class="btn-ghost px-3 py-1.5 text-[11px] font-semibold w-full"
+                      onclick="showToast('Template applied!','success')">Use Template</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h2 class="text-sm font-bold mb-3">Quick Links</h2>
+          <div class="grid grid-cols-3 gap-4">
+            <a class="card-static rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all" href="#" onclick="showToast('Opening documentation...','info');return false">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--info-bg)">
+                <i data-lucide="book-open" class="w-4.5 h-4.5" style="color:var(--info)"></i>
+              </div>
+              <div>
+                <span class="text-[13px] font-semibold block">Documentation</span>
+                <span class="text-[11px]" style="color:var(--text-tertiary)">Guides & API reference</span>
+              </div>
+            </a>
+            <a class="card-static rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all" href="#" onclick="showToast('Opening Discord...','info');return false">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--purple-bg)">
+                <i data-lucide="message-circle" class="w-4.5 h-4.5" style="color:var(--purple)"></i>
+              </div>
+              <div>
+                <span class="text-[13px] font-semibold block">Join Discord</span>
+                <span class="text-[11px]" style="color:var(--text-tertiary)">Chat with sellers</span>
+              </div>
+            </a>
+            <a class="card-static rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:shadow-sm hover:-translate-y-px transition-all" href="#" onclick="showToast('Opening tutorial...','info');return false">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-accent-bg)">
+                <i data-lucide="play-circle" class="w-4.5 h-4.5" style="color:var(--brand-accent)"></i>
+              </div>
+              <div>
+                <span class="text-[13px] font-semibold block">Watch Tutorial</span>
+                <span class="text-[11px]" style="color:var(--text-tertiary)">5 min getting started</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- RETURNING USER VIEW -->
+    <!-- ============================================================ -->
+    <div id="view-returning-user" class="homepage-view hidden-view">
+      <main class="p-6">
+
+        <!-- Page Title -->
+        <div class="flex items-start justify-between mb-5">
+          <div>
+            <h1 class="text-xl font-bold tracking-tight">Good morning, Leo</h1>
+            <p class="text-[13px] mt-0.5" style="color:var(--text-secondary)">All 3 shops are synced. Here's your overview.</p>
+          </div>
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background:var(--success-bg)">
+            <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--success)"></span>
+            <span class="text-xs font-medium" style="color:var(--success)">All synced</span>
+          </div>
+        </div>
+
+        <!-- Section 1: KPI Cards -->
+        <div class="grid grid-cols-4 gap-4 mb-4">
+          <div class="kpi-card card-static rounded-xl p-5">
+            <div class="text-[12px] font-medium mb-1" style="color:var(--text-secondary)">Products</div>
+            <div class="text-[26px] font-extrabold tracking-tight leading-none mb-2">247</div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style="background:var(--success-bg);color:var(--success)">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> +12 this week
+            </span>
+          </div>
+          <div class="kpi-card card-static rounded-xl p-5">
+            <div class="text-[12px] font-medium mb-1" style="color:var(--text-secondary)">Orders</div>
+            <div class="text-[26px] font-extrabold tracking-tight leading-none mb-2">58</div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style="background:var(--success-bg);color:var(--success)">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> +5 this week
+            </span>
+          </div>
+          <div class="kpi-card card-static rounded-xl p-5">
+            <div class="text-[12px] font-medium mb-1" style="color:var(--text-secondary)">Revenue</div>
+            <div class="text-[26px] font-extrabold tracking-tight leading-none mb-2">$4,230</div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style="background:var(--success-bg);color:var(--success)">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> +18%
+            </span>
+          </div>
+          <div class="kpi-card card-static rounded-xl p-5">
+            <div class="text-[12px] font-medium mb-1" style="color:var(--text-secondary)">Shops</div>
+            <div class="text-[26px] font-extrabold tracking-tight leading-none mb-2">3</div>
+            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style="background:var(--success-bg);color:var(--success)">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> All synced
+            </span>
+          </div>
+        </div>
+
+        <!-- Section 2: Quick Actions -->
+        <div class="flex items-center gap-3 mb-4">
+          <button class="btn-primary px-4 py-2.5 text-xs font-semibold inline-flex items-center gap-1.5"
+                  onclick="showToast('Opening product creator...','info')">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create Product
+          </button>
+          <button class="btn-ghost px-4 py-2.5 text-xs font-semibold inline-flex items-center gap-1.5"
+                  onclick="showToast('Opening import...','info')">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Import Products
+          </button>
+          <button class="btn-ghost px-4 py-2.5 text-xs font-semibold inline-flex items-center gap-1.5"
+                  onclick="showToast('Opening deploy...','info')">
+            <i data-lucide="rocket" class="w-3.5 h-3.5"></i> Deploy to Shop
+          </button>
+        </div>
+
+        <!-- Section 3: Suggested Next Step -->
+        <div class="rounded-xl p-5 mb-4" style="background:var(--brand-primary-bg);border:1px solid rgba(59,130,246,0.2)">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                 style="background:rgba(59,130,246,0.15)">
+              <i data-lucide="target" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-sm font-bold" style="color:var(--brand-primary-dark)">Suggested Next Step</h3>
+              <p class="text-[13px] mt-0.5" style="color:var(--text-secondary)">You have 12 products but 0 deployed. Deploy to Etsy to start selling!</p>
+            </div>
+            <button class="btn-primary px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
+                    onclick="showToast('Starting deploy to Etsy...','success')">
+              Deploy Now <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 4: Two-Column Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <!-- Recent Products -->
+          <div class="card-static rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold">Recent Products</h3>
+              <a class="text-[11px] font-semibold cursor-pointer" style="color:var(--brand-primary)"
+                 onclick="showToast('Navigating to listings...','info')">View All &rarr;</a>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex-shrink-0" style="background:var(--bg-muted)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Vintage Sunset Tee</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Edited 2h ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex-shrink-0" style="background:var(--bg-muted)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Mountain Mug Set</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Edited 5h ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex-shrink-0" style="background:var(--bg-muted)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Abstract Poster A3</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Edited 1d ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex-shrink-0" style="background:var(--bg-muted)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Retro Cat Hoodie</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Edited 2d ago</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg flex-shrink-0" style="background:var(--bg-muted)"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Ocean Wave Sticker</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Edited 3d ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Actions -->
+          <div class="card-static rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold">Pending Actions</h3>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--danger-bg)">
+                  <i data-lucide="alert-triangle" class="w-4 h-4" style="color:var(--danger)"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="text-[13px] font-semibold">3 failed deployments</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Etsy sync errors</div>
+                </div>
+                <a class="text-[11px] font-semibold cursor-pointer" style="color:var(--danger)"
+                   onclick="showToast('Viewing failed deploys...','error')">View &rarr;</a>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--info-bg)">
+                  <i data-lucide="refresh-cw" class="w-4 h-4" style="color:var(--info)"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="text-[13px] font-semibold">2 syncing</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Shopify inventory update</div>
+                </div>
+                <a class="text-[11px] font-semibold cursor-pointer" style="color:var(--info)"
+                   onclick="showToast('Viewing sync status...','info')">View &rarr;</a>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-secondary-bg)">
+                  <i data-lucide="package" class="w-4 h-4" style="color:var(--brand-secondary)"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="text-[13px] font-semibold">5 orders pending</div>
+                  <div class="text-[11px]" style="color:var(--text-tertiary)">Awaiting fulfillment</div>
+                </div>
+                <a class="text-[11px] font-semibold cursor-pointer" style="color:var(--brand-secondary)"
+                   onclick="showToast('Viewing pending orders...','warning')">View &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Revenue Trend -->
+        <div class="card-static rounded-xl p-5 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold">Revenue Trend (7 days)</h3>
+              <p class="text-[11px]" style="color:var(--text-tertiary)">Mar 4 — Mar 10, 2026</p>
+            </div>
+          </div>
+          <div class="mb-4" style="height:120px">
+            <svg width="100%" height="120" viewBox="0 0 600 120" preserveAspectRatio="none">
+              <line x1="0" y1="30" x2="600" y2="30" stroke="var(--border-light)" stroke-width="1" />
+              <line x1="0" y1="60" x2="600" y2="60" stroke="var(--border-light)" stroke-width="1" />
+              <line x1="0" y1="90" x2="600" y2="90" stroke="var(--border-light)" stroke-width="1" />
+              <path d="M0,96 L100,72 L200,78 L300,48 L400,54 L500,24 L600,30 L600,120 L0,120 Z"
+                    fill="var(--brand-primary-bg)" opacity="0.5" />
+              <path d="M0,96 L100,72 L200,78 L300,48 L400,54 L500,24 L600,30"
+                    fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="0" cy="96" r="4" fill="var(--brand-primary)" />
+              <circle cx="100" cy="72" r="4" fill="var(--brand-primary)" />
+              <circle cx="200" cy="78" r="4" fill="var(--brand-primary)" />
+              <circle cx="300" cy="48" r="4" fill="var(--brand-primary)" />
+              <circle cx="400" cy="54" r="4" fill="var(--brand-primary)" />
+              <circle cx="500" cy="24" r="4" fill="var(--brand-primary)" />
+              <circle cx="600" cy="30" r="4" fill="var(--brand-primary)" />
+            </svg>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold"
+                  style="background:#FFF7ED;color:#F1641E">
+              <span class="w-2 h-2 rounded-full" style="background:#F1641E"></span> Etsy 60%
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold"
+                  style="background:#F0FDF4;color:#22C55E">
+              <span class="w-2 h-2 rounded-full" style="background:#22C55E"></span> Shopify 30%
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold"
+                  style="background:#ECFEFF;color:#06B6D4">
+              <span class="w-2 h-2 rounded-full" style="background:#06B6D4"></span> TikTok 10%
+            </span>
+          </div>
+        </div>
+
+        <!-- Section 6: What's New (dismissible) -->
+        <div class="card-static rounded-xl p-5 mb-4" id="whatsNewCard">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold inline-flex items-center gap-2">
+              <span class="text-base">&#x1F195;</span> What's New — v1.7.0
+            </h3>
+            <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+                    style="color:var(--text-tertiary)" aria-label="Dismiss" onclick="dismissCard('whatsNewCard','dodgeprint_dismiss_whatsnew')">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="space-y-2 mb-3">
+            <div class="flex items-start gap-2">
+              <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:var(--brand-primary)"></span>
+              <span class="text-[13px]">AI Background Removal upgraded — 3x faster, better edge detection</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:var(--brand-primary)"></span>
+              <span class="text-[13px]">TikTok Shop analytics now available in dashboard</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:var(--brand-primary)"></span>
+              <span class="text-[13px]">Bulk deploy now supports up to 500 listings at once</span>
+            </div>
+          </div>
+          <a class="text-[12px] font-semibold cursor-pointer" style="color:var(--brand-primary)"
+             onclick="showToast('Opening changelog...','info')">See all updates &rarr;</a>
+        </div>
+
+        <!-- Section 7: Daily Tip (dismissible) -->
+        <div class="rounded-xl p-5 mb-4" id="dailyTipCard" style="background:var(--brand-primary-bg);border:1px solid var(--border)">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-bold inline-flex items-center gap-2">
+              <span class="text-base">&#x1F4A1;</span> Did you know?
+            </h3>
+            <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+                    style="color:var(--text-tertiary)" aria-label="Dismiss" onclick="dismissCard('dailyTipCard','dodgeprint_dismiss_dailytip')">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-[13px] mb-3" style="color:var(--text-secondary)">Listings with 10+ tags get 40% more views on Etsy. Optimize your tags to boost visibility.</p>
+          <button class="btn-primary px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
+                  onclick="showToast('Opening Tag Optimizer...','info')">
+            Try Tag Optimizer <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Section 8: Community Stats -->
+        <div class="text-center py-4" style="color:var(--text-tertiary)">
+          <p class="text-[12px]">&#x1F30D; 12,450 sellers &middot; 2.3M products deployed &middot; Join 340 sellers who started this week</p>
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+</div>
+
+<!-- Shared Navigation JS -->
+<script src="_shared-navigation.js"></script>
+<script>
+// ===== VIEW SWITCHING =====
+function switchView(mode) {
+  var newView = document.getElementById('view-new-user');
+  var retView = document.getElementById('view-returning-user');
+  var pillNew = document.getElementById('pillNew');
+  var pillRet = document.getElementById('pillReturning');
+
+  if (mode === 'new') {
+    newView.classList.remove('hidden-view');
+    newView.classList.add('active-view');
+    retView.classList.remove('active-view');
+    retView.classList.add('hidden-view');
+    pillNew.classList.add('active');
+    pillRet.classList.remove('active');
+  } else {
+    retView.classList.remove('hidden-view');
+    retView.classList.add('active-view');
+    newView.classList.remove('active-view');
+    newView.classList.add('hidden-view');
+    pillRet.classList.add('active');
+    pillNew.classList.remove('active');
+  }
+
+  localStorage.setItem('dodgeprint_homepage_mode', mode);
+  // Re-init Lucide for newly visible icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// ===== DISMISS CARD =====
+function dismissCard(cardId, storageKey) {
+  var card = document.getElementById(cardId);
+  if (card) {
+    card.style.opacity = '0';
+    card.style.transition = 'opacity 0.2s ease';
+    setTimeout(function() { card.style.display = 'none'; }, 200);
+    localStorage.setItem(storageKey, 'true');
+  }
+}
+
+// ===== INIT ON LOAD =====
+document.addEventListener('DOMContentLoaded', function() {
+  // Restore mode from localStorage
+  var saved = localStorage.getItem('dodgeprint_homepage_mode');
+  if (saved === 'returning') {
+    switchView('returning');
+  }
+
+  // Restore dismissed cards
+  if (localStorage.getItem('dodgeprint_dismiss_whatsnew') === 'true') {
+    var wn = document.getElementById('whatsNewCard');
+    if (wn) wn.style.display = 'none';
+  }
+  if (localStorage.getItem('dodgeprint_dismiss_dailytip') === 'true') {
+    var dt = document.getElementById('dailyTipCard');
+    if (dt) dt.style.display = 'none';
+  }
+});
+
+</script>
+</body>
+</html>

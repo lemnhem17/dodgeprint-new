@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Billing</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<script>
+  // Tailwind config — must match other wireframes exactly
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+      }
+    }
+  };
+</script>
+<style>
+  /* ===== Billing Tab Panels ===== */
+  .billing-panel { display: none; }
+  .billing-panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Top horizontal tabs (Current Plan / Upgrade / Invoices / Payment) ===== */
+  .billing-tab {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .billing-tab:hover { color: var(--text-primary); }
+  .billing-tab.active {
+    color: var(--brand-primary);
+    border-bottom-color: var(--brand-primary);
+    font-weight: 600;
+  }
+
+  /* ===== Pricing card highlight ===== */
+  .pricing-card {
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px 20px;
+    background: var(--bg-card);
+    transition: box-shadow 0.2s, transform 0.2s;
+    position: relative;
+  }
+  .pricing-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    transform: translateY(-2px);
+  }
+  .pricing-card.popular {
+    border-color: var(--brand-primary);
+    border-width: 2px;
+  }
+
+  /* ===== Billing period pill toggle ===== */
+  .period-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-muted);
+    border-radius: 9999px;
+    padding: 3px;
+  }
+  .period-btn {
+    padding: 5px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: background 0.15s, color 0.15s;
+  }
+  .period-btn.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* ===== Grand total preview box ===== */
+  .total-box {
+    background: var(--brand-primary-bg);
+    border: 1px solid var(--brand-primary);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+
+  /* ===== Credit progress bar ===== */
+  .credit-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bg-muted);
+    overflow: hidden;
+  }
+  .credit-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--brand-primary);
+    transition: width 0.4s ease;
+  }
+
+  /* ===== Platform breakdown table row ===== */
+  .breakdown-row { border-bottom: 1px solid var(--border-light); }
+  .breakdown-row:last-child { border-bottom: none; }
+
+  /* ===== Quantity input ===== */
+  .qty-input {
+    width: 72px;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    text-align: center;
+  }
+  .qty-input:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-bg);
+    outline: none;
+  }
+</style>
+</head>
+<body data-page="billing">
+
+<!-- Toast notifications container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<!-- Navigation progress bar (injected by _shared-navigation.js) -->
+<div id="nav-progress-bar"></div>
+
+<!-- ===== APP SHELL ===== -->
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR (identical pattern to 09-settings.html) ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned: Settings (active), theme, collapse -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+             style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)"
+                 class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg"
+                 style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')"
+                class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== PAGE CONTENT ===== -->
+    <main class="p-7">
+
+      <!-- Page title -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Billing</h1>
+        <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Manage your subscription and payment details</p>
+      </div>
+
+      <!-- ===== TOP TABS ===== -->
+      <div class="flex border-b mb-6" style="border-color:var(--border)">
+        <button class="billing-tab active" onclick="switchBillingTab(this,'current-plan')">Current Plan</button>
+        <button class="billing-tab" onclick="switchBillingTab(this,'upgrade')">Upgrade</button>
+        <button class="billing-tab" onclick="switchBillingTab(this,'invoices')">Invoices</button>
+        <button class="billing-tab" onclick="switchBillingTab(this,'payment')">Payment Methods</button>
+      </div>
+
+      <!-- ================================================================
+           TAB 1: CURRENT PLAN
+           ================================================================ -->
+      <div class="billing-panel active" id="btab-current-plan">
+
+        <!-- Plan summary card -->
+        <div class="card-static rounded-2xl p-6 mb-5">
+          <div class="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <!-- Plan badge + price -->
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide mb-3"
+                    style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+                <i data-lucide="zap" class="w-3 h-3"></i> Professional Plan
+              </span>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-4xl font-extrabold font-mono tracking-tight">$1,810</span>
+                <span class="text-sm font-medium" style="color:var(--text-secondary)">/mo</span>
+              </div>
+              <p class="text-[13px] mt-1" style="color:var(--text-secondary)">
+                90 shops × $15/shop (Pro) + 20 shops × $8/shop (Starter)
+              </p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <!-- Next billing -->
+              <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium"
+                   style="background:var(--bg-muted);color:var(--text-secondary)">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                Next billing: <strong style="color:var(--text-primary)">April 1, 2026</strong>
+              </div>
+              <!-- Yearly savings badge -->
+              <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                   style="background:var(--success-bg);color:var(--success)">
+                <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+                Save 17% — $18,028/yr if billed annually
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform breakdown table -->
+        <div class="card-static rounded-2xl overflow-hidden mb-5">
+          <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom:1px solid var(--border)">
+            <h3 class="text-sm font-bold">Platform Breakdown</h3>
+            <span class="text-[12px] font-medium" style="color:var(--text-tertiary)">130 shops total</span>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr style="background:var(--bg-muted)">
+                <th class="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Platform</th>
+                <th class="text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Shops</th>
+                <th class="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Plan</th>
+                <th class="text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Rate</th>
+                <th class="text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Etsy -->
+              <tr class="breakdown-row">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background:rgba(241,100,30,0.1)">
+                      <span class="text-[13px] font-bold" style="color:#F1641E">E</span>
+                    </div>
+                    <span class="text-sm font-semibold">Etsy</span>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-semibold">100</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--brand-primary-bg);color:var(--brand-primary)">Professional</span>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm" style="color:var(--text-secondary)">$15/shop</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,500</td>
+              </tr>
+              <!-- Amazon -->
+              <tr class="breakdown-row">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background:rgba(255,153,0,0.1)">
+                      <span class="text-[13px] font-bold" style="color:#FF9900">A</span>
+                    </div>
+                    <span class="text-sm font-semibold">Amazon</span>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-semibold">10</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--brand-primary-bg);color:var(--brand-primary)">Professional</span>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm" style="color:var(--text-secondary)">$15/shop</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$150</td>
+              </tr>
+              <!-- TikTok -->
+              <tr class="breakdown-row">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background:rgba(0,0,0,0.06)">
+                      <span class="text-[13px] font-bold" style="color:#010101">T</span>
+                    </div>
+                    <span class="text-sm font-semibold">TikTok</span>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-semibold">10</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Starter</span>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm" style="color:var(--text-secondary)">$8/shop</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$80</td>
+              </tr>
+              <!-- eBay -->
+              <tr class="breakdown-row">
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                         style="background:rgba(230,0,0,0.08)">
+                      <span class="text-[13px] font-bold" style="color:#E53238">B</span>
+                    </div>
+                    <span class="text-sm font-semibold">eBay</span>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-semibold">10</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Starter</span>
+                </td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm" style="color:var(--text-secondary)">$8/shop</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$80</td>
+              </tr>
+              <!-- Grand Total row -->
+              <tr style="background:var(--bg-muted)">
+                <td class="px-5 py-3.5" colspan="4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold">Grand Total</span>
+                    <span class="text-[11px] font-medium" style="color:var(--text-secondary)">
+                      or <strong style="color:var(--success)">$18,028/yr</strong> with 17% annual discount
+                    </span>
+                  </div>
+                </td>
+                <td class="px-5 py-3.5 text-right">
+                  <span class="text-base font-extrabold font-mono">$1,810</span>
+                  <span class="text-xs font-medium ml-0.5" style="color:var(--text-secondary)">/mo</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Credits section -->
+        <div class="card-static rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold">AI Credits</h3>
+              <p class="text-[11px] mt-0.5" style="color:var(--text-tertiary)">
+                Resets on <strong style="color:var(--text-secondary)">April 1, 2026</strong>
+              </p>
+            </div>
+            <span class="text-sm font-bold font-mono" style="color:var(--brand-primary)">1,000 / 1,000</span>
+          </div>
+          <!-- Full credits bar -->
+          <div class="credit-bar mb-2">
+            <div class="credit-bar-fill" style="width:100%"></div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">0 used this month</span>
+            <button class="text-[11px] font-semibold" style="color:var(--brand-primary);background:none;border:none;cursor:pointer">
+              Buy extra credits
+            </button>
+          </div>
+        </div>
+
+      </div><!-- end #btab-current-plan -->
+
+
+      <!-- ================================================================
+           TAB 2: UPGRADE
+           ================================================================ -->
+      <div class="billing-panel" id="btab-upgrade">
+
+        <!-- Monthly / Yearly toggle -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="period-toggle" id="periodToggle">
+            <button class="period-btn active" id="btnMonthly" onclick="setPeriod('monthly')">Monthly</button>
+            <button class="period-btn" id="btnYearly" onclick="setPeriod('yearly')">
+              Yearly
+            </button>
+          </div>
+          <!-- Save badge — visible only when yearly selected -->
+          <span id="saveBadge" class="hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"
+                style="background:var(--success-bg);color:var(--success)">
+            <i data-lucide="tag" class="w-3 h-3"></i> Save 17%
+          </span>
+        </div>
+
+        <!-- 4 pricing cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+          <!-- Free -->
+          <div class="pricing-card">
+            <p class="text-[11px] font-semibold uppercase tracking-wider mb-1" style="color:var(--text-tertiary)">Free</p>
+            <div class="flex items-baseline gap-1 mb-1">
+              <span class="text-3xl font-extrabold font-mono">$0</span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">Forever, no credit card</p>
+            <ul class="space-y-1.5 mb-5">
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                1 shop / platform
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                300 products
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                50 orders/mo
+              </li>
+            </ul>
+            <button class="btn-ghost w-full py-2.5 text-xs font-semibold rounded-xl">Downgrade</button>
+          </div>
+
+          <!-- Starter -->
+          <div class="pricing-card">
+            <p class="text-[11px] font-semibold uppercase tracking-wider mb-1" style="color:var(--text-tertiary)">Starter</p>
+            <div class="flex items-baseline gap-1 mb-1">
+              <span class="text-3xl font-extrabold font-mono" data-monthly="$8" data-yearly="$6.64">$8</span>
+              <span class="text-xs font-medium" style="color:var(--text-secondary)">/shop/mo</span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">Great for small sellers</p>
+            <ul class="space-y-1.5 mb-5">
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                2K products
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                500 orders/mo
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                AI SEO
+              </li>
+            </ul>
+            <button class="btn-ghost w-full py-2.5 text-xs font-semibold rounded-xl">Select Starter</button>
+          </div>
+
+          <!-- Professional — MOST POPULAR -->
+          <div class="pricing-card popular">
+            <!-- Most popular badge -->
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                    style="background:var(--brand-primary);color:#fff;white-space:nowrap">
+                <i data-lucide="star" class="w-2.5 h-2.5"></i> Most Popular
+              </span>
+            </div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider mb-1 mt-2" style="color:var(--brand-primary)">Professional</p>
+            <div class="flex items-baseline gap-1 mb-1">
+              <span class="text-3xl font-extrabold font-mono" data-monthly="$15" data-yearly="$12.45">$15</span>
+              <span class="text-xs font-medium" style="color:var(--text-secondary)">/shop/mo</span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">For scaling operations</p>
+            <ul class="space-y-1.5 mb-5">
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                5K products
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                1.5K orders/mo
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                Market Research
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                API access
+              </li>
+            </ul>
+            <button class="btn-primary w-full py-2.5 text-xs font-semibold" disabled style="opacity:0.5">Current Plan</button>
+          </div>
+
+          <!-- Enterprise -->
+          <div class="pricing-card" style="background:var(--bg-muted)">
+            <p class="text-[11px] font-semibold uppercase tracking-wider mb-1" style="color:var(--text-tertiary)">Enterprise</p>
+            <div class="flex items-baseline gap-1 mb-1">
+              <span class="text-3xl font-extrabold">Custom</span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">Talk to our team</p>
+            <ul class="space-y-1.5 mb-5">
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                Unlimited shops
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                SLA guarantee
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                Dedicated support
+              </li>
+              <li class="flex items-center gap-2 text-[12px]" style="color:var(--text-secondary)">
+                <i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--success)"></i>
+                Custom integrations
+              </li>
+            </ul>
+            <button class="btn-accent w-full py-2.5 text-xs font-semibold rounded-xl"
+                    onclick="showToast('Sales team notified — we\'ll reach out within 24h!','success')">
+              Contact Sales
+            </button>
+          </div>
+
+        </div><!-- end pricing cards grid -->
+
+        <!-- Shop quantity selector per platform -->
+        <div class="card-static rounded-2xl p-5 mb-5">
+          <h3 class="text-sm font-bold mb-1">Estimate Your Bill</h3>
+          <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+            Adjust shop counts per platform to see real-time pricing.
+          </p>
+
+          <!-- Platform rows -->
+          <div class="space-y-3 mb-5">
+
+            <!-- Etsy -->
+            <div class="flex items-center justify-between py-2.5 px-4 rounded-xl" style="background:var(--bg-muted)">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(241,100,30,0.12)">
+                  <span class="text-[12px] font-bold" style="color:#F1641E">E</span>
+                </div>
+                <div>
+                  <p class="text-[13px] font-semibold">Etsy</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">Professional — $15/shop</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="number" id="qtyEtsy" class="qty-input" value="100" min="0" max="9999"
+                       oninput="recalcTotal()">
+                <span class="text-sm font-bold font-mono w-16 text-right" id="subtotalEtsy">$1,500</span>
+              </div>
+            </div>
+
+            <!-- Amazon -->
+            <div class="flex items-center justify-between py-2.5 px-4 rounded-xl" style="background:var(--bg-muted)">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(255,153,0,0.12)">
+                  <span class="text-[12px] font-bold" style="color:#FF9900">A</span>
+                </div>
+                <div>
+                  <p class="text-[13px] font-semibold">Amazon</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">Professional — $15/shop</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="number" id="qtyAmazon" class="qty-input" value="10" min="0" max="9999"
+                       oninput="recalcTotal()">
+                <span class="text-sm font-bold font-mono w-16 text-right" id="subtotalAmazon">$150</span>
+              </div>
+            </div>
+
+            <!-- TikTok -->
+            <div class="flex items-center justify-between py-2.5 px-4 rounded-xl" style="background:var(--bg-muted)">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(0,0,0,0.05)">
+                  <span class="text-[12px] font-bold" style="color:#010101">T</span>
+                </div>
+                <div>
+                  <p class="text-[13px] font-semibold">TikTok</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">Starter — $8/shop</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="number" id="qtyTikTok" class="qty-input" value="10" min="0" max="9999"
+                       oninput="recalcTotal()">
+                <span class="text-sm font-bold font-mono w-16 text-right" id="subtotalTikTok">$80</span>
+              </div>
+            </div>
+
+            <!-- eBay -->
+            <div class="flex items-center justify-between py-2.5 px-4 rounded-xl" style="background:var(--bg-muted)">
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(230,0,0,0.06)">
+                  <span class="text-[12px] font-bold" style="color:#E53238">B</span>
+                </div>
+                <div>
+                  <p class="text-[13px] font-semibold">eBay</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">Starter — $8/shop</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="number" id="qtyEbay" class="qty-input" value="10" min="0" max="9999"
+                       oninput="recalcTotal()">
+                <span class="text-sm font-bold font-mono w-16 text-right" id="subtotalEbay">$80</span>
+              </div>
+            </div>
+
+          </div><!-- end platform rows -->
+
+          <!-- Grand total preview box -->
+          <div class="total-box">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-semibold" style="color:var(--brand-primary)">Estimated Total</span>
+              <div class="text-right">
+                <div class="flex items-baseline gap-1.5">
+                  <span class="text-2xl font-extrabold font-mono" id="grandTotalMonthly">$1,810</span>
+                  <span class="text-xs font-medium" style="color:var(--text-secondary)">/mo</span>
+                </div>
+                <p class="text-[11px] mt-0.5" style="color:var(--success)">
+                  or <strong id="grandTotalYearly">$18,028</strong>/yr (save 17%)
+                </p>
+              </div>
+            </div>
+            <div class="text-[11px]" style="color:var(--text-secondary)">
+              Billed <span id="periodLabel">monthly</span>. Change anytime.
+            </div>
+          </div>
+
+        </div><!-- end estimator card -->
+
+      </div><!-- end #btab-upgrade -->
+
+
+      <!-- ================================================================
+           TAB 3: INVOICES
+           ================================================================ -->
+      <div class="billing-panel" id="btab-invoices">
+
+        <div class="card-static rounded-2xl overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr style="background:var(--bg-muted)">
+                <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Date</th>
+                <th class="text-right px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Amount</th>
+                <th class="text-left px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Description</th>
+                <th class="text-center px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Status</th>
+                <th class="text-center px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
+                    style="color:var(--text-tertiary)">Invoice</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Invoice rows: 6 months of billing history -->
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Mar 1, 2026</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,810.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional + Starter — 130 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2026-03.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Feb 1, 2026</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,810.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional + Starter — 130 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2026-02.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Jan 1, 2026</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,650.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional — 110 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2026-01.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Dec 1, 2025</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,500.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional — 100 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2025-12.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Nov 1, 2025</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$1,200.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional — 80 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2025-11.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-5 py-3.5 text-sm font-medium">Oct 1, 2025</td>
+                <td class="px-5 py-3.5 text-right font-mono text-sm font-bold">$900.00</td>
+                <td class="px-5 py-3.5 text-sm" style="color:var(--text-secondary)">Professional — 60 shops</td>
+                <td class="px-5 py-3.5 text-center">
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold"
+                        style="background:var(--success-bg);color:var(--success)">Paid</span>
+                </td>
+                <td class="px-5 py-3.5 text-center">
+                  <button class="inline-flex items-center gap-1 text-[12px] font-semibold"
+                          style="color:var(--brand-primary);background:none;border:none;cursor:pointer"
+                          onclick="showToast('Downloading INV-2025-10.pdf','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- end #btab-invoices -->
+
+
+      <!-- ================================================================
+           TAB 4: PAYMENT METHODS
+           ================================================================ -->
+      <div class="billing-panel" id="btab-payment">
+
+        <!-- Current card on file -->
+        <div class="card-static rounded-2xl p-5 mb-5">
+          <h3 class="text-sm font-bold mb-4">Payment Method</h3>
+
+          <!-- Card display -->
+          <div class="flex items-center justify-between p-4 rounded-xl mb-4"
+               style="background:var(--bg-muted)">
+            <div class="flex items-center gap-3">
+              <!-- Visa logo placeholder -->
+              <div class="w-12 h-8 rounded-md flex items-center justify-center text-white text-[11px] font-extrabold"
+                   style="background:#1A1F71;letter-spacing:0.5px">VISA</div>
+              <div>
+                <p class="text-sm font-semibold">Visa ending in <span class="font-mono">4242</span></p>
+                <p class="text-[11px]" style="color:var(--text-tertiary)">Expires 12/27</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style="background:var(--success-bg);color:var(--success)">
+                <i data-lucide="check-circle" class="w-3 h-3"></i> Default
+              </span>
+            </div>
+          </div>
+
+          <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"
+                  onclick="showToast('Redirecting to secure payment update form…','info')">
+            <i data-lucide="credit-card" class="w-4 h-4"></i>
+            Update Payment Method
+          </button>
+        </div>
+
+        <!-- Billing address -->
+        <div class="card-static rounded-2xl p-5">
+          <h3 class="text-sm font-bold mb-4">Billing Address</h3>
+          <div class="grid grid-cols-2 gap-4 max-w-lg">
+            <div class="col-span-2">
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Full Name</label>
+              <input type="text" value="John Doe"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div class="col-span-2">
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Company (optional)</label>
+              <input type="text" placeholder="Dodgeprint LLC"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div class="col-span-2">
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Address</label>
+              <input type="text" value="123 Commerce St"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div>
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">City</label>
+              <input type="text" value="San Francisco"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div>
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">ZIP / Postal Code</label>
+              <input type="text" value="94105"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div>
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Country</label>
+              <select class="w-full h-10 px-3 text-sm border rounded-xl"
+                      style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+                <option selected>United States</option>
+                <option>Canada</option>
+                <option>United Kingdom</option>
+                <option>Australia</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">State / Province</label>
+              <input type="text" value="CA"
+                     class="w-full h-10 px-3 text-sm border rounded-xl"
+                     style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+          </div>
+          <button class="btn-primary px-5 h-9 text-sm font-medium mt-5"
+                  onclick="showToast('Billing address saved!','success')">
+            Save Address
+          </button>
+        </div>
+
+      </div><!-- end #btab-payment -->
+
+    </main>
+  </div><!-- end mainArea -->
+
+</div><!-- end app-shell -->
+
+<!-- Mobile Bottom Nav (matches 09-settings.html pattern) -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white z-40 border-t hidden items-center justify-around py-2"
+     style="border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span>
+  </a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span>
+  </a>
+  <a href="06-research.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="search" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Research</span>
+  </a>
+  <a href="07-pod-hub.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="printer" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">POD Hub</span>
+  </a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="settings" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--brand-primary)">Settings</span>
+  </a>
+</nav>
+
+<!-- ===== PAGE SCRIPTS ===== -->
+<script>
+  // ===== TAB SWITCHING =====
+  function switchBillingTab(el, tabId) {
+    // Deactivate all tabs
+    document.querySelectorAll('.billing-tab').forEach(function(t) { t.classList.remove('active'); });
+    // Activate clicked tab
+    el.classList.add('active');
+    // Hide all panels
+    document.querySelectorAll('.billing-panel').forEach(function(p) { p.classList.remove('active'); });
+    // Show target panel
+    var target = document.getElementById('btab-' + tabId);
+    if (target) target.classList.add('active');
+  }
+
+  // ===== BILLING PERIOD TOGGLE =====
+  // Rates per shop/mo for each plan
+  var RATES = { etsy: 15, amazon: 15, tiktok: 8, ebay: 8 };
+  var currentPeriod = 'monthly';
+
+  function setPeriod(period) {
+    currentPeriod = period;
+
+    // Update toggle button states
+    document.getElementById('btnMonthly').classList.toggle('active', period === 'monthly');
+    document.getElementById('btnYearly').classList.toggle('active', period === 'yearly');
+
+    // Show/hide save badge
+    var badge = document.getElementById('saveBadge');
+    badge.classList.toggle('hidden', period === 'monthly');
+
+    // Update pricing card prices shown
+    document.querySelectorAll('[data-monthly]').forEach(function(el) {
+      el.textContent = period === 'monthly' ? el.getAttribute('data-monthly') : el.getAttribute('data-yearly');
+    });
+
+    // Update period label in total box
+    document.getElementById('periodLabel').textContent = period === 'yearly' ? 'yearly' : 'monthly';
+
+    // Recalculate totals
+    recalcTotal();
+
+    // Re-init lucide icons (badge may contain one)
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ===== REAL-TIME TOTAL CALCULATION =====
+  function recalcTotal() {
+    var qtyEtsy   = parseInt(document.getElementById('qtyEtsy').value)   || 0;
+    var qtyAmazon = parseInt(document.getElementById('qtyAmazon').value) || 0;
+    var qtyTikTok = parseInt(document.getElementById('qtyTikTok').value) || 0;
+    var qtyEbay   = parseInt(document.getElementById('qtyEbay').value)   || 0;
+
+    // Yearly discount multiplier (17% off = 0.83 effective monthly rate)
+    var mult = currentPeriod === 'yearly' ? 0.83 : 1;
+
+    var subEtsy   = Math.round(qtyEtsy   * RATES.etsy   * mult);
+    var subAmazon = Math.round(qtyAmazon * RATES.amazon * mult);
+    var subTikTok = Math.round(qtyTikTok * RATES.tiktok * mult);
+    var subEbay   = Math.round(qtyEbay   * RATES.ebay   * mult);
+
+    var total = subEtsy + subAmazon + subTikTok + subEbay;
+
+    // Update subtotal cells
+    document.getElementById('subtotalEtsy').textContent   = '$' + subEtsy.toLocaleString();
+    document.getElementById('subtotalAmazon').textContent = '$' + subAmazon.toLocaleString();
+    document.getElementById('subtotalTikTok').textContent = '$' + subTikTok.toLocaleString();
+    document.getElementById('subtotalEbay').textContent   = '$' + subEbay.toLocaleString();
+
+    // Update grand total preview
+    document.getElementById('grandTotalMonthly').textContent = '$' + total.toLocaleString();
+    var yearlyTotal = Math.round(total * 12 * 0.83);
+    document.getElementById('grandTotalYearly').textContent  = '$' + yearlyTotal.toLocaleString();
+  }
+
+  // Run initial calculation on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    recalcTotal();
+    // Re-init lucide after DOM ready (shared nav also calls this, belt-and-suspenders)
+    if (window.lucide) lucide.createIcons();
+  });
+</script>
+</body>
+</html>

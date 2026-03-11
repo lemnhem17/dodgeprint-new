@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Templates</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: 'var(--brand-primary)',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* Template panel visibility */
+  .tmpl-panel { display: none; }
+  .tmpl-panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+
+  /* Left nav tab (template section style) */
+  .tmpl-tab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.12s, color 0.12s;
+    color: var(--text-secondary);
+    width: 100%;
+    text-align: left;
+    border: none; background: none;
+  }
+  .tmpl-tab:hover { background: var(--bg-muted); color: var(--text-primary); }
+  .tmpl-tab.active {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
+
+  /* Collapsible platform group */
+  .platform-group-body { overflow: hidden; transition: max-height 0.25s ease; }
+  .platform-group-body.collapsed { max-height: 0 !important; }
+
+  /* Chevron rotation for collapse */
+  .chevron-icon { transition: transform 0.2s ease; }
+  .chevron-icon.open { transform: rotate(180deg); }
+</style>
+</head>
+<body data-page="templates">
+
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+<div id="nav-progress-bar"></div>
+
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-7">
+
+      <!-- Page Title -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Templates</h1>
+        <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Reusable configurations for listings across platforms</p>
+      </div>
+
+      <!-- Templates Layout: Left Nav + Right Content -->
+      <div class="flex gap-6">
+
+        <!-- ===== LEFT NAVIGATION (w-52) ===== -->
+        <div class="w-52 flex-shrink-0">
+          <div class="space-y-4">
+
+            <!-- DETAILS section -->
+            <div>
+              <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1.5"
+                   style="color:var(--text-tertiary)">Details</div>
+              <div class="space-y-0.5">
+                <button class="tmpl-tab active" id="tab-descriptions" onclick="switchTmplTab(this,'descriptions')">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                  Descriptions
+                </button>
+                <button class="tmpl-tab" id="tab-variations" onclick="switchTmplTab(this,'variations')">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                  Variations
+                </button>
+                <button class="tmpl-tab" id="tab-tags" onclick="switchTmplTab(this,'tags')">
+                  <i data-lucide="tag" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                  Tags
+                </button>
+              </div>
+            </div>
+
+            <!-- SALES CHANNELS section -->
+            <div>
+              <div class="text-[10px] font-semibold uppercase tracking-wider px-2 pb-1.5"
+                   style="color:var(--text-tertiary)">Sales Channels</div>
+              <div class="space-y-0.5">
+
+                <!-- Etsy (collapsible) -->
+                <div>
+                  <button class="tmpl-tab w-full justify-between" onclick="togglePlatformGroup('etsy-group', this)">
+                    <span class="flex items-center gap-2">
+                      <span class="w-3.5 h-3.5 rounded-sm flex-shrink-0 flex items-center justify-center text-[10px] font-bold" style="background:rgba(241,100,30,.15);color:#F1641E">E</span>
+                      Etsy
+                    </span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 chevron-icon open flex-shrink-0"></i>
+                  </button>
+                  <div class="platform-group-body" id="etsy-group" style="max-height:200px">
+                    <div class="ml-4 mt-0.5 space-y-0.5">
+                      <button class="tmpl-tab" id="tab-etsy-shipping" onclick="switchTmplTab(this,'etsy-shipping')">
+                        <i data-lucide="truck" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Shipping Profiles
+                      </button>
+                      <button class="tmpl-tab" id="tab-etsy-personalization" onclick="switchTmplTab(this,'etsy-personalization')">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Personalizations
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shopify (no sub-items) -->
+                <button class="tmpl-tab" id="tab-shopify" onclick="switchTmplTab(this,'shopify')">
+                  <span class="w-3.5 h-3.5 rounded-sm flex-shrink-0 flex items-center justify-center text-[10px] font-bold" style="background:rgba(150,191,72,.15);color:#96BF48">S</span>
+                  Shopify
+                </button>
+
+                <!-- TikTok (collapsible) -->
+                <div>
+                  <button class="tmpl-tab w-full justify-between" onclick="togglePlatformGroup('tiktok-group', this)">
+                    <span class="flex items-center gap-2">
+                      <span class="w-3.5 h-3.5 rounded-sm flex-shrink-0 flex items-center justify-center text-[10px] font-bold" style="background:rgba(0,0,0,.08);color:#010101">T</span>
+                      TikTok
+                    </span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 chevron-icon open flex-shrink-0"></i>
+                  </button>
+                  <div class="platform-group-body" id="tiktok-group" style="max-height:200px">
+                    <div class="ml-4 mt-0.5 space-y-0.5">
+                      <button class="tmpl-tab" id="tab-tiktok-shipping" onclick="switchTmplTab(this,'tiktok-shipping')">
+                        <i data-lucide="package" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Shipping Packages
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Amazon (collapsible) -->
+                <div>
+                  <button class="tmpl-tab w-full justify-between" onclick="togglePlatformGroup('amazon-group', this)">
+                    <span class="flex items-center gap-2">
+                      <span class="w-3.5 h-3.5 rounded-sm flex-shrink-0 flex items-center justify-center text-[10px] font-bold" style="background:rgba(255,153,0,.15);color:#FF9900">A</span>
+                      Amazon
+                    </span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 chevron-icon open flex-shrink-0"></i>
+                  </button>
+                  <div class="platform-group-body" id="amazon-group" style="max-height:200px">
+                    <div class="ml-4 mt-0.5 space-y-0.5">
+                      <button class="tmpl-tab" id="tab-amazon-shipping" onclick="switchTmplTab(this,'amazon-shipping')">
+                        <i data-lucide="package" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Shipping Packages
+                      </button>
+                      <button class="tmpl-tab" id="tab-amazon-bullets" onclick="switchTmplTab(this,'amazon-bullets')">
+                        <i data-lucide="list" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Bullet Points
+                      </button>
+                      <button class="tmpl-tab" id="tab-amazon-keywords" onclick="switchTmplTab(this,'amazon-keywords')">
+                        <i data-lucide="key" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        Generic Keywords
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== RIGHT CONTENT AREA ===== -->
+        <div class="flex-1">
+
+          <!-- ====== DESCRIPTIONS (default active) ====== -->
+          <div class="tmpl-panel active" id="tmpl-descriptions">
+            <!-- Toolbar -->
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-base font-bold">Description Templates</h2>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+
+            <!-- Table -->
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Platforms</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Shared Access</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Created By</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Row 1 -->
+                  <tr>
+                    <td class="px-4 py-3">
+                      <span class="text-sm font-semibold">Standard Product Description</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">All Platforms</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--success-bg);color:var(--success)">
+                        <i data-lucide="users" class="w-3 h-3"></i> Team
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-bold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Opening editor…','info')">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Row 2 -->
+                  <tr>
+                    <td class="px-4 py-3">
+                      <span class="text-sm font-semibold">Holiday Template</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-1 flex-wrap">
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:rgba(241,100,30,.1);color:#F1641E">Etsy</span>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:rgba(150,191,72,.1);color:#96BF48">Shopify</span>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">
+                        <i data-lucide="lock" class="w-3 h-3"></i> Private
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-bold" style="background:var(--brand-accent-bg);color:var(--brand-accent)">AC</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Opening editor…','info')">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Row 3 -->
+                  <tr>
+                    <td class="px-4 py-3">
+                      <span class="text-sm font-semibold">Amazon Optimized</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:rgba(255,153,0,.12);color:#FF9900">Amazon</span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold" style="background:var(--success-bg);color:var(--success)">
+                        <i data-lucide="users" class="w-3 h-3"></i> Team
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex w-7 h-7 rounded-full items-center justify-center text-xs font-bold" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">KT</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Opening editor…','info')">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== VARIATIONS ====== -->
+          <div class="tmpl-panel" id="tmpl-variations">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-base font-bold">Variation Templates</h2>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Options Count</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Size + Color Options</td>
+                    <td class="px-4 py-3 text-sm font-mono">12</td>
+                    <td class="px-4 py-3 text-sm">48 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Canvas Size Options</td>
+                    <td class="px-4 py-3 text-sm font-mono">6</td>
+                    <td class="px-4 py-3 text-sm">23 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== TAGS ====== -->
+          <div class="tmpl-panel" id="tmpl-tags">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-base font-bold">Tag Templates</h2>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Template Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Tags</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Home Decor Tags</td>
+                    <td class="px-4 py-3">
+                      <div class="flex gap-1 flex-wrap">
+                        <span class="px-1.5 py-0.5 rounded text-[11px]" style="background:var(--bg-muted);color:var(--text-secondary)">home decor</span>
+                        <span class="px-1.5 py-0.5 rounded text-[11px]" style="background:var(--bg-muted);color:var(--text-secondary)">wall art</span>
+                        <span class="px-1.5 py-0.5 rounded text-[11px]" style="background:var(--bg-muted);color:var(--text-secondary)">+11</span>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm">67 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== ETSY > SHIPPING PROFILES ====== -->
+          <div class="tmpl-panel" id="tmpl-etsy-shipping">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(241,100,30,.1);color:#F1641E">Etsy</span>
+                </div>
+                <h2 class="text-base font-bold">Shipping Profiles</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Profile
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Profile Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Processing Time</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Shipping Cost</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Countries</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Standard US Shipping</td>
+                    <td class="px-4 py-3 text-sm">3–5 business days</td>
+                    <td class="px-4 py-3 text-sm font-mono">$4.99</td>
+                    <td class="px-4 py-3 text-sm">United States</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">International Economy</td>
+                    <td class="px-4 py-3 text-sm">7–14 business days</td>
+                    <td class="px-4 py-3 text-sm font-mono">$12.99</td>
+                    <td class="px-4 py-3 text-sm">Worldwide</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Free Domestic + Expedited</td>
+                    <td class="px-4 py-3 text-sm">1–2 business days</td>
+                    <td class="px-4 py-3 text-sm font-mono">$0.00</td>
+                    <td class="px-4 py-3 text-sm">United States, Canada</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== ETSY > PERSONALIZATIONS ====== -->
+          <div class="tmpl-panel" id="tmpl-etsy-personalization">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(241,100,30,.1);color:#F1641E">Etsy</span>
+                </div>
+                <h2 class="text-base font-bold">Personalization Templates</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Template Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Instructions</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Required</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Custom Name Engraving</td>
+                    <td class="px-4 py-3 text-sm" style="color:var(--text-secondary)">Please enter the name you'd like engraved…</td>
+                    <td class="px-4 py-3"><span class="status-synced">Yes</span></td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Gift Message</td>
+                    <td class="px-4 py-3 text-sm" style="color:var(--text-secondary)">Add a personal message (up to 150 chars)</td>
+                    <td class="px-4 py-3"><span class="status-draft">Optional</span></td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== SHOPIFY ====== -->
+          <div class="tmpl-panel" id="tmpl-shopify">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(150,191,72,.12);color:#96BF48">Shopify</span>
+                </div>
+                <h2 class="text-base font-bold">Shopify Templates</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Type</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Standard SEO Description</td>
+                    <td class="px-4 py-3 text-sm">HTML Description</td>
+                    <td class="px-4 py-3 text-sm">34 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== TIKTOK > SHIPPING PACKAGES ====== -->
+          <div class="tmpl-panel" id="tmpl-tiktok-shipping">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:var(--bg-muted);color:var(--text-secondary)">TikTok</span>
+                </div>
+                <h2 class="text-base font-bold">Shipping Packages</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Package
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Package Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Dimensions</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Weight</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Small Flat Pack</td>
+                    <td class="px-4 py-3 text-sm font-mono">12 × 9 × 1 in</td>
+                    <td class="px-4 py-3 text-sm font-mono">0.5 lb</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== AMAZON > SHIPPING PACKAGES ====== -->
+          <div class="tmpl-panel" id="tmpl-amazon-shipping">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(255,153,0,.12);color:#FF9900">Amazon</span>
+                </div>
+                <h2 class="text-base font-bold">Shipping Packages</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Package
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Package Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Dimensions</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Weight</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Carrier</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Standard Box</td>
+                    <td class="px-4 py-3 text-sm font-mono">14 × 10 × 4 in</td>
+                    <td class="px-4 py-3 text-sm font-mono">2 lb</td>
+                    <td class="px-4 py-3 text-sm">UPS / FedEx</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== AMAZON > BULLET POINTS ====== -->
+          <div class="tmpl-panel" id="tmpl-amazon-bullets">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(255,153,0,.12);color:#FF9900">Amazon</span>
+                </div>
+                <h2 class="text-base font-bold">Bullet Point Templates</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Template Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Bullet Count</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">POD Standard Bullets</td>
+                    <td class="px-4 py-3 text-sm font-mono">5</td>
+                    <td class="px-4 py-3 text-sm">89 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Premium Product Bullets</td>
+                    <td class="px-4 py-3 text-sm font-mono">5</td>
+                    <td class="px-4 py-3 text-sm">41 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ====== AMAZON > GENERIC KEYWORDS ====== -->
+          <div class="tmpl-panel" id="tmpl-amazon-keywords">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(255,153,0,.12);color:#FF9900">Amazon</span>
+                </div>
+                <h2 class="text-base font-bold">Generic Keyword Templates</h2>
+              </div>
+              <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Create Template
+              </button>
+            </div>
+            <div class="card-static rounded-2xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr style="background:var(--bg-muted)">
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Template Name</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Keyword Count</th>
+                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
+                    <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Home Decor Keywords</td>
+                    <td class="px-4 py-3 text-sm font-mono">250 chars</td>
+                    <td class="px-4 py-3 text-sm">55 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 font-medium">Gift Occasion Keywords</td>
+                    <td class="px-4 py-3 text-sm font-mono">230 chars</td>
+                    <td class="px-4 py-3 text-sm">28 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div><!-- end right content -->
+      </div><!-- end flex layout -->
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t hidden items-center justify-around py-2" style="background:var(--bg-card);border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span></a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span></a>
+  <a href="18-templates.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="layout-template" class="w-5 h-5" style="color:var(--brand-primary)"></i><span class="text-[10px] font-medium" style="color:var(--brand-primary)">Templates</span></a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="settings" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Settings</span></a>
+</nav>
+
+<script>
+// ===== TEMPLATES: Tab Switching =====
+function switchTmplTab(el, tabId) {
+  // Deactivate all tabs
+  document.querySelectorAll('.tmpl-tab').forEach(function(t) {
+    t.classList.remove('active');
+  });
+  // Activate clicked tab
+  el.classList.add('active');
+
+  // Hide all panels
+  document.querySelectorAll('.tmpl-panel').forEach(function(p) {
+    p.classList.remove('active');
+  });
+  // Show target panel
+  var target = document.getElementById('tmpl-' + tabId);
+  if (target) target.classList.add('active');
+}
+
+// ===== TEMPLATES: Collapse/Expand Platform Groups =====
+function togglePlatformGroup(groupId, btn) {
+  var group = document.getElementById(groupId);
+  if (!group) return;
+  var chevron = btn.querySelector('.chevron-icon');
+  var isCollapsed = group.classList.contains('collapsed');
+
+  if (isCollapsed) {
+    // Expand
+    group.classList.remove('collapsed');
+    if (chevron) chevron.classList.add('open');
+  } else {
+    // Collapse
+    group.classList.add('collapsed');
+    if (chevron) chevron.classList.remove('open');
+  }
+}
+</script>
+</body>
+</html>

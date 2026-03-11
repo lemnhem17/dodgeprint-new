@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Deployments</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<script>
+  // Tailwind custom config — matches project design tokens
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: 'var(--brand-primary)',
+          secondary: 'var(--brand-secondary)',
+          accent: 'var(--brand-accent)',
+        }
+      }
+    }
+  };
+</script>
+<style>
+  /* ===== Deployment type badge ===== */
+  .type-insert {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .type-update-partial {
+    background: var(--brand-accent-bg);
+    color: var(--brand-accent);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 9999px;
+    white-space: nowrap;
+  }
+  .type-update-image {
+    background: var(--purple-bg);
+    color: var(--purple);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 9999px;
+    white-space: nowrap;
+  }
+
+  /* ===== KPI cards: no hover lift (matches .kpi-card pattern) ===== */
+  .kpi-card { transition: none !important; box-shadow: none !important; }
+  .kpi-card:hover { transform: none !important; box-shadow: none !important; }
+
+  /* ===== Shop filter dropdown — searchable ===== */
+  .shop-filter-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 280px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    z-index: 200;
+    overflow: hidden;
+  }
+  .shop-filter-dropdown .search-row {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .shop-filter-dropdown .search-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px 0 30px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    outline: none;
+  }
+  .shop-filter-dropdown .search-input:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px var(--brand-primary-bg);
+  }
+  .shop-filter-dropdown .platform-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 8px 12px 4px;
+  }
+  .shop-filter-dropdown .shop-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .shop-filter-dropdown .shop-option:hover {
+    background: var(--bg-muted);
+  }
+  .shop-filter-dropdown .shop-option.selected {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+  }
+
+  /* ===== Filter button (toolbar dropdowns) ===== */
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    white-space: nowrap;
+    position: relative;
+  }
+  .filter-btn:hover {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary-bg);
+  }
+  .filter-btn.active-filter {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
+
+  /* ===== Simple inline filter dropdown (status / type) ===== */
+  .inline-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 160px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    z-index: 200;
+    overflow: hidden;
+    padding: 4px;
+  }
+  .inline-dropdown .dd-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    font-size: 12px; font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.1s;
+    color: var(--text-primary);
+  }
+  .inline-dropdown .dd-item:hover { background: var(--bg-muted); }
+  .inline-dropdown .dd-item.selected {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body data-page="deployments">
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<!-- Navigation progress bar -->
+<div id="nav-progress-bar"></div>
+
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Products" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Products</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+          <!-- Deployments — active page -->
+          <a data-nav="deployments" data-tooltip="Deployments"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="rocket" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Deployments</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+             style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)"
+                 class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg"
+                 style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')"
+                class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-7">
+
+      <!-- ===== Page Title ===== -->
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Deployments</h1>
+          <p class="text-[13px] mt-0.5" style="color:var(--text-tertiary)">
+            Track product deployments to your shops
+          </p>
+        </div>
+        <button class="btn-primary h-10 px-5 text-sm font-semibold inline-flex items-center gap-2"
+                onclick="showToast('New deployment started','success')">
+          <i data-lucide="rocket" class="w-4 h-4"></i>
+          New Deployment
+        </button>
+      </div>
+
+      <!-- ===== Toolbar — filters ===== -->
+      <div class="flex flex-wrap items-center gap-2 mb-6">
+
+        <!-- Filter: Shop (searchable dropdown — critical UX for 130+ shops) -->
+        <div class="relative" id="shopFilterWrapper">
+          <button class="filter-btn" id="shopFilterBtn" onclick="toggleShopFilterDropdown()">
+            <i data-lucide="store" class="w-3.5 h-3.5" style="color:var(--text-tertiary)"></i>
+            <span id="shopFilterLabel">All Shops</span>
+            <i data-lucide="chevron-down" class="w-3 h-3" style="color:var(--text-tertiary)"></i>
+          </button>
+
+          <!-- Searchable shop dropdown panel -->
+          <div class="shop-filter-dropdown hidden" id="shopFilterDropdown">
+            <!-- Search input at top -->
+            <div class="search-row" style="position:relative">
+              <i data-lucide="search" class="w-3.5 h-3.5"
+                 style="position:absolute;left:22px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);pointer-events:none"></i>
+              <input type="text"
+                     class="search-input"
+                     placeholder="Search shops..."
+                     id="shopSearchInput"
+                     oninput="filterShopOptions(this.value)"
+                     onclick="event.stopPropagation()">
+            </div>
+
+            <!-- Scrollable list with platform sections -->
+            <div style="max-height:280px;overflow-y:auto;padding-bottom:4px" id="shopFilterList">
+
+              <!-- All option -->
+              <div class="shop-option selected" onclick="selectShopFilter('all','All Shops')" id="shopOpt-all">
+                <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--text-tertiary)"></i>
+                All Shops
+              </div>
+
+              <!-- ETSY section -->
+              <div class="platform-section-label">Etsy</div>
+              <div class="shop-option" onclick="selectShopFilter('etsy-nastyjamz','NastyJamz')" id="shopOpt-etsy-nastyjamz">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                NastyJamz
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('etsy-cozypets','CozyPets')" id="shopOpt-etsy-cozypets">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                CozyPets
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('etsy-vintagevibes','VintageVibes')" id="shopOpt-etsy-vintagevibes">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                VintageVibes
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('etsy-boldtees','BoldTees')" id="shopOpt-etsy-boldtees">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                BoldTees
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('etsy-inkcraft','InkCraft')" id="shopOpt-etsy-inkcraft">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                InkCraft
+              </div>
+
+              <!-- AMAZON section -->
+              <div class="platform-section-label">Amazon</div>
+              <div class="shop-option" onclick="selectShopFilter('amz-usmerch','US Merch')" id="shopOpt-amz-usmerch">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(255,153,0,0.12);color:#FF9900">A</span>
+                US Merch
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('amz-primeprint','PrimePrint')" id="shopOpt-amz-primeprint">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(255,153,0,0.12);color:#FF9900">A</span>
+                PrimePrint
+              </div>
+
+              <!-- TIKTOK section -->
+              <div class="platform-section-label">TikTok Shop</div>
+              <div class="shop-option" onclick="selectShopFilter('tt-trendkits','TrendKits')" id="shopOpt-tt-trendkits">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(0,0,0,0.08);color:#111">TT</span>
+                TrendKits
+              </div>
+              <div class="shop-option" onclick="selectShopFilter('tt-viralmerch','ViralMerch')" id="shopOpt-tt-viralmerch">
+                <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                      style="background:rgba(0,0,0,0.08);color:#111">TT</span>
+                ViralMerch
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter: Status -->
+        <div class="relative" id="statusFilterWrapper">
+          <button class="filter-btn" id="statusFilterBtn" onclick="toggleInlineDropdown('status')">
+            <i data-lucide="activity" class="w-3.5 h-3.5" style="color:var(--text-tertiary)"></i>
+            <span id="statusFilterLabel">All Statuses</span>
+            <i data-lucide="chevron-down" class="w-3 h-3" style="color:var(--text-tertiary)"></i>
+          </button>
+          <div class="inline-dropdown hidden" id="statusDropdown">
+            <div class="dd-item selected" onclick="selectStatusFilter('all','All Statuses')">All Statuses</div>
+            <div class="dd-item" onclick="selectStatusFilter('finished','Finished')">
+              <span class="status-synced">Finished</span>
+            </div>
+            <div class="dd-item" onclick="selectStatusFilter('failed','Failed')">
+              <span class="status-error">Failed</span>
+            </div>
+            <div class="dd-item" onclick="selectStatusFilter('in-progress','In Progress')">
+              <span class="status-pending">In Progress</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter: Type -->
+        <div class="relative" id="typeFilterWrapper">
+          <button class="filter-btn" id="typeFilterBtn" onclick="toggleInlineDropdown('type')">
+            <i data-lucide="layers" class="w-3.5 h-3.5" style="color:var(--text-tertiary)"></i>
+            <span id="typeFilterLabel">All Types</span>
+            <i data-lucide="chevron-down" class="w-3 h-3" style="color:var(--text-tertiary)"></i>
+          </button>
+          <div class="inline-dropdown hidden" id="typeDropdown">
+            <div class="dd-item selected" onclick="selectTypeFilter('all','All Types')">All Types</div>
+            <div class="dd-item" onclick="selectTypeFilter('insert','Insert')">
+              <span class="type-insert">Insert</span>
+            </div>
+            <div class="dd-item" onclick="selectTypeFilter('update-partial','Update Partial')">
+              <span class="type-update-partial">Update Partial</span>
+            </div>
+            <div class="dd-item" onclick="selectTypeFilter('update-image','Update Image')">
+              <span class="type-update-image">Update Image</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter: Date range -->
+        <div class="relative">
+          <button class="filter-btn" onclick="showToast('Date range picker coming soon','info')">
+            <i data-lucide="calendar" class="w-3.5 h-3.5" style="color:var(--text-tertiary)"></i>
+            <span>Mar 1 – Mar 11, 2026</span>
+            <i data-lucide="chevron-down" class="w-3 h-3" style="color:var(--text-tertiary)"></i>
+          </button>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- Right: New Deployment (also in header, duplicate for toolbar) is omitted here per design -->
+      </div>
+
+      <!-- ===== KPI Stats Row ===== -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+
+        <!-- Total Deployments -->
+        <div class="card-static kpi-card rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">
+              Total
+            </p>
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style="background:var(--brand-primary-bg)">
+              <i data-lucide="rocket" class="w-3.5 h-3.5" style="color:var(--brand-primary)"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-extrabold font-mono">156</p>
+          <p class="text-[11px] mt-0.5" style="color:var(--text-tertiary)">Deployments</p>
+        </div>
+
+        <!-- Success Rate -->
+        <div class="card-static kpi-card rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">
+              Success Rate
+            </p>
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style="background:var(--success-bg)">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5" style="color:var(--success)"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-extrabold font-mono" style="color:var(--success)">94.2%</p>
+          <p class="text-[11px] mt-0.5" style="color:var(--text-tertiary)">147 of 156 successful</p>
+        </div>
+
+        <!-- Failed -->
+        <div class="card-static kpi-card rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">
+              Failed
+            </p>
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style="background:var(--danger-bg)">
+              <i data-lucide="x-circle" class="w-3.5 h-3.5" style="color:var(--danger)"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-extrabold font-mono" style="color:var(--danger)">9</p>
+          <p class="text-[11px] mt-0.5" style="color:var(--text-tertiary)">Need attention</p>
+        </div>
+
+        <!-- In Progress -->
+        <div class="card-static kpi-card rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">
+              In Progress
+            </p>
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style="background:var(--info-bg)">
+              <i data-lucide="loader" class="w-3.5 h-3.5" style="color:var(--info)"></i>
+            </div>
+          </div>
+          <p class="text-2xl font-extrabold font-mono" style="color:var(--info)">3</p>
+          <p class="text-[11px] mt-0.5" style="color:var(--text-tertiary)">Currently running</p>
+        </div>
+      </div>
+
+      <!-- ===== Deployments Table ===== -->
+      <div class="card-static rounded-2xl overflow-hidden">
+        <table class="w-full text-sm" id="deploymentsTable">
+          <thead>
+            <tr style="background:var(--bg-muted)">
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Created By</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Type</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Shop</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Status</th>
+              <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Products (Total / Done / Failed)</th>
+              <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                  style="color:var(--text-tertiary)">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Row 1: Finished / Insert / NastyJamz-Etsy -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                  <div>
+                    <p class="text-xs font-medium">John Doe</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 11, 09:12</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-insert">Insert</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                  <span class="text-xs font-medium">NastyJamz</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-synced">Finished</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">150</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">148</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">2</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 2: In Progress / Insert / US Merch-Amazon -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+                  <div>
+                    <p class="text-xs font-medium">Sarah Adams</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 11, 08:45</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-insert">Insert</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(255,153,0,0.12);color:#FF9900">A</span>
+                  <span class="text-xs font-medium">US Merch</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-pending">In Progress</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">200</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">87</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">0</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 3: Failed / Update Partial / VintageVibes-Etsy -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                  <div>
+                    <p class="text-xs font-medium">John Doe</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 10, 22:30</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-update-partial">Update Partial</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                  <span class="text-xs font-medium">VintageVibes</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-error">Failed</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">75</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">12</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">63</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 4: Finished / Insert / TrendKits-TikTok -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">MK</div>
+                  <div>
+                    <p class="text-xs font-medium">Mike Kim</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 10, 18:05</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-insert">Insert</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(0,0,0,0.08);color:#111">TT</span>
+                  <span class="text-xs font-medium">TrendKits</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-synced">Finished</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">50</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">50</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">0</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 5: Finished / Update Image / BoldTees-Etsy -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                  <div>
+                    <p class="text-xs font-medium">John Doe</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 10, 14:22</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-update-image">Update Image</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                  <span class="text-xs font-medium">BoldTees</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-synced">Finished</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">300</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">297</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">3</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 6: In Progress / Update Partial / PrimePrint-Amazon -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-accent-bg);color:var(--brand-accent)">SA</div>
+                  <div>
+                    <p class="text-xs font-medium">Sarah Adams</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 10, 11:00</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-update-partial">Update Partial</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(255,153,0,0.12);color:#FF9900">A</span>
+                  <span class="text-xs font-medium">PrimePrint</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-pending">In Progress</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">120</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">44</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">1</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 7: Failed / Insert / CozyPets-Etsy -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</div>
+                  <div>
+                    <p class="text-xs font-medium">John Doe</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 9, 16:48</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-insert">Insert</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(241,100,30,0.12);color:#F1641E">E</span>
+                  <span class="text-xs font-medium">CozyPets</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-error">Failed</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">80</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">0</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">80</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 8: Finished / Update Partial / ViralMerch-TikTok -->
+            <tr class="listing-row">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                       style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">MK</div>
+                  <div>
+                    <p class="text-xs font-medium">Mike Kim</p>
+                    <p class="text-[11px] font-mono" style="color:var(--text-tertiary)">Mar 9, 10:15</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3"><span class="type-update-partial">Update Partial</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                        style="background:rgba(0,0,0,0.08);color:#111">TT</span>
+                  <span class="text-xs font-medium">ViralMerch</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center"><span class="status-synced">Finished</span></td>
+              <td class="px-4 py-3 text-center">
+                <span class="font-mono text-xs">60</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--success)">59</span>
+                <span class="text-[11px] mx-1" style="color:var(--text-tertiary)">/</span>
+                <span class="font-mono text-xs" style="color:var(--danger)">1</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center justify-end gap-2 row-actions">
+                  <button class="btn-ghost px-3 h-7 text-xs font-medium"
+                          onclick="showToast('Opening deployment report...','info')">View Report</button>
+                  <button class="row-action-btn" title="Download logs"
+                          onclick="showToast('Downloading logs...','info')">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+
+        <!-- Table footer: pagination info -->
+        <div class="flex items-center justify-between px-4 py-3"
+             style="border-top:1px solid var(--border-light)">
+          <p class="text-xs" style="color:var(--text-tertiary)">
+            Showing 8 of 156 deployments
+          </p>
+          <div class="flex items-center gap-1">
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg btn-ghost"
+                    onclick="showToast('Previous page','info')">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="text-xs font-medium px-2" style="color:var(--text-secondary)">Page 1 of 20</span>
+            <button class="w-7 h-7 flex items-center justify-center rounded-lg btn-ghost"
+                    onclick="showToast('Next page','info')">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div><!-- /mainArea -->
+</div><!-- /app-shell -->
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white z-40 border-t hidden items-center justify-around py-2"
+     style="border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span>
+  </a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Products</span>
+  </a>
+  <a href="06-research.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="search" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Research</span>
+  </a>
+  <a href="17-deployments.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="rocket" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--brand-primary)">Deployments</span>
+  </a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="settings" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Settings</span>
+  </a>
+</nav>
+
+<script>
+/* ============================================================
+   17-deployments.html — Filter interaction logic
+   ============================================================ */
+
+// ===== SHOP FILTER (searchable) =====
+
+// Toggle the shop filter dropdown open/closed
+function toggleShopFilterDropdown() {
+  var dd = document.getElementById('shopFilterDropdown');
+  if (!dd) return;
+  var isHidden = dd.classList.contains('hidden');
+  // Close all other open dropdowns first
+  closeAllDropdowns();
+  if (isHidden) {
+    dd.classList.remove('hidden');
+    var input = document.getElementById('shopSearchInput');
+    if (input) setTimeout(function() { input.focus(); }, 50);
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+// Filter visible shop options by search query
+function filterShopOptions(query) {
+  query = (query || '').toLowerCase().trim();
+  var allOptions = document.querySelectorAll('#shopFilterList .shop-option, #shopFilterList .platform-section-label');
+
+  // Track whether each platform section has any visible shop
+  var platformHasVisible = {};
+  var currentPlatform = null;
+
+  allOptions.forEach(function(el) {
+    if (el.classList.contains('platform-section-label')) {
+      currentPlatform = el;
+      // Temporarily hide — we'll reveal if any child is visible
+      el.style.display = query ? 'none' : '';
+      return;
+    }
+    // It's a shop option
+    var text = el.textContent.toLowerCase();
+    var visible = !query || text.indexOf(query) !== -1;
+    el.style.display = visible ? '' : 'none';
+    if (visible && currentPlatform) {
+      currentPlatform.style.display = '';
+    }
+  });
+}
+
+// Handle shop option click
+function selectShopFilter(id, label) {
+  // Update all option selected states
+  document.querySelectorAll('#shopFilterList .shop-option').forEach(function(el) {
+    el.classList.toggle('selected', el.id === 'shopOpt-' + id);
+  });
+  // Update button label
+  var labelEl = document.getElementById('shopFilterLabel');
+  if (labelEl) labelEl.textContent = label;
+
+  // Mark button as active filter if not "all"
+  var btn = document.getElementById('shopFilterBtn');
+  if (btn) btn.classList.toggle('active-filter', id !== 'all');
+
+  // Close dropdown
+  var dd = document.getElementById('shopFilterDropdown');
+  if (dd) dd.classList.add('hidden');
+
+  // Reset search input
+  var inp = document.getElementById('shopSearchInput');
+  if (inp) { inp.value = ''; filterShopOptions(''); }
+
+  showToast('Filtered by: ' + label, 'info');
+}
+
+// ===== STATUS FILTER =====
+function selectStatusFilter(value, label) {
+  document.getElementById('statusFilterLabel').textContent = label;
+  var btn = document.getElementById('statusFilterBtn');
+  if (btn) btn.classList.toggle('active-filter', value !== 'all');
+  // Mark selected inside dropdown
+  document.querySelectorAll('#statusDropdown .dd-item').forEach(function(el) {
+    el.classList.toggle('selected', el.textContent.trim().toLowerCase().indexOf(label.toLowerCase()) !== -1);
+  });
+  closeAllDropdowns();
+  showToast('Filtered by status: ' + label, 'info');
+}
+
+// ===== TYPE FILTER =====
+function selectTypeFilter(value, label) {
+  document.getElementById('typeFilterLabel').textContent = label;
+  var btn = document.getElementById('typeFilterBtn');
+  if (btn) btn.classList.toggle('active-filter', value !== 'all');
+  closeAllDropdowns();
+  showToast('Filtered by type: ' + label, 'info');
+}
+
+// ===== GENERIC INLINE DROPDOWN (status / type) =====
+function toggleInlineDropdown(which) {
+  var dd = document.getElementById(which + 'Dropdown');
+  if (!dd) return;
+  var isHidden = dd.classList.contains('hidden');
+  closeAllDropdowns();
+  if (isHidden) dd.classList.remove('hidden');
+}
+
+// Close all filter dropdowns
+function closeAllDropdowns() {
+  ['shopFilterDropdown', 'statusDropdown', 'typeDropdown'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+// ===== Close dropdowns on outside click =====
+document.addEventListener('click', function(e) {
+  // Shop filter wrapper
+  var shopWrap = document.getElementById('shopFilterWrapper');
+  if (shopWrap && !shopWrap.contains(e.target)) {
+    var dd = document.getElementById('shopFilterDropdown');
+    if (dd) dd.classList.add('hidden');
+  }
+  // Status filter wrapper
+  var statusWrap = document.getElementById('statusFilterWrapper');
+  if (statusWrap && !statusWrap.contains(e.target)) {
+    var sd = document.getElementById('statusDropdown');
+    if (sd) sd.classList.add('hidden');
+  }
+  // Type filter wrapper
+  var typeWrap = document.getElementById('typeFilterWrapper');
+  if (typeWrap && !typeWrap.contains(e.target)) {
+    var td = document.getElementById('typeDropdown');
+    if (td) td.classList.add('hidden');
+  }
+});
+</script>
+</body>
+</html>

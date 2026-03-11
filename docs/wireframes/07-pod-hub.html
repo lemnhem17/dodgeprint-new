@@ -161,6 +161,18 @@
     <!-- Page Content -->
     <main class="p-7">
 
+      <!-- Empty state — hidden when designs present -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="printer" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">Upload your first design</div>
+        <div class="empty-state-desc">Add designs to your library, then apply them to products across all shops.</div>
+        <button class="btn-primary px-4 py-2 text-xs font-semibold">
+          <i data-lucide="upload" class="w-3.5 h-3.5 mr-1"></i> Upload Design
+        </button>
+      </div>
+
       <!-- Title -->
       <div class="mb-6">
         <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">POD Hub</h1>
@@ -315,7 +327,13 @@
 
       <!-- ====== MOCKUPS TAB ====== -->
       <div class="tab-content" id="tab-mockups">
-        <h2 class="text-base font-bold mb-1">Generate Mockups</h2>
+        <div class="flex items-center gap-2 mb-1">
+          <h2 class="text-base font-bold">Generate Mockups</h2>
+          <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+            <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+            <div class="help-tooltip">Upload a design, then generate product mockups automatically.</div>
+          </button>
+        </div>
         <p class="text-[13px] mb-6" style="color:var(--text-tertiary)">Create professional product mockups from your designs in seconds.</p>
 
         <!-- Step 1 -->

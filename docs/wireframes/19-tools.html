@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Tools</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: 'var(--brand-primary)',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* Top-level tab panels */
+  .tools-panel { display: none; }
+  .tools-panel.active { display: block; animation: fadeIn 0.25s ease-out; }
+
+  /* P&L sub-tab panels */
+  .pnl-sub-panel { display: none; }
+  .pnl-sub-panel.active { display: block; animation: fadeIn 0.2s ease-out; }
+
+  /* Top-level tab bar item */
+  .tools-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px;
+    font-size: 13px; font-weight: 500;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer; transition: color 0.12s, border-color 0.12s;
+    white-space: nowrap;
+    background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tools-tab:hover { color: var(--text-primary); }
+  .tools-tab.active {
+    color: var(--brand-primary);
+    border-bottom-color: var(--brand-primary);
+    font-weight: 600;
+  }
+
+  /* P&L sub-tab bar */
+  .pnl-sub-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 500;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer; transition: background 0.12s, color 0.12s;
+    background: none; border: none;
+  }
+  .pnl-sub-tab:hover { background: var(--bg-muted); color: var(--text-primary); }
+  .pnl-sub-tab.active {
+    background: var(--brand-primary-bg);
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
+
+  /* Calculator toggle switch (Offsite Ads) */
+  .calc-result-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; font-size: 13px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .calc-result-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body data-page="tools">
+
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+<div id="nav-progress-bar"></div>
+
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+          <!-- Tools is the active nav item on this page -->
+          <a data-nav="tools" data-tooltip="Tools" onclick="navigate('tools')"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="wrench" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Tools</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-7">
+
+      <!-- Page Title -->
+      <div class="mb-5">
+        <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Tools</h1>
+        <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Calculators, reports, and data management</p>
+      </div>
+
+      <!-- ===== TOP TAB BAR ===== -->
+      <div class="flex items-center mb-6 border-b" style="border-color:var(--border)">
+        <button class="tools-tab active" id="ttab-calculator" onclick="switchToolsTab(this,'calculator')">
+          <i data-lucide="calculator" class="w-4 h-4"></i> Calculator
+        </button>
+        <button class="tools-tab" id="ttab-pnl" onclick="switchToolsTab(this,'pnl')">
+          <i data-lucide="trending-up" class="w-4 h-4"></i> P&amp;L Tracker
+        </button>
+        <button class="tools-tab" id="ttab-import" onclick="switchToolsTab(this,'import')">
+          <i data-lucide="upload" class="w-4 h-4"></i> Import History
+        </button>
+        <button class="tools-tab" id="ttab-export" onclick="switchToolsTab(this,'export')">
+          <i data-lucide="download" class="w-4 h-4"></i> Export History
+        </button>
+      </div>
+
+      <!-- ===================================================================
+           TAB 1: CALCULATOR (Etsy Fee Calculator)
+           =================================================================== -->
+      <div class="tools-panel active" id="tools-calculator">
+
+        <!-- Section heading -->
+        <div class="flex items-center gap-2 mb-5">
+          <span class="w-7 h-7 rounded-lg flex items-center justify-center text-[13px] font-bold" style="background:rgba(241,100,30,.1);color:#F1641E">E</span>
+          <h2 class="text-base font-bold">Etsy Fee Calculator</h2>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+
+          <!-- LEFT: Input Card -->
+          <div class="card-static rounded-2xl p-6">
+            <h3 class="text-sm font-bold mb-5">Sale Details</h3>
+            <div class="space-y-4">
+
+              <!-- Selling Price -->
+              <div>
+                <label class="text-xs font-semibold mb-1.5 block" style="color:var(--text-secondary)">Selling Price</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold" style="color:var(--text-tertiary)">$</span>
+                  <input type="number" id="calcPrice" value="29.99" min="0" step="0.01"
+                         class="w-full h-11 pl-7 pr-4 text-sm border rounded-xl font-mono"
+                         style="border-color:var(--border);background:var(--bg-card)"
+                         oninput="runCalculator()">
+                </div>
+              </div>
+
+              <!-- Product Cost -->
+              <div>
+                <label class="text-xs font-semibold mb-1.5 block" style="color:var(--text-secondary)">Product Cost (COGS)</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold" style="color:var(--text-tertiary)">$</span>
+                  <input type="number" id="calcCost" value="8.50" min="0" step="0.01"
+                         class="w-full h-11 pl-7 pr-4 text-sm border rounded-xl font-mono"
+                         style="border-color:var(--border);background:var(--bg-card)"
+                         oninput="runCalculator()">
+                </div>
+              </div>
+
+              <!-- Offsite Ads Toggle -->
+              <div class="flex items-center justify-between py-2 px-3 rounded-xl" style="background:var(--bg-muted)">
+                <div>
+                  <p class="text-sm font-medium">Offsite Ads</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">15% fee on referred sales</p>
+                </div>
+                <div class="toggle" id="offsiteAdsToggle" onclick="toggleOffsiteAds(this)"></div>
+              </div>
+
+              <!-- Calculate Button -->
+              <button class="btn-primary w-full h-11 text-sm font-semibold mt-2" onclick="runCalculator()">
+                Calculate
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT: Results Card -->
+          <div class="card-static rounded-2xl p-6">
+            <h3 class="text-sm font-bold mb-5">Fee Breakdown</h3>
+
+            <!-- Fee rows -->
+            <div class="mb-4">
+              <div class="calc-result-row">
+                <span style="color:var(--text-secondary)">Listing Fee</span>
+                <span class="font-mono text-sm font-semibold" id="r-listing">$0.20</span>
+              </div>
+              <div class="calc-result-row">
+                <span style="color:var(--text-secondary)">Transaction Fee (6.5%)</span>
+                <span class="font-mono text-sm font-semibold" id="r-transaction">$1.95</span>
+              </div>
+              <div class="calc-result-row">
+                <span style="color:var(--text-secondary)">Payment Processing (3% + $0.25)</span>
+                <span class="font-mono text-sm font-semibold" id="r-payment">$1.15</span>
+              </div>
+              <!-- Offsite Ads row — shown/hidden by JS -->
+              <div class="calc-result-row" id="r-offsite-row" style="display:none">
+                <span style="color:var(--text-secondary)">Offsite Ads (15%)</span>
+                <span class="font-mono text-sm font-semibold" id="r-offsite">$4.50</span>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t mb-4" style="border-color:var(--border)"></div>
+
+            <!-- KPI Result Cards -->
+            <div class="grid grid-cols-3 gap-3">
+              <!-- Revenue -->
+              <div class="rounded-xl p-3 text-center" style="background:var(--brand-primary-bg)">
+                <p class="text-[10px] font-semibold uppercase tracking-wide mb-1" style="color:var(--brand-primary)">Revenue</p>
+                <p class="text-base font-extrabold font-mono" style="color:var(--brand-primary)" id="r-revenue">$29.99</p>
+              </div>
+              <!-- Profit -->
+              <div class="rounded-xl p-3 text-center" style="background:var(--success-bg)">
+                <p class="text-[10px] font-semibold uppercase tracking-wide mb-1" style="color:var(--success)">Profit</p>
+                <p class="text-base font-extrabold font-mono" style="color:var(--success)" id="r-profit">$18.19</p>
+              </div>
+              <!-- Margin -->
+              <div class="rounded-xl p-3 text-center" style="background:var(--brand-secondary-bg)">
+                <p class="text-[10px] font-semibold uppercase tracking-wide mb-1" style="color:var(--brand-secondary)">Margin</p>
+                <p class="text-base font-extrabold font-mono" style="color:var(--brand-secondary)" id="r-margin">60.7%</p>
+              </div>
+            </div>
+
+            <!-- Total fees summary -->
+            <div class="mt-4 pt-3 border-t flex items-center justify-between" style="border-color:var(--border)">
+              <span class="text-xs font-semibold" style="color:var(--text-tertiary)">Total Fees</span>
+              <span class="font-mono text-sm font-bold" id="r-total-fees" style="color:var(--danger)">$3.30</span>
+            </div>
+          </div>
+
+        </div><!-- end grid -->
+      </div>
+
+      <!-- ===================================================================
+           TAB 2: P&L TRACKER
+           =================================================================== -->
+      <div class="tools-panel" id="tools-pnl">
+
+        <!-- Controls row -->
+        <div class="flex flex-wrap items-center gap-3 mb-5">
+          <!-- Shop selector -->
+          <div class="relative">
+            <i data-lucide="store" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+            <select class="h-9 pl-9 pr-8 text-sm border rounded-xl appearance-none" style="border-color:var(--border);background:var(--bg-card);min-width:220px">
+              <option>All Shops (130)</option>
+              <option>Etsy — CozyPrints</option>
+              <option>Etsy — VintageVibes</option>
+              <option>Shopify — Main Store</option>
+              <option>Amazon — US</option>
+            </select>
+          </div>
+
+          <!-- Date range -->
+          <div class="flex items-center gap-2 h-9 px-3 border rounded-xl text-sm cursor-pointer" style="border-color:var(--border);background:var(--bg-card)">
+            <i data-lucide="calendar" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            <span>Mar 1 – Mar 11, 2026</span>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5" style="color:var(--text-tertiary)"></i>
+          </div>
+
+          <!-- Timezone -->
+          <div class="flex items-center gap-1.5 text-xs font-medium" style="color:var(--text-secondary)">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            <span>Pacific Time</span>
+          </div>
+        </div>
+
+        <!-- P&L Sub-tabs -->
+        <div class="flex items-center gap-1 mb-5 p-1 rounded-xl w-fit" style="background:var(--bg-muted)">
+          <button class="pnl-sub-tab active" onclick="switchPnlTab(this,'pnl-dashboard')">P&amp;L Dashboard</button>
+          <button class="pnl-sub-tab" onclick="switchPnlTab(this,'pnl-tiles')">Tiles</button>
+          <button class="pnl-sub-tab" onclick="switchPnlTab(this,'pnl-inventory')">Products Inventory</button>
+        </div>
+
+        <!-- P&L DASHBOARD sub-panel -->
+        <div class="pnl-sub-panel active" id="pnl-dashboard">
+          <!-- Summary KPI cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="card-static rounded-2xl p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style="color:var(--text-tertiary)">Revenue</p>
+              <p class="text-xl font-extrabold font-mono">$47,382</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+12.4% vs last period</p>
+            </div>
+            <div class="card-static rounded-2xl p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style="color:var(--text-tertiary)">COGS</p>
+              <p class="text-xl font-extrabold font-mono">$18,943</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--danger)">+8.1% vs last period</p>
+            </div>
+            <div class="card-static rounded-2xl p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style="color:var(--text-tertiary)">Gross Profit</p>
+              <p class="text-xl font-extrabold font-mono">$28,439</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+15.9% vs last period</p>
+            </div>
+            <div class="card-static rounded-2xl p-4">
+              <p class="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style="color:var(--text-tertiary)">Net Profit</p>
+              <p class="text-xl font-extrabold font-mono">$21,107</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+18.2% vs last period</p>
+            </div>
+          </div>
+
+          <!-- Chart placeholder -->
+          <div class="card-static rounded-2xl p-6 flex flex-col items-center justify-center min-h-[220px]" style="border-style:dashed">
+            <i data-lucide="bar-chart-2" class="w-10 h-10 mb-3" style="color:var(--border)"></i>
+            <p class="text-sm font-semibold" style="color:var(--text-tertiary)">Chart data loading...</p>
+            <p class="text-[11px] mt-1" style="color:var(--text-tertiary)">Revenue vs COGS over time</p>
+          </div>
+        </div>
+
+        <!-- TILES sub-panel -->
+        <div class="pnl-sub-panel" id="pnl-tiles">
+          <!-- 3x2 grid of metric tiles -->
+          <div class="grid grid-cols-3 gap-4">
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Total Orders</span>
+                <i data-lucide="shopping-bag" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">2,847</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+9.3% this period</p>
+            </div>
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Avg Order Value</span>
+                <i data-lucide="dollar-sign" class="w-4 h-4" style="color:var(--brand-secondary)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">$16.64</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+2.8% this period</p>
+            </div>
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Gross Margin %</span>
+                <i data-lucide="percent" class="w-4 h-4" style="color:var(--brand-accent)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">60.0%</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+2.1 pts this period</p>
+            </div>
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Platform Fees</span>
+                <i data-lucide="receipt" class="w-4 h-4" style="color:var(--danger)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">$5,821</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--danger)">12.3% of revenue</p>
+            </div>
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Refunds</span>
+                <i data-lucide="undo-2" class="w-4 h-4" style="color:var(--brand-secondary)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">$1,204</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--danger)">2.5% of revenue</p>
+            </div>
+            <div class="card-static rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Net Margin %</span>
+                <i data-lucide="trending-up" class="w-4 h-4" style="color:var(--success)"></i>
+              </div>
+              <p class="text-2xl font-extrabold font-mono">44.6%</p>
+              <p class="text-[11px] mt-1 font-medium" style="color:var(--success)">+3.4 pts this period</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRODUCTS INVENTORY sub-panel -->
+        <div class="pnl-sub-panel" id="pnl-inventory">
+          <div class="card-static rounded-2xl overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr style="background:var(--bg-muted)">
+                  <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Product</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Units Sold</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Revenue</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">COGS</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Profit</th>
+                  <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="px-4 py-3 font-medium">Mountain Sunrise Canvas</td>
+                  <td class="px-4 py-3 text-right font-mono">342</td>
+                  <td class="px-4 py-3 text-right font-mono">$10,258</td>
+                  <td class="px-4 py-3 text-right font-mono">$3,932</td>
+                  <td class="px-4 py-3 text-right font-mono" style="color:var(--success)">$6,326</td>
+                  <td class="px-4 py-3 text-right font-mono">61.7%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium">Minimalist Pet Portrait</td>
+                  <td class="px-4 py-3 text-right font-mono">289</td>
+                  <td class="px-4 py-3 text-right font-mono">$8,670</td>
+                  <td class="px-4 py-3 text-right font-mono">$3,179</td>
+                  <td class="px-4 py-3 text-right font-mono" style="color:var(--success)">$5,491</td>
+                  <td class="px-4 py-3 text-right font-mono">63.3%</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium">Botanical Print Set (3)</td>
+                  <td class="px-4 py-3 text-right font-mono">201</td>
+                  <td class="px-4 py-3 text-right font-mono">$7,236</td>
+                  <td class="px-4 py-3 text-right font-mono">$3,105</td>
+                  <td class="px-4 py-3 text-right font-mono" style="color:var(--success)">$4,131</td>
+                  <td class="px-4 py-3 text-right font-mono">57.1%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- end pnl panel -->
+
+      <!-- ===================================================================
+           TAB 3: IMPORT HISTORY
+           =================================================================== -->
+      <div class="tools-panel" id="tools-import">
+
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-base font-bold">Import History</h2>
+          <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+            <i data-lucide="upload" class="w-4 h-4"></i> New Import
+          </button>
+        </div>
+
+        <div class="card-static rounded-2xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="background:var(--bg-muted)">
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">ID</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Information</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Executed Time</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Type</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Shops</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">File Size</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Status</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Total Records</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 — Success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0041</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Listings bulk import</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">etsy-listings-march.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 11, 09:14 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Listings</span></td>
+                <td class="px-4 py-3 text-sm">Etsy — CozyPrints</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">2.4 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-right font-mono">892</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">View</button>
+                </td>
+              </tr>
+              <!-- Row 2 — Failed -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0040</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Product price update</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">price-update-batch.xlsx</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 10, 04:33 PM</td>
+                <td class="px-4 py-3"><span class="status-pending">Prices</span></td>
+                <td class="px-4 py-3 text-sm">All Shops</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">0.8 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-error">Failed</span></td>
+                <td class="px-4 py-3 text-right font-mono" style="color:var(--text-tertiary)">—</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">Retry</button>
+                </td>
+              </tr>
+              <!-- Row 3 — Success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0039</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Inventory sync</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">inventory-snapshot.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 10, 11:00 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Inventory</span></td>
+                <td class="px-4 py-3 text-sm">Shopify — Main</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">1.1 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-right font-mono">1,204</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">View</button>
+                </td>
+              </tr>
+              <!-- Row 4 — Failed -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0038</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Amazon ASIN map</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">amazon-asin-mapping.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 9, 02:15 PM</td>
+                <td class="px-4 py-3"><span class="status-pending">Products</span></td>
+                <td class="px-4 py-3 text-sm">Amazon — US</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">3.7 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-error">Failed</span></td>
+                <td class="px-4 py-3 text-right font-mono" style="color:var(--text-tertiary)">—</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">Retry</button>
+                </td>
+              </tr>
+              <!-- Row 5 — Success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0037</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Tags bulk update</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">tags-overwrite.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 9, 08:50 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Tags</span></td>
+                <td class="px-4 py-3 text-sm">Etsy — VintageVibes</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">0.5 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-right font-mono">432</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">View</button>
+                </td>
+              </tr>
+              <!-- Row 6 — Success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#IMP-0036</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Shipping profiles import</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">etsy-shipping.json</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 8, 03:22 PM</td>
+                <td class="px-4 py-3"><span class="status-synced">Shipping</span></td>
+                <td class="px-4 py-3 text-sm">Etsy — CozyPrints</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">0.2 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-right font-mono">18</td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- end import panel -->
+
+      <!-- ===================================================================
+           TAB 4: EXPORT HISTORY
+           =================================================================== -->
+      <div class="tools-panel" id="tools-export">
+
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-base font-bold">Export History</h2>
+          <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> New Export
+          </button>
+        </div>
+
+        <div class="card-static rounded-2xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="background:var(--bg-muted)">
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">ID</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Information</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Executed Time</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Type</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Records &amp; Columns</th>
+                <th class="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">File Size</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Status</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Logs</th>
+                <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 — large export, success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#EXP-0088</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Full listings export</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">all-listings-2026-03.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 11, 10:01 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Listings</span></td>
+                <td class="px-4 py-3 text-sm font-mono">33,058 records × 42 cols</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">18.7 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-center">
+                  <button class="text-xs font-medium" style="color:var(--brand-primary)">View</button>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Downloading file…','info')">Download</button>
+                </td>
+              </tr>
+              <!-- Row 2 — success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#EXP-0087</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Order report Q1 2026</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">orders-q1-2026.xlsx</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 10, 06:45 PM</td>
+                <td class="px-4 py-3"><span class="status-synced">Orders</span></td>
+                <td class="px-4 py-3 text-sm font-mono">14,291 records × 28 cols</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">9.2 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-center">
+                  <button class="text-xs font-medium" style="color:var(--brand-primary)">View</button>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Downloading file…','info')">Download</button>
+                </td>
+              </tr>
+              <!-- Row 3 — failed -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#EXP-0086</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">P&amp;L summary export</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">pnl-summary-march.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 10, 01:22 PM</td>
+                <td class="px-4 py-3"><span class="status-pending">P&amp;L</span></td>
+                <td class="px-4 py-3 text-sm font-mono" style="color:var(--text-tertiary)">—</td>
+                <td class="px-4 py-3 text-right text-sm font-mono" style="color:var(--text-tertiary)">—</td>
+                <td class="px-4 py-3 text-center"><span class="status-error">Failed</span></td>
+                <td class="px-4 py-3 text-center">
+                  <button class="text-xs font-medium" style="color:var(--danger)">Error log</button>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium">Retry</button>
+                </td>
+              </tr>
+              <!-- Row 4 — success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#EXP-0085</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Amazon keyword report</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">amazon-keywords-export.csv</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 9, 11:30 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Keywords</span></td>
+                <td class="px-4 py-3 text-sm font-mono">5,874 records × 12 cols</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">1.3 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-center">
+                  <button class="text-xs font-medium" style="color:var(--brand-primary)">View</button>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Downloading file…','info')">Download</button>
+                </td>
+              </tr>
+              <!-- Row 5 — success -->
+              <tr>
+                <td class="px-4 py-3 font-mono text-xs" style="color:var(--text-tertiary)">#EXP-0084</td>
+                <td class="px-4 py-3">
+                  <p class="font-medium text-sm">Etsy analytics snapshot</p>
+                  <p class="text-[11px]" style="color:var(--text-tertiary)">etsy-analytics-mar9.xlsx</p>
+                </td>
+                <td class="px-4 py-3 text-xs font-mono" style="color:var(--text-secondary)">Mar 9, 08:05 AM</td>
+                <td class="px-4 py-3"><span class="status-synced">Analytics</span></td>
+                <td class="px-4 py-3 text-sm font-mono">2,210 records × 19 cols</td>
+                <td class="px-4 py-3 text-right text-sm font-mono">0.9 MB</td>
+                <td class="px-4 py-3 text-center"><span class="status-synced">Success</span></td>
+                <td class="px-4 py-3 text-center">
+                  <button class="text-xs font-medium" style="color:var(--brand-primary)">View</button>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="showToast('Downloading file…','info')">Download</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- end export panel -->
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t hidden items-center justify-around py-2" style="background:var(--bg-card);border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span></a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span></a>
+  <a href="19-tools.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="wrench" class="w-5 h-5" style="color:var(--brand-primary)"></i><span class="text-[10px] font-medium" style="color:var(--brand-primary)">Tools</span></a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="settings" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Settings</span></a>
+</nav>
+
+<script>
+// ===== TOOLS: Top-level Tab Switching =====
+function switchToolsTab(el, tabId) {
+  document.querySelectorAll('.tools-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  document.querySelectorAll('.tools-panel').forEach(function(p) { p.classList.remove('active'); });
+  var target = document.getElementById('tools-' + tabId);
+  if (target) target.classList.add('active');
+}
+
+// ===== P&L: Sub-tab Switching =====
+function switchPnlTab(el, tabId) {
+  document.querySelectorAll('.pnl-sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  el.classList.add('active');
+  document.querySelectorAll('.pnl-sub-panel').forEach(function(p) { p.classList.remove('active'); });
+  var target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+}
+
+// ===== CALCULATOR: State =====
+var offsiteAdsEnabled = false;
+
+function toggleOffsiteAds(el) {
+  el.classList.toggle('on');
+  offsiteAdsEnabled = el.classList.contains('on');
+  var row = document.getElementById('r-offsite-row');
+  if (row) row.style.display = offsiteAdsEnabled ? 'flex' : 'none';
+  runCalculator();
+}
+
+// ===== CALCULATOR: Core Logic =====
+function runCalculator() {
+  var price = parseFloat(document.getElementById('calcPrice').value) || 0;
+  var cost = parseFloat(document.getElementById('calcCost').value) || 0;
+
+  // Fixed Etsy fees
+  var listingFee = 0.20;
+  var transactionFee = price * 0.065;           // 6.5%
+  var paymentFee = price * 0.03 + 0.25;         // 3% + $0.25
+  var offsiteFee = offsiteAdsEnabled ? price * 0.15 : 0;  // 15% if enabled
+
+  var totalFees = listingFee + transactionFee + paymentFee + offsiteFee;
+  var profit = price - cost - totalFees;
+  var margin = price > 0 ? (profit / price) * 100 : 0;
+
+  // Update DOM
+  setText('r-listing', '$' + listingFee.toFixed(2));
+  setText('r-transaction', '$' + transactionFee.toFixed(2));
+  setText('r-payment', '$' + paymentFee.toFixed(2));
+  setText('r-offsite', '$' + offsiteFee.toFixed(2));
+  setText('r-revenue', '$' + price.toFixed(2));
+  setText('r-profit', '$' + profit.toFixed(2));
+  setText('r-margin', margin.toFixed(1) + '%');
+  setText('r-total-fees', '$' + totalFees.toFixed(2));
+
+  // Color profit depending on positive/negative
+  var profitEl = document.getElementById('r-profit');
+  if (profitEl) profitEl.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
+}
+
+function setText(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// Run calculator on load to populate initial results
+document.addEventListener('DOMContentLoaded', function() {
+  runCalculator();
+});
+</script>
+</body>
+</html>

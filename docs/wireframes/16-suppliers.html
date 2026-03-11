@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Suppliers</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+<style>
+  /* Fade-in animation for page content */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .page-fade { animation: fadeIn 0.25s ease-out; }
+
+  /* Dashed border card for "Add Custom Supplier" slot */
+  .card-dashed {
+    background: var(--bg-card);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .card-dashed:hover {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary-bg);
+  }
+
+  /* Supplier logo circle helpers */
+  .supplier-logo {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* Stat chip inside supplier card */
+  .stat-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--bg-muted);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  /* Modal supplier type selection card */
+  .supplier-type-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex; align-items: center; gap-12px;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--bg-card);
+  }
+  .supplier-type-card:hover {
+    border-color: var(--brand-primary);
+    background: var(--brand-primary-bg);
+  }
+</style>
+</head>
+<body data-page="suppliers">
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<!-- ===== APP SHELL ===== -->
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard" onclick="navigate('dashboard')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings" onclick="navigate('listings')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders" onclick="navigate('orders')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- TOOLS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Tools</div>
+        <div class="space-y-0.5">
+          <a data-nav="research" data-tooltip="Research" onclick="navigate('research')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="pod-hub" data-tooltip="POD Hub" onclick="navigate('pod-hub')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+          <!-- Suppliers — active page -->
+          <a data-nav="suppliers" data-tooltip="Suppliers"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="truck" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Suppliers</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a data-nav="analytics" data-tooltip="Analytics" onclick="navigate('analytics')"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned: Settings + collapse/theme toggles -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- ===== HEADER ===== -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <!-- Global search — mirrors 09-settings.html -->
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+             style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)"
+                 class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg"
+                 style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('3 new notifications','info')"
+                class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== PAGE CONTENT ===== -->
+    <main class="p-7 page-fade">
+
+      <!-- Page title + toolbar -->
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Suppliers</h1>
+          <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Manage fulfillment suppliers and integrations</p>
+        </div>
+        <!-- Add Supplier CTA — opens modal -->
+        <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"
+                onclick="openModal('addSupplierModal')">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          Add Supplier
+        </button>
+      </div>
+
+      <!-- ===== SUPPLIER CARDS — 2-column grid ===== -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <!-- ── Card 1: Gelato (Active) ── -->
+        <div class="card-static rounded-2xl p-5">
+
+          <!-- Card header: logo + title + status -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <!-- Gelato logo — green circle with "G" -->
+              <div class="supplier-logo" style="background:#D1FAE5;color:#059669">G</div>
+              <div>
+                <h3 class="font-semibold text-[15px]">Gelato</h3>
+                <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-demand fulfillment</p>
+              </div>
+            </div>
+            <!-- Active status badge -->
+            <span class="status-synced">Active</span>
+          </div>
+
+          <!-- Stats row -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="stat-chip">
+              <i data-lucide="package" class="w-3.5 h-3.5"></i>
+              1,240 products linked
+            </span>
+            <span class="stat-chip">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5" style="color:var(--success)"></i>
+              98% fulfillment rate
+            </span>
+          </div>
+
+          <!-- Last sync timestamp -->
+          <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+            <i data-lucide="refresh-cw" class="w-3 h-3 inline-block mr-1"></i>
+            Last sync: 5 min ago
+          </p>
+
+          <!-- Action buttons -->
+          <div class="flex items-center gap-3">
+            <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                    onclick="showToast('Opening Gelato settings…','info')">
+              Manage
+            </button>
+            <button class="text-sm font-medium" style="color:var(--danger)"
+                    onclick="showToast('Gelato disconnected','error')">
+              Disconnect
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Card 2: FF Dress via Google Sheets (Inactive) ── -->
+        <div class="card-static rounded-2xl p-5">
+
+          <!-- Card header: logo + title + status -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <!-- FF Dress logo — orange circle -->
+              <div class="supplier-logo" style="background:#FED7AA;color:#C2410C">FF</div>
+              <div>
+                <h3 class="font-semibold text-[15px]">FF Dress</h3>
+                <p class="text-[12px]" style="color:var(--text-secondary)">Custom supplier via Google Sheets</p>
+              </div>
+            </div>
+            <!-- Inactive / draft badge -->
+            <span class="status-draft">Inactive</span>
+          </div>
+
+          <!-- Stats row — no products linked yet -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="stat-chip">
+              <i data-lucide="package" class="w-3.5 h-3.5"></i>
+              0 products linked
+            </span>
+          </div>
+
+          <!-- Placeholder for last sync line to keep card height consistent -->
+          <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+            <i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1" style="color:var(--brand-secondary)"></i>
+            Not yet configured
+          </p>
+
+          <!-- Action buttons -->
+          <div class="flex items-center gap-3">
+            <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                    onclick="openModal('addSupplierModal')">
+              Configure
+            </button>
+            <button class="text-sm font-medium" style="color:var(--danger)"
+                    onclick="showToast('Supplier removed','error')">
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Card 3: Add Custom Supplier (dashed / CTA) ── -->
+        <div class="card-dashed p-5 flex flex-col items-center justify-center text-center min-h-[180px]"
+             onclick="openModal('addSupplierModal')">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center mb-3"
+               style="background:var(--bg-muted)">
+            <i data-lucide="plus-circle" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+          </div>
+          <p class="font-semibold text-[14px] mb-1" style="color:var(--brand-primary)">+ Add Custom Supplier</p>
+          <p class="text-[12px]" style="color:var(--text-tertiary)">Connect via Google Sheets, API, or CSV</p>
+        </div>
+
+      </div><!-- /grid -->
+    </main>
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white z-40 border-t hidden items-center justify-around py-2"
+     style="border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span>
+  </a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span>
+  </a>
+  <a href="07-pod-hub.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="printer" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">POD Hub</span>
+  </a>
+  <a href="16-suppliers.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="truck" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--brand-primary)">Suppliers</span>
+  </a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1">
+    <i data-lucide="settings" class="w-5 h-5" style="color:var(--text-tertiary)"></i>
+    <span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Settings</span>
+  </a>
+</nav>
+
+<!-- ===== ADD SUPPLIER MODAL ===== -->
+<!--
+  Uses .modal-overlay from _shared-tokens.css
+  openModal / closeModal are provided by _shared-navigation.js
+-->
+<div class="modal-overlay" id="addSupplierModal">
+  <div class="rounded-2xl p-6 w-full max-w-lg mx-4"
+       style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-bold">Add Supplier</h2>
+      <button onclick="closeModal('addSupplierModal')"
+              class="w-8 h-8 flex items-center justify-center rounded-lg"
+              style="color:var(--text-secondary);background:var(--bg-muted)">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Supplier type selection cards — 2-column grid -->
+    <p class="text-[12px] mb-4" style="color:var(--text-secondary)">Choose a supplier type to get started:</p>
+
+    <div class="grid grid-cols-1 gap-3">
+
+      <!-- Option 1: Gelato — automated POD -->
+      <div class="supplier-type-card" onclick="showToast('Connecting to Gelato…','info');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-base"
+             style="background:#D1FAE5;color:#059669">G</div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Gelato</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Automated POD fulfillment</p>
+        </div>
+        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();showToast('Connecting to Gelato…','info');closeModal('addSupplierModal')">
+          Connect
+        </button>
+      </div>
+
+      <!-- Option 2: Google Sheets — custom CSV/sheet -->
+      <div class="supplier-type-card" onclick="showToast('Opening Google Sheets setup…','info');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+             style="background:#FEF9C3">
+          <!-- Google Sheets icon approximation using lucide table-2 -->
+          <i data-lucide="table-2" class="w-5 h-5" style="color:#16A34A"></i>
+        </div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Google Sheets</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Custom CSV/Sheet integration</p>
+        </div>
+        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();showToast('Opening Google Sheets setup…','info');closeModal('addSupplierModal')">
+          Connect
+        </button>
+      </div>
+
+      <!-- Option 3: API Integration — REST API -->
+      <div class="supplier-type-card" onclick="showToast('Opening API configuration…','info');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+             style="background:var(--purple-bg)">
+          <i data-lucide="code-2" class="w-5 h-5" style="color:var(--purple)"></i>
+        </div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">API Integration</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Connect via REST API</p>
+        </div>
+        <button class="btn-ghost px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();showToast('Opening API configuration…','info');closeModal('addSupplierModal')">
+          Configure
+        </button>
+      </div>
+
+      <!-- Option 4: Manual — manual order fulfillment -->
+      <div class="supplier-type-card" onclick="showToast('Setting up manual fulfillment…','info');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+             style="background:var(--bg-muted)">
+          <i data-lucide="clipboard-list" class="w-5 h-5" style="color:var(--text-secondary)"></i>
+        </div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Manual</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Manual order fulfillment</p>
+        </div>
+        <button class="btn-ghost px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();showToast('Setting up manual fulfillment…','info');closeModal('addSupplierModal')">
+          Set up
+        </button>
+      </div>
+
+    </div><!-- /grid -->
+
+    <!-- Modal footer cancel -->
+    <div class="mt-5 flex justify-end">
+      <button onclick="closeModal('addSupplierModal')"
+              class="text-sm font-medium" style="color:var(--text-secondary)">
+        Cancel
+      </button>
+    </div>
+
+  </div>
+</div><!-- /addSupplierModal -->
+
+</body>
+</html>

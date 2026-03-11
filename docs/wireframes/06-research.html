@@ -158,6 +158,15 @@
     <!-- Page Content -->
     <main class="p-7">
 
+      <!-- Empty state — hidden when search has been performed -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="search" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">Discover trending niches</div>
+        <div class="empty-state-desc">Enter a keyword above to find profitable opportunities and trending products.</div>
+      </div>
+
       <!-- Title -->
       <div class="mb-6">
         <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Research</h1>
@@ -171,6 +180,7 @@
         <button class="research-tab pb-3 text-[13.5px] font-medium" style="color:var(--text-secondary)" onclick="switchResearchTab('competitors')">Competitors</button>
         <button class="research-tab pb-3 text-[13.5px] font-medium" style="color:var(--text-secondary)" onclick="switchResearchTab('niche')">Niche Finder</button>
         <button class="research-tab pb-3 text-[13.5px] font-medium" style="color:var(--text-secondary)" onclick="switchResearchTab('optimizer')">Listing Optimizer</button>
+        <button class="research-tab pb-3 text-[13.5px] font-medium" style="color:var(--text-secondary)" onclick="switchResearchTab('tag-analysis')">Tag Analysis</button>
       </div>
 
       <!-- ====== KEYWORDS TAB ====== -->
@@ -207,7 +217,14 @@
               <tr style="background:var(--bg-muted)">
                 <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Keyword</th>
                 <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Search Volume</th>
-                <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Competition</th>
+                <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1">Competition
+                    <button class="help-tooltip-btn" onclick="toggleHelp(this)">
+                      <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                      <div class="help-tooltip">Higher saturation means more competition. Look for low saturation + high demand.</div>
+                    </button>
+                  </span>
+                </th>
                 <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Trend</th>
                 <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">CPC</th>
                 <th class="text-center px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
@@ -672,6 +689,281 @@
 
       </div>
 
+      <!-- ====== TAG ANALYSIS TAB ====== -->
+      <div class="tab-content" id="tab-tag-analysis">
+
+        <!-- Search Bar -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="relative flex-1 max-w-xl">
+            <i data-lucide="tag" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+            <input type="text" placeholder="Enter a tag or keyword (e.g. boho wall art)" class="w-full h-12 pl-12 pr-4 text-sm border rounded-full" style="border-color:var(--border);background:var(--bg-card)">
+          </div>
+          <button class="btn-primary px-6 h-12 text-sm font-semibold inline-flex items-center gap-2">
+            <i data-lucide="search" class="w-4 h-4"></i> Analyze
+          </button>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium flex-shrink-0" style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+            <i data-lucide="database" class="w-3 h-3"></i> Based on 30M+ Etsy listings
+          </span>
+        </div>
+
+        <!-- Analyzed Tag Heading -->
+        <div class="flex items-center gap-3 mb-4">
+          <h3 class="text-base font-bold">Results for: <span style="color:var(--brand-primary)">"boho wall art"</span></h3>
+        </div>
+
+        <!-- Time Frame Toggles -->
+        <div class="flex items-center gap-2 mb-5">
+          <span class="text-xs font-medium mr-1" style="color:var(--text-tertiary)">Compare:</span>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors" style="background:var(--bg-muted);color:var(--text-secondary)" onclick="setTagTimeframe(this)">Today vs Yesterday</button>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors" style="background:var(--brand-primary);color:#fff" onclick="setTagTimeframe(this)">7d vs 7d</button>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors" style="background:var(--bg-muted);color:var(--text-secondary)" onclick="setTagTimeframe(this)">14d vs 14d</button>
+          <button class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors" style="background:var(--bg-muted);color:var(--text-secondary)" onclick="setTagTimeframe(this)">28d vs 28d</button>
+        </div>
+
+        <!-- KPI Cards Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium" style="color:var(--text-tertiary)">Listings</span>
+              <i data-lucide="layout-list" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            </div>
+            <div class="text-2xl font-extrabold mb-1">12,450</div>
+            <div class="flex items-center gap-1 text-xs font-semibold" style="color:#16a34a">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +8.2% vs prev 7d
+            </div>
+          </div>
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium" style="color:var(--text-tertiary)">Sales</span>
+              <i data-lucide="shopping-bag" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            </div>
+            <div class="text-2xl font-extrabold mb-1">3,210</div>
+            <div class="flex items-center gap-1 text-xs font-semibold" style="color:#16a34a">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +12.5% vs prev 7d
+            </div>
+          </div>
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium" style="color:var(--text-tertiary)">Views</span>
+              <i data-lucide="eye" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            </div>
+            <div class="text-2xl font-extrabold mb-1">89,400</div>
+            <div class="flex items-center gap-1 text-xs font-semibold" style="color:#dc2626">
+              <i data-lucide="trending-down" class="w-3.5 h-3.5"></i> -2.1% vs prev 7d
+            </div>
+          </div>
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium" style="color:var(--text-tertiary)">Favorers</span>
+              <i data-lucide="heart" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+            </div>
+            <div class="text-2xl font-extrabold mb-1">15,800</div>
+            <div class="flex items-center gap-1 text-xs font-semibold" style="color:#16a34a">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> +5.7% vs prev 7d
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="card-static rounded-2xl overflow-hidden mb-8">
+          <div class="px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid var(--border-light)">
+            <h4 class="text-sm font-bold">Tag Breakdown</h4>
+            <button class="btn-ghost px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="background:var(--bg-muted)">
+                <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1">Tag <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1 justify-end">Listings <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1 justify-end">Sales <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1 justify-end">Views <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1 justify-end">Favorers <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer hover:text-[var(--brand-primary)]" style="color:var(--text-tertiary)">
+                  <span class="inline-flex items-center gap-1 justify-end">Conv. Rate <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                </th>
+                <th class="text-center px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">boho wall art</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">12,450</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">3,210</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">89,400</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">15,800</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#16a34a">6.8%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:8px"></span><span style="height:12px"></span><span style="height:10px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:20px"></span><span style="height:20px"></span></div></td>
+              </tr>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">boho art print</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">8,920</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">1,840</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">54,100</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">9,300</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#16a34a">5.2%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:10px"></span><span style="height:12px"></span><span style="height:14px"></span><span style="height:12px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:16px"></span></div></td>
+              </tr>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">wall art boho decor</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">6,350</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">890</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">31,200</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">5,600</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef9c3;color:#ca8a04">3.4%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:14px"></span><span style="height:12px"></span><span style="height:10px"></span><span style="height:14px"></span><span style="height:12px"></span><span style="height:10px"></span><span style="height:12px"></span></div></td>
+              </tr>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">bohemian wall decor</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">4,780</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">430</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">24,500</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">3,100</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fee2e2;color:#dc2626">1.8%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:18px"></span><span style="height:16px"></span><span style="height:14px"></span><span style="height:12px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:10px"></span></div></td>
+              </tr>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">boho home decor print</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">3,210</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">680</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">18,900</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">2,800</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef9c3;color:#ca8a04">4.1%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:6px"></span><span style="height:8px"></span><span style="height:10px"></span><span style="height:14px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:18px"></span></div></td>
+              </tr>
+              <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">gallery wall boho</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">2,890</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">210</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">11,400</td>
+                <td class="px-5 py-3.5 text-right font-mono text-[13px]">1,650</td>
+                <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fee2e2;color:#dc2626">1.1%</span></td>
+                <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:10px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:10px"></span><span style="height:8px"></span></div></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Conv. Rate Legend -->
+          <div class="px-5 py-3 flex items-center gap-4" style="border-top:1px solid var(--border-light);background:var(--bg-muted)">
+            <span class="text-[11px] font-medium" style="color:var(--text-tertiary)">Conv. Rate:</span>
+            <span class="inline-flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#16a34a"></span><span style="color:var(--text-secondary)">&gt;5% Excellent</span></span>
+            <span class="inline-flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#ca8a04"></span><span style="color:var(--text-secondary)">2-5% Good</span></span>
+            <span class="inline-flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#dc2626"></span><span style="color:var(--text-secondary)">&lt;2% Low</span></span>
+          </div>
+        </div>
+
+        <!-- All Product Tags Section -->
+        <div class="card-static rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h4 class="text-sm font-bold mb-0.5">All Product Tags — Bulk Analysis</h4>
+              <p class="text-[12px]" style="color:var(--text-tertiary)">Paste all your product tags to compare performance side-by-side</p>
+            </div>
+            <button class="btn-ghost px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+            </button>
+          </div>
+
+          <!-- Bulk Input -->
+          <div class="flex gap-3 mb-6">
+            <div class="flex-1">
+              <textarea rows="3" placeholder="Paste tags separated by commas or new lines, e.g:&#10;boho wall art, vintage print, minimalist poster, home decor gift..." class="w-full px-4 py-3 text-sm border rounded-xl resize-none" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary);font-family:inherit"></textarea>
+            </div>
+            <div class="flex flex-col justify-start pt-1">
+              <button class="btn-primary px-5 py-2.5 text-sm font-semibold inline-flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="search" class="w-4 h-4"></i> Analyze All
+              </button>
+            </div>
+          </div>
+
+          <!-- Bulk Results Table -->
+          <div class="overflow-hidden rounded-xl" style="border:1px solid var(--border-light)">
+            <table class="w-full text-sm">
+              <thead>
+                <tr style="background:var(--bg-muted)">
+                  <th class="text-left px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1">Tag <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1 justify-end">Listings <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1 justify-end">Sales <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1 justify-end">Views <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1 justify-end">Favorers <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-right px-5 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer" style="color:var(--text-tertiary)">
+                    <span class="inline-flex items-center gap-1 justify-end">Conv. Rate <i data-lucide="chevrons-up-down" class="w-3 h-3"></i></span>
+                  </th>
+                  <th class="text-center px-5 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                  <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">boho wall art</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">12,450</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">3,210</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">89,400</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">15,800</td>
+                  <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#16a34a">6.8%</span></td>
+                  <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:8px"></span><span style="height:12px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:20px"></span><span style="height:20px"></span><span style="height:20px"></span></div></td>
+                </tr>
+                <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                  <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">vintage print</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">21,300</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">4,780</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">134,200</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">22,400</td>
+                  <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#dcfce7;color:#16a34a">7.1%</span></td>
+                  <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:10px"></span><span style="height:12px"></span><span style="height:14px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:18px"></span><span style="height:20px"></span></div></td>
+                </tr>
+                <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                  <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">minimalist poster</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">9,870</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">1,540</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">48,600</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">8,200</td>
+                  <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef9c3;color:#ca8a04">3.8%</span></td>
+                  <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:12px"></span><span style="height:14px"></span><span style="height:12px"></span><span style="height:14px"></span><span style="height:16px"></span><span style="height:14px"></span><span style="height:16px"></span></div></td>
+                </tr>
+                <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                  <td class="px-5 py-3.5 font-medium" style="color:var(--brand-primary)">home decor gift</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">34,100</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">5,620</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">198,700</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">31,500</td>
+                  <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fef9c3;color:#ca8a04">2.9%</span></td>
+                  <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:16px"></span><span style="height:18px"></span><span style="height:14px"></span><span style="height:16px"></span><span style="height:18px"></span><span style="height:20px"></span><span style="height:20px"></span></div></td>
+                </tr>
+                <tr class="hover:bg-[var(--border-light)] cursor-pointer">
+                  <td class="px-5 py-3.5 font-medium" style="color:var(--text-primary)">gallery wall set</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">5,240</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">310</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">19,800</td>
+                  <td class="px-5 py-3.5 text-right font-mono text-[13px]">2,900</td>
+                  <td class="px-5 py-3.5 text-right"><span class="px-2 py-0.5 rounded-full text-xs font-semibold" style="background:#fee2e2;color:#dc2626">1.6%</span></td>
+                  <td class="px-5 py-3.5"><div class="sparkline flex justify-center"><span style="height:14px"></span><span style="height:12px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:8px"></span></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -693,6 +985,15 @@ function switchResearchTab(tabId) {
   event.target.style.color = '';
   var el = document.getElementById('tab-' + tabId);
   if (el) el.classList.add('active');
+}
+
+function setTagTimeframe(btn) {
+  btn.closest('.flex').querySelectorAll('button').forEach(b => {
+    b.style.background = 'var(--bg-muted)';
+    b.style.color = 'var(--text-secondary)';
+  });
+  btn.style.background = 'var(--brand-primary)';
+  btn.style.color = '#fff';
 }
 </script>
 </body>

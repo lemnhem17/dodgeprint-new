@@ -52,7 +52,7 @@ tailwind.config = {
 .analytics-section.collapsed { max-height: 0 !important; }
 </style>
 </head>
-<body>
+<body data-page="orders">
 
 <!-- Toast container -->
 <div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
@@ -242,6 +242,43 @@ tailwind.config = {
         <span class="text-xs px-2" style="color:var(--text-secondary)" id="ordersConfidenceSelected">0 selected</span>
       </div>
 
+      <!-- Toolbar: filters row -->
+      <div class="flex items-center gap-2 mb-3">
+        <!-- Bulk Fulfillment Actions -->
+        <button onclick="showToast('Sending selected orders to supplier...','info')" class="btn-ghost px-3 py-2 text-xs font-medium flex items-center gap-1.5">
+          <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+          Send to Supplier
+        </button>
+        <button onclick="openModal('uploadTrackingModal')" class="btn-ghost px-3 py-2 text-xs font-medium flex items-center gap-1.5">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          Upload Tracking
+        </button>
+        <div class="w-px h-5 mx-1" style="background:var(--border)"></div>
+        <!-- Shop Filter -->
+        <div class="relative">
+          <button onclick="toggleOrderShopFilter()" class="btn-ghost px-3 py-2 text-xs font-medium flex items-center gap-1.5">
+            <i data-lucide="store" class="w-3.5 h-3.5"></i>
+            <span id="orderShopFilterLabel">All Shops</span>
+            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+          </button>
+          <div id="orderShopDropdown" class="hidden absolute top-full left-0 mt-1 w-64 rounded-xl p-2 z-50" style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+            <input type="text" placeholder="Search shops..." oninput="filterOrderShops(this.value)" class="w-full h-8 px-3 text-xs border rounded-lg mb-2" style="border-color:var(--border);background:var(--bg-muted)">
+            <div class="text-[10px] font-semibold uppercase px-2 py-1" style="color:var(--text-tertiary)">ETSY</div>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('CozyPrints')">CozyPrints</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('VintageVibes')">VintageVibes</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('ArtfulDecor')">ArtfulDecor</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('NatureCrafts')">NatureCrafts</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('HandmadeHaven')">HandmadeHaven</button>
+            <div class="text-[10px] font-semibold uppercase px-2 py-1 mt-1" style="color:var(--text-tertiary)">AMAZON</div>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('US Merch')">US Merch</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('UK Store')">UK Store</button>
+            <div class="text-[10px] font-semibold uppercase px-2 py-1 mt-1" style="color:var(--text-tertiary)">TIKTOK</div>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('TrendyGoods')">TrendyGoods</button>
+            <button class="shop-option w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted transition-colors" onclick="selectOrderShop('FashionFinder')">FashionFinder</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Status Filter Tabs -->
       <div class="flex items-center gap-0 mb-5 border-b overflow-x-auto" style="border-color:var(--border-light)">
         <button class="status-tab active" onclick="switchStatusTab(this)">All <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--bg-muted);color:var(--text-tertiary)">856</span></button>
@@ -250,6 +287,16 @@ tailwind.config = {
         <button class="status-tab" onclick="switchStatusTab(this)">Shipped <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--brand-primary-bg);color:var(--brand-primary)">412</span></button>
         <button class="status-tab" onclick="switchStatusTab(this)">Delivered <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--bg-muted);color:var(--text-secondary)">389</span></button>
         <button class="status-tab" onclick="switchStatusTab(this)">Cancelled <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded-full" style="background:var(--danger-bg);color:var(--danger)">17</span></button>
+      </div>
+
+      <!-- Empty state — hidden when orders present -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--brand-primary-bg)">
+          <i data-lucide="shopping-cart" class="w-7 h-7" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="empty-state-title">Orders appear once shops are synced</div>
+        <div class="empty-state-desc">Connect a shop and sync to see your orders here.</div>
+        <button class="btn-primary px-4 py-2 text-xs font-semibold" onclick="navigate('settings')">Check Sync Status</button>
       </div>
 
       <!-- Orders Table -->
@@ -265,6 +312,7 @@ tailwind.config = {
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Items</th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Total</th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Status</th>
+                <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Fulfillment</th>
                 <th class="px-4 py-3 font-semibold text-xs uppercase tracking-wider" style="color:var(--text-secondary)">Date</th>
               </tr>
             </thead>
@@ -280,6 +328,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">2 items</td>
                 <td class="px-4 py-3 font-mono font-medium">$67.98</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 7, 2026</td>
               </tr>
               <tr class="cursor-pointer" onclick="openOrderPanel('4520')">
@@ -293,6 +342,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">1 item</td>
                 <td class="px-4 py-3 font-mono font-medium">$49.00</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Pending</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Unfulfilled</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 7, 2026</td>
               </tr>
               <tr class="cursor-pointer" onclick="openOrderPanel('4519')">
@@ -306,6 +356,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">3 items</td>
                 <td class="px-4 py-3 font-mono font-medium">$84.97</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--info-bg);color:var(--info)">Processing</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--info-bg);color:var(--info)">In Production</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 6, 2026</td>
               </tr>
               <tr class="cursor-pointer" onclick="openOrderPanel('4518')">
@@ -318,6 +369,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">VintageVibes</td>
                 <td class="px-4 py-3 text-sm">1 item</td>
                 <td class="px-4 py-3 font-mono font-medium">$28.50</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 5, 2026</td>
               </tr>
@@ -332,6 +384,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">2 items</td>
                 <td class="px-4 py-3 font-mono font-medium">$53.00</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 5, 2026</td>
               </tr>
               <tr class="cursor-pointer" onclick="openOrderPanel('4516')">
@@ -345,6 +398,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">1 item</td>
                 <td class="px-4 py-3 font-mono font-medium">$22.99</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--danger-bg);color:var(--danger)">Cancelled</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Unfulfilled</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 4, 2026</td>
               </tr>
               <tr class="cursor-pointer" onclick="openOrderPanel('4515')">
@@ -357,6 +411,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-xs" style="color:var(--text-secondary)">CozyPrints</td>
                 <td class="px-4 py-3 text-sm">4 items</td>
                 <td class="px-4 py-3 font-mono font-medium">$142.00</td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Delivered</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 3, 2026</td>
               </tr>
@@ -371,6 +426,7 @@ tailwind.config = {
                 <td class="px-4 py-3 text-sm">1 item</td>
                 <td class="px-4 py-3 font-mono font-medium">$65.00</td>
                 <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">Shipped</span></td>
+                <td class="px-4 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:rgba(99,102,241,.1);color:#6366F1">Sent to Supplier</span></td>
                 <td class="px-4 py-3 text-xs" style="color:var(--text-tertiary)">Mar 3, 2026</td>
               </tr>
             </tbody>
@@ -519,6 +575,68 @@ tailwind.config = {
       </div>
     </div>
 
+    <!-- Design Files -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-tertiary)">Design Files</h4>
+      <div class="space-y-3">
+        <!-- Upload zone -->
+        <div class="border-2 border-dashed rounded-lg p-4 flex flex-col items-center gap-2 cursor-pointer hover:bg-blue-50 transition-colors" style="border-color:var(--border)">
+          <i data-lucide="upload-cloud" class="w-6 h-6" style="color:var(--text-tertiary)"></i>
+          <span class="text-xs font-medium" style="color:var(--text-secondary)">Upload Design</span>
+          <span class="text-[10px]" style="color:var(--text-tertiary)">PNG, PSD, SVG — drag or click</span>
+        </div>
+        <!-- Uploaded files -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2 p-2 rounded-lg" style="background:var(--bg-muted)">
+            <div class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-semibold" style="background:rgba(59,130,246,.1);color:var(--brand-primary)">PNG</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium truncate">mockup-front.png</p>
+              <p class="text-[10px]" style="color:var(--text-tertiary)">Front Design: Vintage Plant Pot</p>
+            </div>
+            <span class="flex items-center gap-1 text-[10px] font-medium" style="color:#22C55E">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> Uploaded
+            </span>
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded-lg" style="background:var(--bg-muted)">
+            <div class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-semibold" style="background:rgba(139,92,246,.1);color:#8B5CF6">PSD</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium truncate">floral-bag-artwork.psd</p>
+              <p class="text-[10px]" style="color:var(--text-tertiary)">Front Design: Floral Tote Bag</p>
+            </div>
+            <span class="flex items-center gap-1 text-[10px] font-medium" style="color:#22C55E">
+              <i data-lucide="check-circle" class="w-3 h-3"></i> Uploaded
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supplier Fulfillment -->
+    <div>
+      <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-tertiary)">Supplier Fulfillment</h4>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Supplier</label>
+          <select class="w-full h-10 px-3 text-sm border rounded-md bg-white" style="border-color:var(--border)">
+            <option>Gelato</option>
+            <option>Merchize</option>
+            <option>Printify</option>
+            <option>Printful</option>
+            <option>SPOD</option>
+          </select>
+        </div>
+        <!-- Supplier status badge — "Not Sent" shown by default -->
+        <!-- Alternatives (comment): <span style="background:#DCFCE7;color:#16A34A">Sent</span> | <span style="background:#DBEAFE;color:#2563EB">Processing</span> | <span style="background:var(--danger-bg);color:var(--danger)">Failed</span> -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-medium" style="color:var(--text-secondary)">Status</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium" style="background:var(--bg-muted);color:var(--text-secondary)">Not Sent</span>
+        </div>
+        <button onclick="showToast('Order sent to Gelato!','success')" class="btn-primary w-full h-10 text-sm font-semibold inline-flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4"></i> Send Order to Supplier
+        </button>
+      </div>
+    </div>
+
     <!-- Fulfillment -->
     <div>
       <h4 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color:var(--text-tertiary)">Fulfillment</h4>
@@ -526,6 +644,15 @@ tailwind.config = {
         <div>
           <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Tracking Number</label>
           <input type="text" value="1Z999AA10123456784" class="w-full h-10 px-3 text-sm font-mono border rounded-md" style="border-color:var(--border)">
+          <!-- Sync status row -->
+          <div class="flex items-center justify-between mt-1.5">
+            <!-- Green = Synced. Alternatives: yellow dot "Syncing..." | red dot "Sync failed — Retry" -->
+            <span class="flex items-center gap-1 text-[10px]" style="color:#22C55E">
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:#22C55E"></span>
+              Synced to Etsy
+            </span>
+            <span class="text-[10px]" style="color:var(--text-tertiary)">Source: From Supplier</span>
+          </div>
         </div>
         <div>
           <label class="text-xs font-medium mb-1.5 block" style="color:var(--text-secondary)">Carrier</label>
@@ -612,6 +739,42 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ===== UPLOAD TRACKING MODAL ===== -->
+<div id="uploadTrackingModal" class="modal-overlay hidden fixed inset-0 z-[500] flex items-center justify-center p-4" style="background:rgba(0,0,0,.45)" onclick="if(event.target===this)closeModal('uploadTrackingModal')">
+  <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-6 pt-5 pb-4" style="border-bottom:1px solid var(--border-light)">
+      <h3 class="text-base font-bold">Upload Tracking Numbers</h3>
+      <button onclick="closeModal('uploadTrackingModal')" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
+        <i data-lucide="x" class="w-4 h-4" style="color:var(--text-secondary)"></i>
+      </button>
+    </div>
+    <div class="px-6 py-5 space-y-4">
+      <p class="text-sm" style="color:var(--text-secondary)">Upload a CSV file with order IDs and tracking numbers to bulk-update fulfillment.</p>
+      <!-- File upload zone -->
+      <div class="border-2 border-dashed rounded-xl p-6 flex flex-col items-center gap-3 cursor-pointer hover:bg-blue-50 transition-colors" style="border-color:var(--border)">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:var(--brand-primary-bg)">
+          <i data-lucide="upload-cloud" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-medium">Drop CSV here or click to browse</p>
+          <p class="text-xs mt-0.5" style="color:var(--text-tertiary)">Max 10MB — must include <code class="font-mono text-[11px] px-1 rounded" style="background:var(--bg-muted)">order_id</code> and <code class="font-mono text-[11px] px-1 rounded" style="background:var(--bg-muted)">tracking_number</code> columns</p>
+        </div>
+      </div>
+      <!-- Download template link -->
+      <div class="flex items-center gap-2">
+        <i data-lucide="download" class="w-3.5 h-3.5" style="color:var(--brand-primary)"></i>
+        <a href="#" class="text-xs font-medium" style="color:var(--brand-primary)" onclick="showToast('Template downloaded','success');return false;">Download CSV template</a>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 px-6 pb-5">
+      <button onclick="closeModal('uploadTrackingModal')" class="btn-ghost flex-1 h-10 text-sm font-medium">Cancel</button>
+      <button onclick="showToast('Tracking numbers uploaded & applied!','success');closeModal('uploadTrackingModal')" class="btn-primary flex-1 h-10 text-sm font-semibold inline-flex items-center justify-center gap-2">
+        <i data-lucide="upload" class="w-4 h-4"></i> Upload &amp; Apply
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile Bottom Nav -->
 <nav class="mobile-bottom-nav hidden fixed bottom-0 left-0 right-0 bg-white border-t z-40 px-2 py-2" style="border-color:var(--border)">
   <div class="flex items-center justify-around">
@@ -685,6 +848,30 @@ function undoRecoveryAction() {
   if (toast) toast.style.display = 'none';
   showToast('Action undone', 'info');
 }
+
+// Shop filter dropdown
+function toggleOrderShopFilter() {
+  var dd = document.getElementById('orderShopDropdown');
+  dd.classList.toggle('hidden');
+}
+function filterOrderShops(query) {
+  var items = document.querySelectorAll('#orderShopDropdown .shop-option');
+  items.forEach(function(item) {
+    item.style.display = item.textContent.toLowerCase().indexOf(query.toLowerCase()) !== -1 ? '' : 'none';
+  });
+}
+function selectOrderShop(name) {
+  document.getElementById('orderShopFilterLabel').textContent = name;
+  document.getElementById('orderShopDropdown').classList.add('hidden');
+  showToast('Filtered by ' + name, 'info');
+}
+// Close shop dropdown on outside click
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('orderShopDropdown');
+  if (dd && !dd.classList.contains('hidden') && !e.target.closest('.relative')) {
+    dd.classList.add('hidden');
+  }
+});
 </script>
 </body>
 </html>
