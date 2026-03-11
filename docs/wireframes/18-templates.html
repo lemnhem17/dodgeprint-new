@@ -421,21 +421,68 @@
                 <i data-lucide="plus" class="w-4 h-4"></i> Create Template
               </button>
             </div>
+
+            <!-- Multi-select toolbar -->
+            <div class="flex items-center gap-2 mb-3 flex-wrap">
+              <button onclick="varSelectAll(true)" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+                <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Select All
+              </button>
+              <button onclick="varSelectAll(false)" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+                <i data-lucide="square" class="w-3.5 h-3.5"></i> Deselect All
+              </button>
+              <button onclick="varExcludeSelected()" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5" style="color:var(--danger)">
+                <i data-lucide="ban" class="w-3.5 h-3.5"></i> Exclude Selected
+              </button>
+              <button onclick="varIncludeAll()" class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Include All
+              </button>
+              <span class="text-xs ml-auto" style="color:var(--text-secondary)" id="varSelectionCount">5 selected, 2 excluded</span>
+            </div>
+
             <div class="card-static rounded-2xl overflow-hidden">
               <table class="w-full text-sm">
                 <thead>
                   <tr style="background:var(--bg-muted)">
+                    <th class="px-4 py-3 w-8"><input type="checkbox" class="w-4 h-4 rounded" onchange="varToggleAll(this)" title="Select all"></th>
                     <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Name</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Options Count</th>
                     <th class="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Products Using</th>
                     <th class="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td class="px-4 py-3 font-medium">Size + Color Options</td>
-                    <td class="px-4 py-3 text-sm font-mono">12</td>
-                    <td class="px-4 py-3 text-sm">48 products</td>
+                <tbody id="varTemplateRows">
+                  <!-- Row 1 — selected, excluded (example) -->
+                  <tr class="var-row var-excluded" id="var-row-1" style="opacity:0.5">
+                    <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4 rounded var-checkbox" checked onchange="varUpdateCount()"></td>
+                    <td class="px-4 py-3 font-medium" style="text-decoration:line-through;color:var(--text-tertiary)">Size + Color Options <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded" style="background:var(--danger-bg);color:var(--danger)">Excluded</span></td>
+                    <td class="px-4 py-3 text-sm font-mono" style="color:var(--text-tertiary)">12</td>
+                    <td class="px-4 py-3 text-sm" style="color:var(--text-tertiary)">48 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="varIncludeRow('var-row-1')">Include</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Row 2 — selected, excluded (example) -->
+                  <tr class="var-row var-excluded" id="var-row-2" style="opacity:0.5">
+                    <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4 rounded var-checkbox" checked onchange="varUpdateCount()"></td>
+                    <td class="px-4 py-3 font-medium" style="text-decoration:line-through;color:var(--text-tertiary)">Canvas Size Options <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded" style="background:var(--danger-bg);color:var(--danger)">Excluded</span></td>
+                    <td class="px-4 py-3 text-sm font-mono" style="color:var(--text-tertiary)">6</td>
+                    <td class="px-4 py-3 text-sm" style="color:var(--text-tertiary)">23 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium" onclick="varIncludeRow('var-row-2')">Include</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Row 3 — active -->
+                  <tr class="var-row" id="var-row-3">
+                    <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4 rounded var-checkbox" checked onchange="varUpdateCount()"></td>
+                    <td class="px-4 py-3 font-medium">T-Shirt Sizes (S–3XL)</td>
+                    <td class="px-4 py-3 text-sm font-mono">6</td>
+                    <td class="px-4 py-3 text-sm">31 products</td>
                     <td class="px-4 py-3 text-center">
                       <div class="inline-flex items-center gap-2">
                         <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
@@ -443,10 +490,25 @@
                       </div>
                     </td>
                   </tr>
-                  <tr>
-                    <td class="px-4 py-3 font-medium">Canvas Size Options</td>
-                    <td class="px-4 py-3 text-sm font-mono">6</td>
-                    <td class="px-4 py-3 text-sm">23 products</td>
+                  <!-- Row 4 — active -->
+                  <tr class="var-row" id="var-row-4">
+                    <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4 rounded var-checkbox" checked onchange="varUpdateCount()"></td>
+                    <td class="px-4 py-3 font-medium">Frame Colors</td>
+                    <td class="px-4 py-3 text-sm font-mono">5</td>
+                    <td class="px-4 py-3 text-sm">19 products</td>
+                    <td class="px-4 py-3 text-center">
+                      <div class="inline-flex items-center gap-2">
+                        <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
+                        <button class="text-xs font-medium" style="color:var(--danger)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Row 5 — active -->
+                  <tr class="var-row" id="var-row-5">
+                    <td class="px-4 py-3"><input type="checkbox" class="w-4 h-4 rounded var-checkbox" checked onchange="varUpdateCount()"></td>
+                    <td class="px-4 py-3 font-medium">Mug Sizes (11oz / 15oz)</td>
+                    <td class="px-4 py-3 text-sm font-mono">2</td>
+                    <td class="px-4 py-3 text-sm">12 products</td>
                     <td class="px-4 py-3 text-center">
                       <div class="inline-flex items-center gap-2">
                         <button class="btn-ghost px-3 py-1 text-xs font-medium">Edit</button>
@@ -891,6 +953,84 @@ function togglePlatformGroup(groupId, btn) {
     group.classList.add('collapsed');
     if (chevron) chevron.classList.remove('open');
   }
+}
+
+// ===== VARIATION MULTI-SELECT / EXCLUDE =====
+
+function varUpdateCount() {
+  var checkboxes = document.querySelectorAll('.var-checkbox');
+  var excludedRows = document.querySelectorAll('.var-row.var-excluded');
+  var checked = 0;
+  checkboxes.forEach(function(cb) { if (cb.checked) checked++; });
+  var countEl = document.getElementById('varSelectionCount');
+  if (countEl) countEl.textContent = checked + ' selected, ' + excludedRows.length + ' excluded';
+}
+
+function varToggleAll(masterCb) {
+  document.querySelectorAll('.var-checkbox').forEach(function(cb) {
+    cb.checked = masterCb.checked;
+  });
+  varUpdateCount();
+}
+
+function varSelectAll(state) {
+  document.querySelectorAll('.var-checkbox').forEach(function(cb) { cb.checked = state; });
+  varUpdateCount();
+}
+
+function varExcludeSelected() {
+  document.querySelectorAll('.var-row').forEach(function(row) {
+    var cb = row.querySelector('.var-checkbox');
+    if (cb && cb.checked && !row.classList.contains('var-excluded')) {
+      row.classList.add('var-excluded');
+      row.style.opacity = '0.5';
+      var nameCell = row.cells[1];
+      if (nameCell) {
+        nameCell.style.textDecoration = 'line-through';
+        nameCell.style.color = 'var(--text-tertiary)';
+        if (!nameCell.querySelector('.excl-badge')) {
+          var badge = document.createElement('span');
+          badge.className = 'excl-badge ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded';
+          badge.style.cssText = 'background:var(--danger-bg);color:var(--danger)';
+          badge.textContent = 'Excluded';
+          nameCell.appendChild(badge);
+        }
+      }
+      var actionsCell = row.cells[4];
+      if (actionsCell) {
+        var editBtn = actionsCell.querySelector('.btn-ghost');
+        if (editBtn) { editBtn.textContent = 'Include'; editBtn.onclick = function() { varIncludeRow(row.id); }; }
+      }
+    }
+  });
+  varUpdateCount();
+}
+
+function varIncludeRow(rowId) {
+  var row = document.getElementById(rowId);
+  if (!row) return;
+  row.classList.remove('var-excluded');
+  row.style.opacity = '';
+  var nameCell = row.cells[1];
+  if (nameCell) {
+    nameCell.style.textDecoration = '';
+    nameCell.style.color = '';
+    var badge = nameCell.querySelector('.excl-badge');
+    if (badge) badge.remove();
+  }
+  var actionsCell = row.cells[4];
+  if (actionsCell) {
+    var includeBtn = actionsCell.querySelector('.btn-ghost');
+    if (includeBtn) { includeBtn.textContent = 'Edit'; includeBtn.onclick = null; }
+  }
+  varUpdateCount();
+}
+
+function varIncludeAll() {
+  document.querySelectorAll('.var-row.var-excluded').forEach(function(row) {
+    varIncludeRow(row.id);
+  });
+  varUpdateCount();
 }
 </script>
 </body>

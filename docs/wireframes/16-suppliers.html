@@ -35,8 +35,9 @@
     width: 44px; height: 44px;
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 800;
+    font-size: 14px; font-weight: 800;
     flex-shrink: 0;
+    color: #fff;
   }
 
   /* Stat chip inside supplier card */
@@ -54,7 +55,7 @@
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 16px;
-    display: flex; align-items: center; gap-12px;
+    display: flex; align-items: center;
     gap: 12px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
@@ -63,6 +64,58 @@
   .supplier-type-card:hover {
     border-color: var(--brand-primary);
     background: var(--brand-primary-bg);
+  }
+
+  /* Section header for supplier groups */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Mapping table styles */
+  .mapping-table th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    padding: 8px 12px;
+    background: var(--bg-muted);
+    text-align: left;
+  }
+  .mapping-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .mapping-status-mapped {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #D1FAE5; color: #059669;
+    border-radius: 6px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600;
+  }
+  .mapping-status-unmapped {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #FEF3C7; color: #D97706;
+    border-radius: 6px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* Connection state test feedback */
+  .connection-success {
+    display: none;
+    background: #D1FAE5;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #059669;
   }
 </style>
 </head>
@@ -199,7 +252,7 @@
         <button class="md:hidden" onclick="toggleSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
-        <!-- Global search — mirrors 09-settings.html -->
+        <!-- Global search -->
         <div class="relative hidden md:block">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
              style="color:var(--text-tertiary)"></i>
@@ -223,12 +276,11 @@
     <main class="p-7 page-fade">
 
       <!-- Page title + toolbar -->
-      <div class="flex items-start justify-between mb-6">
+      <div class="flex items-start justify-between mb-5">
         <div>
           <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Suppliers</h1>
           <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Manage fulfillment suppliers and integrations</p>
         </div>
-        <!-- Add Supplier CTA — opens modal -->
         <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2"
                 onclick="openModal('addSupplierModal')">
           <i data-lucide="plus" class="w-4 h-4"></i>
@@ -236,113 +288,578 @@
         </button>
       </div>
 
-      <!-- ===== SUPPLIER CARDS — 2-column grid ===== -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- ===== SEARCH + FILTER BAR ===== -->
+      <div class="flex items-center gap-3 mb-7">
+        <div class="relative flex-1 max-w-xs">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+             style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search suppliers…"
+                 class="w-full h-9 pl-9 pr-4 text-sm rounded-lg border"
+                 style="background:var(--bg-card);border-color:var(--border);color:var(--text-primary)"
+                 oninput="filterSuppliers(this.value)">
+        </div>
+        <select class="h-9 px-3 pr-8 text-sm rounded-lg border"
+                style="background:var(--bg-card);border-color:var(--border);color:var(--text-secondary)"
+                onchange="filterSuppliers()">
+          <option value="all">All Types</option>
+          <option value="pod">Print-on-Demand</option>
+          <option value="custom">Custom Integration</option>
+        </select>
+        <div class="text-[12px]" style="color:var(--text-tertiary)">
+          <span id="supplierCount">11</span> suppliers total
+        </div>
+      </div>
 
-        <!-- ── Card 1: Gelato (Active) ── -->
-        <div class="card-static rounded-2xl p-5">
+      <!-- ===== SECTION: CONNECTED SUPPLIERS ===== -->
+      <div class="mb-8" id="section-connected">
+        <div class="section-label">Connected Suppliers <span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:#D1FAE5;color:#059669">3 Active</span></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 
-          <!-- Card header: logo + title + status -->
-          <div class="flex items-start justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <!-- Gelato logo — green circle with "G" -->
-              <div class="supplier-logo" style="background:#D1FAE5;color:#059669">G</div>
-              <div>
-                <h3 class="font-semibold text-[15px]">Gelato</h3>
-                <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-demand fulfillment</p>
+          <!-- ── Gelato (Connected) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#059669">G</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Gelato</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
               </div>
+              <span class="status-synced">Active</span>
             </div>
-            <!-- Active status badge -->
-            <span class="status-synced">Active</span>
-          </div>
-
-          <!-- Stats row -->
-          <div class="flex flex-wrap gap-2 mb-3">
-            <span class="stat-chip">
-              <i data-lucide="package" class="w-3.5 h-3.5"></i>
-              1,240 products linked
-            </span>
-            <span class="stat-chip">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5" style="color:var(--success)"></i>
-              98% fulfillment rate
-            </span>
-          </div>
-
-          <!-- Last sync timestamp -->
-          <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
-            <i data-lucide="refresh-cw" class="w-3 h-3 inline-block mr-1"></i>
-            Last sync: 5 min ago
-          </p>
-
-          <!-- Action buttons -->
-          <div class="flex items-center gap-3">
-            <button class="btn-ghost px-4 py-2 text-sm font-medium"
-                    onclick="showToast('Opening Gelato settings…','info')">
-              Manage
-            </button>
-            <button class="text-sm font-medium" style="color:var(--danger)"
-                    onclick="showToast('Gelato disconnected','error')">
-              Disconnect
-            </button>
-          </div>
-        </div>
-
-        <!-- ── Card 2: FF Dress via Google Sheets (Inactive) ── -->
-        <div class="card-static rounded-2xl p-5">
-
-          <!-- Card header: logo + title + status -->
-          <div class="flex items-start justify-between mb-4">
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="stat-chip">
+                <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                1,240 products
+              </span>
+              <span class="stat-chip">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5" style="color:var(--success)"></i>
+                98% rate
+              </span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+              <i data-lucide="refresh-cw" class="w-3 h-3 inline-block mr-1"></i>
+              Last sync: 5 min ago
+            </p>
             <div class="flex items-center gap-3">
-              <!-- FF Dress logo — orange circle -->
-              <div class="supplier-logo" style="background:#FED7AA;color:#C2410C">FF</div>
-              <div>
-                <h3 class="font-semibold text-[15px]">FF Dress</h3>
-                <p class="text-[12px]" style="color:var(--text-secondary)">Custom supplier via Google Sheets</p>
-              </div>
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="openMappingModal('Gelato')">
+                Manage Mapping
+              </button>
+              <button class="btn-ghost px-3 py-2 text-sm font-medium"
+                      onclick="showToast('Opening Gelato settings…','info')">
+                Manage
+              </button>
             </div>
-            <!-- Inactive / draft badge -->
-            <span class="status-draft">Inactive</span>
           </div>
 
-          <!-- Stats row — no products linked yet -->
-          <div class="flex flex-wrap gap-2 mb-3">
-            <span class="stat-chip">
-              <i data-lucide="package" class="w-3.5 h-3.5"></i>
-              0 products linked
+          <!-- ── Merchize (Connected, v1.5.3) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#FF6B35">MZ</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Merchize</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-synced">Active</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="stat-chip">
+                <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                24 products
+              </span>
+              <span class="stat-chip">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                156 orders sent
+              </span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+              <i data-lucide="refresh-cw" class="w-3 h-3 inline-block mr-1"></i>
+              Last sync: 12 min ago
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="openMappingModal('Merchize')">
+                Manage Mapping
+              </button>
+              <button class="text-sm font-medium" style="color:var(--danger)"
+                      onclick="showToast('Merchize disconnected','error')">
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Printify (Connected, v1.5.3) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#2EC4B6">Pf</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Printify</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-synced">Active</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="stat-chip">
+                <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                18 products
+              </span>
+              <span class="stat-chip">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                89 orders sent
+              </span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+              <i data-lucide="refresh-cw" class="w-3 h-3 inline-block mr-1"></i>
+              Last sync: 28 min ago
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="openMappingModal('Printify')">
+                Manage Mapping
+              </button>
+              <button class="text-sm font-medium" style="color:var(--danger)"
+                      onclick="showToast('Printify disconnected','error')">
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== SECTION: AVAILABLE SUPPLIERS ===== -->
+      <div class="mb-8" id="section-available">
+        <div class="section-label">Available Suppliers <span class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:var(--bg-muted);color:var(--text-secondary)">7 Available</span></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+          <!-- ── Printful (v1.5.5.2) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#2B2B2B">PF</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Printful</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Global print-on-demand and dropshipping platform with 300+ products.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('Printful','PF','#2B2B2B')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Printik (v1.5.5.4) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#6366F1">Pk</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Printik</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Vietnamese POD platform with competitive pricing and fast local fulfillment.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('Printik','Pk','#6366F1')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── CustomCat (v1.5.5.4) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#FF4444">CC</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">CustomCat</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              High-volume POD with sublimation printing and fast US fulfillment.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('CustomCat','CC','#FF4444')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Gearment (v1.5.5.4) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#00B4D8">GM</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Gearment</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Custom Fulfillment</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Vietnamese fulfillment partner specializing in apparel with bulk order support.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('Gearment','GM','#00B4D8')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── BurgerPrints (v1.5.6) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#E63946">BP</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">BurgerPrints</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              All-in-one POD platform with global shipping and competitive base costs.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('BurgerPrints','BP','#E63946')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── MangoTee Prints (v1.5.6) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#F9A825">MT</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">MangoTee Prints</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Print-on-Demand</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Specialty tee printing platform with unique fabric options and custom labels.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('MangoTee Prints','MT','#F9A825')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Pentifine (v1.5.6) ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#7B68EE">Pn</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Pentifine</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Custom Fulfillment</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Connected</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Premium fine-art printing and fulfillment for high-quality wall art products.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-primary px-4 py-2 text-sm font-medium"
+                      onclick="openConnectModal('Pentifine','Pn','#7B68EE')">
+                Connect
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== SECTION: CUSTOM INTEGRATION ===== -->
+      <div class="mb-8" id="section-custom">
+        <div class="section-label">Custom Integration</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+          <!-- ── FF Dress via Google Sheets ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="supplier-logo" style="background:#C2410C">FF</div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">FF Dress</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Custom via Google Sheets</p>
+                </div>
+              </div>
+              <span class="status-draft">Inactive</span>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="stat-chip">
+                <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                0 products linked
+              </span>
+            </div>
+            <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
+              <i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1" style="color:var(--brand-secondary)"></i>
+              Not yet configured
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="openModal('addSupplierModal')">
+                Configure
+              </button>
+              <button class="text-sm font-medium" style="color:var(--danger)"
+                      onclick="showToast('Supplier removed','error')">
+                Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- ── API Integration slot ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style="background:var(--purple-bg)">
+                  <i data-lucide="code-2" class="w-5 h-5" style="color:var(--purple)"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">API Integration</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Custom REST API</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Set Up</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Connect any supplier with a custom REST API endpoint and webhook callbacks.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="showToast('Opening API configuration…','info')">
+                Configure
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Manual Fulfillment slot ── -->
+          <div class="card-static rounded-2xl p-5">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style="background:var(--bg-muted)">
+                  <i data-lucide="clipboard-list" class="w-5 h-5" style="color:var(--text-secondary)"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-[15px]">Manual</h3>
+                  <p class="text-[12px]" style="color:var(--text-secondary)">Manual order fulfillment</p>
+                </div>
+              </div>
+              <span class="status-draft">Not Set Up</span>
+            </div>
+            <p class="text-[12px] mb-4" style="color:var(--text-tertiary)">
+              Process orders manually — track status, export order sheets, and update tracking.
+            </p>
+            <div class="flex items-center gap-3">
+              <button class="btn-ghost px-4 py-2 text-sm font-medium"
+                      onclick="showToast('Setting up manual fulfillment…','info')">
+                Set up
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Add Custom Supplier (dashed CTA) ── -->
+          <div class="card-dashed p-5 flex flex-col items-center justify-center text-center min-h-[160px]"
+               onclick="openModal('addSupplierModal')">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center mb-3"
+                 style="background:var(--bg-muted)">
+              <i data-lucide="plus-circle" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+            </div>
+            <p class="font-semibold text-[14px] mb-1" style="color:var(--brand-primary)">+ Add Custom Supplier</p>
+            <p class="text-[12px]" style="color:var(--text-tertiary)">Connect via Google Sheets, API, or CSV</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== SUPPLIER MAPPING SECTION ===== -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold">Supplier Mapping</h2>
+            <p class="text-[12px] mt-0.5" style="color:var(--text-tertiary)">Map your product variants to supplier SKUs for automated routing</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select class="h-8 px-3 text-sm rounded-lg border"
+                    style="background:var(--bg-card);border-color:var(--border);color:var(--text-secondary)"
+                    onchange="showToast('Filtered by supplier','info')">
+              <option>All Suppliers</option>
+              <option>Gelato</option>
+              <option>Merchize</option>
+              <option>Printify</option>
+            </select>
+            <button class="btn-ghost px-4 h-8 text-sm font-medium inline-flex items-center gap-2"
+                    onclick="showToast('Auto-matching variants…','info')">
+              <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+              Auto-Match
+            </button>
+            <button class="btn-primary px-4 h-8 text-sm font-medium inline-flex items-center gap-2"
+                    onclick="showToast('Mapping saved','success')">
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              Save Mapping
+            </button>
+          </div>
+        </div>
+
+        <!-- Mapping table -->
+        <div class="card-static rounded-2xl overflow-hidden">
+          <table class="mapping-table w-full border-collapse">
+            <thead>
+              <tr>
+                <th class="rounded-tl-2xl">DodgePrint Variant</th>
+                <th>Size</th>
+                <th>Color</th>
+                <th>Supplier</th>
+                <th>Supplier SKU</th>
+                <th class="rounded-tr-2xl">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-medium">Vintage Sunset Tee</td>
+                <td style="color:var(--text-secondary)">S</td>
+                <td style="color:var(--text-secondary)">White</td>
+                <td>
+                  <select class="h-7 px-2 text-xs rounded border"
+                          style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+                    <option selected>Gelato</option>
+                    <option>Merchize</option>
+                    <option>Printify</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" value="GEL-TSHIRT-S-WHT-001"
+                         class="h-7 px-2 text-xs rounded border w-full"
+                         style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+                </td>
+                <td><span class="mapping-status-mapped"><i data-lucide="check" class="w-3 h-3"></i> Mapped</span></td>
+              </tr>
+              <tr>
+                <td class="font-medium">Vintage Sunset Tee</td>
+                <td style="color:var(--text-secondary)">M</td>
+                <td style="color:var(--text-secondary)">White</td>
+                <td>
+                  <select class="h-7 px-2 text-xs rounded border"
+                          style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+                    <option selected>Gelato</option>
+                    <option>Merchize</option>
+                    <option>Printify</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" value="GEL-TSHIRT-M-WHT-001"
+                         class="h-7 px-2 text-xs rounded border w-full"
+                         style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+                </td>
+                <td><span class="mapping-status-mapped"><i data-lucide="check" class="w-3 h-3"></i> Mapped</span></td>
+              </tr>
+              <tr>
+                <td class="font-medium">Mountain Trail Hoodie</td>
+                <td style="color:var(--text-secondary)">L</td>
+                <td style="color:var(--text-secondary)">Navy</td>
+                <td>
+                  <select class="h-7 px-2 text-xs rounded border"
+                          style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+                    <option>Gelato</option>
+                    <option selected>Merchize</option>
+                    <option>Printify</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" value="MRZ-HOOD-L-NVY-24"
+                         class="h-7 px-2 text-xs rounded border w-full"
+                         style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+                </td>
+                <td><span class="mapping-status-mapped"><i data-lucide="check" class="w-3 h-3"></i> Mapped</span></td>
+              </tr>
+              <tr>
+                <td class="font-medium">Boho Desert Mug</td>
+                <td style="color:var(--text-secondary)">11oz</td>
+                <td style="color:var(--text-secondary)">White</td>
+                <td>
+                  <select class="h-7 px-2 text-xs rounded border"
+                          style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+                    <option>Gelato</option>
+                    <option>Merchize</option>
+                    <option selected>Printify</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" placeholder="Enter SKU…"
+                         class="h-7 px-2 text-xs rounded border w-full"
+                         style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+                </td>
+                <td><span class="mapping-status-unmapped"><i data-lucide="alert-circle" class="w-3 h-3"></i> Unmapped</span></td>
+              </tr>
+              <tr>
+                <td class="font-medium">Sunrise Poster Print</td>
+                <td style="color:var(--text-secondary)">18×24</td>
+                <td style="color:var(--text-secondary)">—</td>
+                <td>
+                  <select class="h-7 px-2 text-xs rounded border"
+                          style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary)">
+                    <option selected>Gelato</option>
+                    <option>Merchize</option>
+                    <option>Printify</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" placeholder="Enter SKU…"
+                         class="h-7 px-2 text-xs rounded border w-full"
+                         style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+                </td>
+                <td><span class="mapping-status-unmapped"><i data-lucide="alert-circle" class="w-3 h-3"></i> Unmapped</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Table footer -->
+          <div class="px-4 py-3 flex items-center justify-between" style="border-top:1px solid var(--border);background:var(--bg-muted)">
+            <span class="text-[12px]" style="color:var(--text-tertiary)">
+              Showing 5 variants · 3 mapped · 2 unmapped
             </span>
-          </div>
-
-          <!-- Placeholder for last sync line to keep card height consistent -->
-          <p class="text-[11px] mb-4" style="color:var(--text-tertiary)">
-            <i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1" style="color:var(--brand-secondary)"></i>
-            Not yet configured
-          </p>
-
-          <!-- Action buttons -->
-          <div class="flex items-center gap-3">
-            <button class="btn-ghost px-4 py-2 text-sm font-medium"
-                    onclick="openModal('addSupplierModal')">
-              Configure
-            </button>
-            <button class="text-sm font-medium" style="color:var(--danger)"
-                    onclick="showToast('Supplier removed','error')">
-              Remove
+            <button class="text-[12px] font-medium" style="color:var(--brand-primary)"
+                    onclick="showToast('Loading all variants…','info')">
+              View all 1,282 variants →
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- ── Card 3: Add Custom Supplier (dashed / CTA) ── -->
-        <div class="card-dashed p-5 flex flex-col items-center justify-center text-center min-h-[180px]"
-             onclick="openModal('addSupplierModal')">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center mb-3"
-               style="background:var(--bg-muted)">
-            <i data-lucide="plus-circle" class="w-5 h-5" style="color:var(--brand-primary)"></i>
-          </div>
-          <p class="font-semibold text-[14px] mb-1" style="color:var(--brand-primary)">+ Add Custom Supplier</p>
-          <p class="text-[12px]" style="color:var(--text-tertiary)">Connect via Google Sheets, API, or CSV</p>
-        </div>
-
-      </div><!-- /grid -->
     </main>
   </div><!-- /main-area -->
 </div><!-- /app-shell -->
@@ -373,10 +890,6 @@
 </nav>
 
 <!-- ===== ADD SUPPLIER MODAL ===== -->
-<!--
-  Uses .modal-overlay from _shared-tokens.css
-  openModal / closeModal are provided by _shared-navigation.js
--->
 <div class="modal-overlay" id="addSupplierModal">
   <div class="rounded-2xl p-6 w-full max-w-lg mx-4"
        style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
@@ -391,43 +904,83 @@
       </button>
     </div>
 
-    <!-- Supplier type selection cards — 2-column grid -->
     <p class="text-[12px] mb-4" style="color:var(--text-secondary)">Choose a supplier type to get started:</p>
 
-    <div class="grid grid-cols-1 gap-3">
+    <div class="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto pr-1">
 
-      <!-- Option 1: Gelato — automated POD -->
+      <!-- Gelato -->
       <div class="supplier-type-card" onclick="showToast('Connecting to Gelato…','info');closeModal('addSupplierModal')">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-base"
-             style="background:#D1FAE5;color:#059669">G</div>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm text-white"
+             style="background:#059669">G</div>
         <div class="flex-1 ml-3">
           <p class="font-semibold text-[13px]">Gelato</p>
           <p class="text-[11px]" style="color:var(--text-secondary)">Automated POD fulfillment</p>
         </div>
         <button class="btn-primary px-4 py-1.5 text-xs font-medium"
-                onclick="event.stopPropagation();showToast('Connecting to Gelato…','info');closeModal('addSupplierModal')">
+                onclick="event.stopPropagation();openConnectModal('Gelato','G','#059669');closeModal('addSupplierModal')">
           Connect
         </button>
       </div>
 
-      <!-- Option 2: Google Sheets — custom CSV/sheet -->
+      <!-- Merchize -->
+      <div class="supplier-type-card" onclick="openConnectModal('Merchize','MZ','#FF6B35');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-xs text-white"
+             style="background:#FF6B35">MZ</div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Merchize</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Vietnamese POD platform</p>
+        </div>
+        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();openConnectModal('Merchize','MZ','#FF6B35');closeModal('addSupplierModal')">
+          Connect
+        </button>
+      </div>
+
+      <!-- Printify -->
+      <div class="supplier-type-card" onclick="openConnectModal('Printify','Pf','#2EC4B6');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-xs text-white"
+             style="background:#2EC4B6">Pf</div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Printify</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">Global print network</p>
+        </div>
+        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();openConnectModal('Printify','Pf','#2EC4B6');closeModal('addSupplierModal')">
+          Connect
+        </button>
+      </div>
+
+      <!-- Printful -->
+      <div class="supplier-type-card" onclick="openConnectModal('Printful','PF','#2B2B2B');closeModal('addSupplierModal')">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-xs text-white"
+             style="background:#2B2B2B">PF</div>
+        <div class="flex-1 ml-3">
+          <p class="font-semibold text-[13px]">Printful</p>
+          <p class="text-[11px]" style="color:var(--text-secondary)">300+ products, global shipping</p>
+        </div>
+        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+                onclick="event.stopPropagation();openConnectModal('Printful','PF','#2B2B2B');closeModal('addSupplierModal')">
+          Connect
+        </button>
+      </div>
+
+      <!-- Google Sheets -->
       <div class="supplier-type-card" onclick="showToast('Opening Google Sheets setup…','info');closeModal('addSupplierModal')">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
              style="background:#FEF9C3">
-          <!-- Google Sheets icon approximation using lucide table-2 -->
           <i data-lucide="table-2" class="w-5 h-5" style="color:#16A34A"></i>
         </div>
         <div class="flex-1 ml-3">
           <p class="font-semibold text-[13px]">Google Sheets</p>
           <p class="text-[11px]" style="color:var(--text-secondary)">Custom CSV/Sheet integration</p>
         </div>
-        <button class="btn-primary px-4 py-1.5 text-xs font-medium"
+        <button class="btn-ghost px-4 py-1.5 text-xs font-medium"
                 onclick="event.stopPropagation();showToast('Opening Google Sheets setup…','info');closeModal('addSupplierModal')">
-          Connect
+          Configure
         </button>
       </div>
 
-      <!-- Option 3: API Integration — REST API -->
+      <!-- API Integration -->
       <div class="supplier-type-card" onclick="showToast('Opening API configuration…','info');closeModal('addSupplierModal')">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
              style="background:var(--purple-bg)">
@@ -443,7 +996,7 @@
         </button>
       </div>
 
-      <!-- Option 4: Manual — manual order fulfillment -->
+      <!-- Manual -->
       <div class="supplier-type-card" onclick="showToast('Setting up manual fulfillment…','info');closeModal('addSupplierModal')">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
              style="background:var(--bg-muted)">
@@ -461,7 +1014,6 @@
 
     </div><!-- /grid -->
 
-    <!-- Modal footer cancel -->
     <div class="mt-5 flex justify-end">
       <button onclick="closeModal('addSupplierModal')"
               class="text-sm font-medium" style="color:var(--text-secondary)">
@@ -471,6 +1023,233 @@
 
   </div>
 </div><!-- /addSupplierModal -->
+
+<!-- ===== CONNECT ACCOUNT MODAL ===== -->
+<div class="modal-overlay" id="connectAccountModal">
+  <div class="rounded-2xl p-6 w-full max-w-md mx-4"
+       style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-3">
+        <!-- Dynamic logo — set via JS -->
+        <div id="connectModalLogo" class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white"
+             style="background:#059669">G</div>
+        <div>
+          <h2 class="text-base font-bold" id="connectModalTitle">Connect Supplier</h2>
+          <p class="text-[11px]" style="color:var(--text-tertiary)">Enter your API credentials to connect</p>
+        </div>
+      </div>
+      <button onclick="closeModal('connectAccountModal')"
+              class="w-8 h-8 flex items-center justify-center rounded-lg"
+              style="color:var(--text-secondary);background:var(--bg-muted)">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- API Key field -->
+    <div class="mb-4">
+      <label class="block text-[12px] font-semibold mb-1.5" style="color:var(--text-secondary)">
+        API Key <span style="color:var(--danger)">*</span>
+      </label>
+      <input type="password" id="connectApiKey" placeholder="sk-••••••••••••••••••••"
+             class="w-full h-10 px-3 text-sm rounded-lg border"
+             style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+      <p class="text-[11px] mt-1" style="color:var(--text-tertiary)">Find your API key in the supplier's developer settings.</p>
+    </div>
+
+    <!-- Account ID field (optional) -->
+    <div class="mb-5">
+      <label class="block text-[12px] font-semibold mb-1.5" style="color:var(--text-secondary)">
+        Account ID <span class="text-[11px] font-normal" style="color:var(--text-tertiary)">(optional)</span>
+      </label>
+      <input type="text" id="connectAccountId" placeholder="e.g. acc_1234567890"
+             class="w-full h-10 px-3 text-sm rounded-lg border"
+             style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+    </div>
+
+    <!-- Connection test feedback (hidden by default) -->
+    <div id="connectionSuccess" class="connection-success mb-4">
+      <i data-lucide="check-circle" class="w-4 h-4 inline-block mr-1"></i>
+      Connection successful! Ready to save.
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex items-center gap-3">
+      <button class="btn-ghost px-4 h-9 text-sm font-medium flex-1"
+              onclick="testConnection()">
+        <i data-lucide="plug" class="w-3.5 h-3.5 inline-block mr-1.5"></i>
+        Test Connection
+      </button>
+      <button class="btn-primary px-4 h-9 text-sm font-medium flex-1"
+              onclick="saveConnection()">
+        <i data-lucide="save" class="w-3.5 h-3.5 inline-block mr-1.5"></i>
+        Save &amp; Connect
+      </button>
+    </div>
+
+    <div class="mt-4 flex justify-center">
+      <button onclick="closeModal('connectAccountModal')"
+              class="text-sm font-medium" style="color:var(--text-secondary)">
+        Cancel
+      </button>
+    </div>
+
+  </div>
+</div><!-- /connectAccountModal -->
+
+<!-- ===== SUPPLIER MAPPING MODAL ===== -->
+<div class="modal-overlay" id="supplierMappingModal">
+  <div class="rounded-2xl p-6 w-full max-w-3xl mx-4"
+       style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)">
+
+    <!-- Modal header -->
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="text-base font-bold">Manage Mapping — <span id="mappingModalSupplier">Gelato</span></h2>
+        <p class="text-[12px] mt-0.5" style="color:var(--text-tertiary)">Map product variants to supplier SKUs</p>
+      </div>
+      <button onclick="closeModal('supplierMappingModal')"
+              class="w-8 h-8 flex items-center justify-center rounded-lg"
+              style="color:var(--text-secondary);background:var(--bg-muted)">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Bulk actions row -->
+    <div class="flex items-center gap-3 mb-4">
+      <button class="btn-ghost px-4 h-8 text-sm font-medium inline-flex items-center gap-2"
+              onclick="showToast('Auto-matching all variants…','info')">
+        <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+        Auto-Match All
+      </button>
+      <button class="btn-ghost px-4 h-8 text-sm font-medium inline-flex items-center gap-2"
+              onclick="showToast('Importing SKU list…','info')">
+        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+        Import SKUs
+      </button>
+      <div class="flex-1"></div>
+      <span class="text-[12px]" style="color:var(--text-tertiary)">3 mapped · 2 unmapped</span>
+    </div>
+
+    <!-- Compact mapping table inside modal -->
+    <div class="rounded-xl overflow-hidden mb-5" style="border:1px solid var(--border)">
+      <table class="mapping-table w-full border-collapse">
+        <thead>
+          <tr>
+            <th>DodgePrint Variant</th>
+            <th>Size</th>
+            <th>Color</th>
+            <th>Supplier SKU</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-medium text-[13px]">Vintage Sunset Tee</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">S</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">White</td>
+            <td>
+              <input type="text" value="GEL-TSHIRT-S-WHT-001"
+                     class="h-7 px-2 text-xs rounded border w-48"
+                     style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+            </td>
+            <td><span class="mapping-status-mapped"><i data-lucide="check" class="w-3 h-3"></i> Mapped</span></td>
+          </tr>
+          <tr>
+            <td class="font-medium text-[13px]">Mountain Trail Hoodie</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">L</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">Navy</td>
+            <td>
+              <input type="text" value="GEL-HOOD-L-NVY-002"
+                     class="h-7 px-2 text-xs rounded border w-48"
+                     style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+            </td>
+            <td><span class="mapping-status-mapped"><i data-lucide="check" class="w-3 h-3"></i> Mapped</span></td>
+          </tr>
+          <tr>
+            <td class="font-medium text-[13px]">Boho Desert Mug</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">11oz</td>
+            <td class="text-[12px]" style="color:var(--text-secondary)">White</td>
+            <td>
+              <input type="text" placeholder="Enter SKU…"
+                     class="h-7 px-2 text-xs rounded border w-48"
+                     style="background:var(--bg-muted);border-color:var(--border);color:var(--text-primary);font-family:'JetBrains Mono',monospace">
+            </td>
+            <td><span class="mapping-status-unmapped"><i data-lucide="alert-circle" class="w-3 h-3"></i> Unmapped</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="flex items-center justify-end gap-3">
+      <button onclick="closeModal('supplierMappingModal')"
+              class="btn-ghost px-5 h-9 text-sm font-medium">
+        Cancel
+      </button>
+      <button onclick="showToast('Mapping saved','success');closeModal('supplierMappingModal')"
+              class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
+        <i data-lucide="save" class="w-3.5 h-3.5"></i>
+        Save Mapping
+      </button>
+    </div>
+
+  </div>
+</div><!-- /supplierMappingModal -->
+
+<script>
+  /* ── Connect Account Modal helpers ── */
+  function openConnectModal(supplierName, initials, color) {
+    const logo = document.getElementById('connectModalLogo');
+    const title = document.getElementById('connectModalTitle');
+    logo.textContent = initials;
+    logo.style.background = color;
+    title.textContent = 'Connect ' + supplierName;
+    document.getElementById('connectApiKey').value = '';
+    document.getElementById('connectAccountId').value = '';
+    document.getElementById('connectionSuccess').style.display = 'none';
+    openModal('connectAccountModal');
+  }
+
+  function testConnection() {
+    const key = document.getElementById('connectApiKey').value.trim();
+    if (!key) {
+      showToast('Please enter an API key first','error');
+      return;
+    }
+    showToast('Testing connection…','info');
+    setTimeout(() => {
+      document.getElementById('connectionSuccess').style.display = 'flex';
+      if (window.lucide) lucide.createIcons();
+    }, 1200);
+  }
+
+  function saveConnection() {
+    const key = document.getElementById('connectApiKey').value.trim();
+    if (!key) {
+      showToast('Please enter an API key first','error');
+      return;
+    }
+    const supplierName = document.getElementById('connectModalTitle').textContent.replace('Connect ','');
+    closeModal('connectAccountModal');
+    showToast(supplierName + ' connected successfully!','success');
+  }
+
+  /* ── Mapping Modal helper ── */
+  function openMappingModal(supplierName) {
+    document.getElementById('mappingModalSupplier').textContent = supplierName;
+    openModal('supplierMappingModal');
+  }
+
+  /* ── Supplier search/filter ── */
+  function filterSuppliers(query) {
+    // Wireframe-only: just show feedback toast
+    if (query && query.length > 1) {
+      showToast('Filtering suppliers…','info');
+    }
+  }
+</script>
 
 </body>
 </html>

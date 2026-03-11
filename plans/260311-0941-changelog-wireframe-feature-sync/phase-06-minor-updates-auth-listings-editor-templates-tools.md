@@ -7,7 +7,7 @@
 
 ## Overview
 - Priority: LOW-MEDIUM
-- Status: Pending
+- Status: Complete
 - Effort: 2.5h
 
 ## Requirements
@@ -74,13 +74,13 @@
 5. **19-tools.html**: Enhance Export section with cross-platform filters, quick export buttons, export history
 
 ## Todo
-- [ ] Microsoft login button (02-auth, login + register)
-- [ ] Digital download actions in listings table (04-listings)
-- [ ] Personalization section in listing editor (10-listing-editor)
-- [ ] Publish without variants toggle (10-listing-editor)
-- [ ] Multi-select + exclude for variation batch edit (18-templates)
-- [ ] Export Center: all orders, platform/shop filters, quick buttons (19-tools)
-- [ ] Export history list (19-tools)
+- [x] Microsoft login button (02-auth, login + register)
+- [x] Digital download actions in listings table (04-listings)
+- [x] Personalization section in listing editor (10-listing-editor)
+- [x] Publish without variants toggle (10-listing-editor)
+- [x] Multi-select + exclude for variation batch edit (18-templates)
+- [x] Export Center: all orders, platform/shop filters, quick buttons (19-tools)
+- [x] Export history list (19-tools)
 
 ## Success Criteria
 - Microsoft login visible on auth pages

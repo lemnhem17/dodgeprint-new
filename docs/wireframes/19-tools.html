@@ -672,11 +672,74 @@
       <div class="tools-panel" id="tools-export">
 
         <div class="flex items-center justify-between mb-5">
-          <h2 class="text-base font-bold">Export History</h2>
-          <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2">
-            <i data-lucide="download" class="w-4 h-4"></i> New Export
+          <h2 class="text-base font-bold">Export Center</h2>
+          <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2" onclick="showToast('Starting export job...','success')">
+            <i data-lucide="download" class="w-4 h-4"></i> Export All Orders
           </button>
         </div>
+
+        <!-- Export configuration panel -->
+        <div class="card-static rounded-2xl p-5 mb-6">
+          <h3 class="text-sm font-semibold mb-4">New Export</h3>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="text-xs font-semibold mb-1.5 block uppercase tracking-wider" style="color:var(--text-secondary)">Platform</label>
+              <select class="w-full h-9 px-3 text-sm border rounded-lg" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+                <option value="">All Platforms</option>
+                <option value="etsy">Etsy</option>
+                <option value="shopify">Shopify</option>
+                <option value="amazon">Amazon</option>
+                <option value="tiktok">TikTok</option>
+                <option value="ebay">eBay</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-semibold mb-1.5 block uppercase tracking-wider" style="color:var(--text-secondary)">Shop</label>
+              <select class="w-full h-9 px-3 text-sm border rounded-lg" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+                <option value="">All Shops</option>
+                <option value="cozyprints">CozyPrints (Etsy)</option>
+                <option value="vintagevibes">VintageVibes (Etsy)</option>
+                <option value="mainstore">Main Store (Shopify)</option>
+                <option value="amazon-us">Amazon US</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="text-xs font-semibold mb-1.5 block uppercase tracking-wider" style="color:var(--text-secondary)">Date From</label>
+              <input type="date" value="2026-01-01" class="w-full h-9 px-3 text-sm border rounded-lg" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+            <div>
+              <label class="text-xs font-semibold mb-1.5 block uppercase tracking-wider" style="color:var(--text-secondary)">Date To</label>
+              <input type="date" value="2026-03-11" class="w-full h-9 px-3 text-sm border rounded-lg" style="border-color:var(--border);background:var(--bg-card);color:var(--text-primary)">
+            </div>
+          </div>
+          <div class="flex items-center gap-4 mb-5">
+            <label class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-secondary)">Format</label>
+            <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+              <input type="radio" name="exportFormat" value="csv" checked class="accent-blue"> CSV
+            </label>
+            <label class="flex items-center gap-1.5 text-sm cursor-pointer">
+              <input type="radio" name="exportFormat" value="excel" class="accent-blue"> Excel (.xlsx)
+            </label>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button class="btn-primary px-5 h-9 text-sm font-medium inline-flex items-center gap-2" onclick="showToast('Export started — you\'ll be notified when ready','success')">
+              <i data-lucide="download" class="w-4 h-4"></i> Start Export
+            </button>
+            <div class="w-px h-6" style="background:var(--border)"></div>
+            <span class="text-xs font-semibold uppercase tracking-wider" style="color:var(--text-tertiary)">Quick:</span>
+            <button class="btn-ghost px-4 h-8 text-xs font-medium inline-flex items-center gap-1.5" onclick="showToast('Exporting Etsy Transactions...','info')">
+              <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Etsy Transactions
+            </button>
+            <button class="btn-ghost px-4 h-8 text-xs font-medium inline-flex items-center gap-1.5" onclick="showToast('Exporting Amazon Orders...','info')">
+              <i data-lucide="package" class="w-3.5 h-3.5"></i> Amazon Orders
+            </button>
+          </div>
+        </div>
+
+        <!-- Export history label -->
+        <h3 class="text-sm font-semibold mb-3" style="color:var(--text-secondary)">Recent Exports</h3>
 
         <div class="card-static rounded-2xl overflow-hidden">
           <table class="w-full text-sm">

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Notifications</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="_shared-navigation.js"></script>
+</head>
+<body data-page="notifications">
+
+<div id="toast-container" class="fixed top-4 right-4 z-[600] space-y-2"></div>
+
+<div class="flex min-h-screen" id="app-shell">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="toggleShopDropdown()"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+      <div id="shopDropdown" class="hidden absolute left-3 right-3 mt-1 rounded-lg p-1 z-50"
+           style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg)"></div>
+    </div>
+
+    <!-- Nav Groups (injected by initSidebar) -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto"></nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a data-nav="settings" data-tooltip="Settings" onclick="navigate('settings')"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6" style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-4">
+        <button class="md:hidden" onclick="toggleSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <div class="relative hidden md:block">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-tertiary)"></i>
+          <input type="text" placeholder="Search everything... (Ctrl+K)" class="w-72 h-9 pl-9 pr-4 text-sm border-0 rounded-lg" style="background:var(--bg-muted);color:var(--text-primary)">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Bell replaced by initNotificationBell() -->
+        <button onclick="showToast('3 new notifications','info')" class="relative w-9 h-9 flex items-center justify-center rounded-lg transition-colors">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold" style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="p-7">
+
+      <!-- Page header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing:-0.4px">Notifications</h1>
+          <p class="text-[13px] mt-1" style="color:var(--text-tertiary)">Stay on top of orders, syncs, and shop health alerts</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="markAllRead()" class="btn-ghost px-4 h-9 text-xs font-medium inline-flex items-center gap-2">
+            <i data-lucide="check-check" class="w-4 h-4"></i> Mark All Read
+          </button>
+          <button onclick="clearAllRead()" class="btn-ghost px-4 h-9 text-xs font-medium inline-flex items-center gap-2" style="color:var(--text-tertiary)">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Clear Read
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="flex items-center gap-1 mb-5 border-b" style="border-color:var(--border)">
+        <button id="ntab-all" onclick="switchNotifTab('all')" class="px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors" style="border-color:var(--brand-primary);color:var(--brand-primary)">
+          All <span id="ntab-all-count" class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--brand-primary);color:#fff">4</span>
+        </button>
+        <button id="ntab-orders" onclick="switchNotifTab('orders')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors" style="border-color:transparent;color:var(--text-secondary)">
+          Orders <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--bg-muted);color:var(--text-secondary)">1</span>
+        </button>
+        <button id="ntab-shops" onclick="switchNotifTab('shops')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors" style="border-color:transparent;color:var(--text-secondary)">
+          Shops <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--bg-muted);color:var(--text-secondary)">1</span>
+        </button>
+        <button id="ntab-sync" onclick="switchNotifTab('sync')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors" style="border-color:transparent;color:var(--text-secondary)">
+          Sync <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--bg-muted);color:var(--text-secondary)">1</span>
+        </button>
+        <button id="ntab-errors" onclick="switchNotifTab('errors')" class="px-4 py-2.5 text-xs font-medium border-b-2 transition-colors" style="border-color:transparent;color:var(--text-secondary)">
+          Errors <span class="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold" style="background:var(--danger-bg);color:var(--danger)">1</span>
+        </button>
+      </div>
+
+      <!-- Notification list -->
+      <div id="notifList" class="card-static rounded-xl overflow-hidden" style="border:1px solid var(--border)">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Empty state (hidden initially) -->
+      <div id="notifEmpty" class="empty-state" style="display:none">
+        <div class="empty-state-icon" style="background:var(--bg-muted)">
+          <i data-lucide="bell-off" class="w-7 h-7" style="color:var(--text-tertiary)"></i>
+        </div>
+        <div class="empty-state-title">No notifications</div>
+        <div class="empty-state-desc">You're all caught up! Notifications will appear here when there's activity.</div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="mobile-bottom-nav fixed bottom-0 left-0 right-0 bg-white z-40 border-t hidden items-center justify-around py-2" style="border-color:var(--border)">
+  <a href="03-dashboard.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="layout-dashboard" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Dashboard</span></a>
+  <a href="04-listings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="list" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Listings</span></a>
+  <a href="06-research.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="search" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Research</span></a>
+  <a href="08-analytics.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="bar-chart-3" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Analytics</span></a>
+  <a href="09-settings.html" class="flex flex-col items-center gap-0.5 px-2 py-1"><i data-lucide="settings" class="w-5 h-5" style="color:var(--text-tertiary)"></i><span class="text-[10px] font-medium" style="color:var(--text-tertiary)">Settings</span></a>
+</nav>
+
+<script>
+// ===== NOTIFICATION PAGE =====
+// All notification data comes from NOTIFICATIONS array in _shared-navigation.js
+
+// Extended notifications for full page (adds more entries)
+var PAGE_NOTIFICATIONS = [
+  { id: 'n1', type: 'order', icon: 'shopping-cart', title: 'New Order Received', desc: 'Order #4821 — Scrunchie Set (5-pack) · CozyPrints · Etsy', time: '2m ago', read: false },
+  { id: 'n2', type: 'error', icon: 'alert-circle', title: 'Deployment Failed', desc: '2 listings failed to sync to Etsy — VintageVibes. Click to retry.', time: '18m ago', read: false },
+  { id: 'n3', type: 'sync', icon: 'refresh-cw', title: 'Sync Completed', desc: 'Amazon US — 47 listings synced successfully. 0 errors.', time: '1h ago', read: false },
+  { id: 'n4', type: 'shop', icon: 'unplug', title: 'Shop Disconnected', desc: 'Shopify — Main Store token expired. Reconnect in Settings to resume syncing.', time: '3h ago', read: true },
+  { id: 'n5', type: 'order', icon: 'shopping-cart', title: 'Order Shipped', desc: 'Order #4819 marked as shipped · Boho Wall Art Print · Etsy', time: '5h ago', read: true },
+  { id: 'n6', type: 'sync', icon: 'refresh-cw', title: 'Scheduled Sync Started', desc: 'Nightly sync initiated for 6 shops across Etsy, Shopify, Amazon', time: '8h ago', read: true },
+  { id: 'n7', type: 'error', icon: 'alert-triangle', title: 'Listing Price Error', desc: 'Price update failed for "Ceramic Mug Set" on Amazon — invalid format', time: '1d ago', read: true }
+];
+
+var activeFilter = 'all';
+
+var TYPE_TO_TAB = { order: 'orders', error: 'errors', shop: 'shops', sync: 'sync' };
+var TYPE_COLORS = { order: 'var(--brand-primary)', error: 'var(--danger)', sync: 'var(--success)', shop: 'var(--brand-secondary)' };
+var TYPE_BGS = { order: 'var(--brand-primary-bg)', error: 'var(--danger-bg)', sync: 'var(--success-bg)', shop: 'var(--brand-secondary-bg)' };
+
+function switchNotifTab(tab) {
+  activeFilter = tab;
+  var tabs = ['all', 'orders', 'shops', 'sync', 'errors'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('ntab-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.style.borderColor = 'var(--brand-primary)';
+      btn.style.color = 'var(--brand-primary)';
+      btn.style.fontWeight = '600';
+    } else {
+      btn.style.borderColor = 'transparent';
+      btn.style.color = 'var(--text-secondary)';
+      btn.style.fontWeight = '500';
+    }
+  });
+  renderNotifList();
+}
+
+function getFilteredNotifs() {
+  if (activeFilter === 'all') return PAGE_NOTIFICATIONS;
+  return PAGE_NOTIFICATIONS.filter(function(n) {
+    return TYPE_TO_TAB[n.type] === activeFilter;
+  });
+}
+
+function renderNotifList() {
+  var list = document.getElementById('notifList');
+  var empty = document.getElementById('notifEmpty');
+  var items = getFilteredNotifs();
+
+  if (items.length === 0) {
+    list.style.display = 'none';
+    empty.style.display = 'flex';
+    return;
+  }
+
+  list.style.display = 'block';
+  empty.style.display = 'none';
+
+  list.innerHTML = items.map(function(n, idx) {
+    var isLast = idx === items.length - 1;
+    var borderStyle = isLast ? '' : 'border-bottom:1px solid var(--border)';
+    var rowBg = n.read ? '' : 'background:rgba(59,130,246,.04)';
+    return '<div id="pnotif-' + n.id + '" class="flex items-start gap-3 p-4 transition-colors" style="' + borderStyle + ';' + rowBg + '">'
+      + '<div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background:' + (TYPE_BGS[n.type] || 'var(--bg-muted)') + '">'
+      + '<i data-lucide="' + n.icon + '" class="w-4 h-4" style="color:' + (TYPE_COLORS[n.type] || 'var(--text-secondary)') + '"></i></div>'
+      + '<div class="flex-1 min-w-0">'
+      + '<div class="flex items-start justify-between gap-2">'
+      + '<span class="text-sm ' + (n.read ? 'font-medium' : 'font-semibold') + '" style="color:var(--text-primary)">' + n.title + '</span>'
+      + '<span class="text-[11px] flex-shrink-0 mt-0.5" style="color:var(--text-tertiary)">' + n.time + '</span>'
+      + '</div>'
+      + '<p class="text-xs mt-0.5" style="color:var(--text-secondary)">' + n.desc + '</p>'
+      + '<div class="flex items-center gap-3 mt-2">'
+      + (!n.read ? '<button onclick="markPageNotifRead(\'' + n.id + '\')" class="text-[11px] font-medium" style="color:var(--brand-primary)">Mark as read</button>' : '<span class="text-[11px]" style="color:var(--text-tertiary)">Read</span>')
+      + (n.type === 'error' ? '<button class="text-[11px] font-medium" style="color:var(--danger)">Retry</button>' : '')
+      + (n.type === 'shop' ? '<button onclick="navigate(\'settings\')" class="text-[11px] font-medium" style="color:var(--brand-secondary)">Reconnect</button>' : '')
+      + '</div>'
+      + '</div>'
+      + (!n.read ? '<div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background:var(--brand-primary)"></div>' : '')
+      + '</div>';
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function markPageNotifRead(id) {
+  var n = PAGE_NOTIFICATIONS.find(function(x) { return x.id === id; });
+  if (n) n.read = true;
+  // Also sync with shared NOTIFICATIONS array
+  var shared = NOTIFICATIONS.find(function(x) { return x.id === id; });
+  if (shared) shared.read = true;
+  updateNotificationBadge();
+  renderNotifList();
+  showToast('Notification marked as read', 'success');
+}
+
+function markAllRead() {
+  PAGE_NOTIFICATIONS.forEach(function(n) { n.read = true; });
+  NOTIFICATIONS.forEach(function(n) { n.read = true; });
+  updateNotificationBadge();
+  renderNotifList();
+  showToast('All notifications marked as read', 'success');
+}
+
+function clearAllRead() {
+  var before = PAGE_NOTIFICATIONS.length;
+  for (var i = PAGE_NOTIFICATIONS.length - 1; i >= 0; i--) {
+    if (PAGE_NOTIFICATIONS[i].read) PAGE_NOTIFICATIONS.splice(i, 1);
+  }
+  var cleared = before - PAGE_NOTIFICATIONS.length;
+  renderNotifList();
+  showToast(cleared + ' read notifications cleared', 'success');
+}
+
+// Init on load
+document.addEventListener('DOMContentLoaded', function() {
+  renderNotifList();
+});
+</script>
+</body>
+</html>

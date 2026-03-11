@@ -1,7 +1,7 @@
 ---
 title: "Changelog Feature Sync — Update Wireframes to Match DodgePrint v1.5.0–1.5.6"
 description: "Add 20 missing/incomplete features from 2025 changelog across 10+ wireframe files"
-status: pending
+status: completed
 priority: P1
 effort: 14h
 branch: feat/changelog-wireframe-sync
@@ -32,12 +32,12 @@ Sync DodgePrint wireframes with all features released in v1.5.0–v1.5.6 (Mar–
 
 | # | Phase | File(s) | Effort | Status |
 |---|-------|---------|--------|--------|
-| 1 | Workspace Management | `09-settings.html`, `_shared-navigation.js` | 3h | Pending |
-| 2 | Supplier Ecosystem | `16-suppliers.html` | 2.5h | Pending |
-| 3 | Order Fulfillment Flow | `05-orders.html` | 2h | Pending |
-| 4 | Research & Tag Analysis | `06-research.html` | 2h | Pending |
-| 5 | Dashboard, Analytics & Notifications | `03-dashboard.html`, `08-analytics.html`, `_shared-navigation.js` | 2h | Pending |
-| 6 | Minor Updates (Auth, Listings, Editor, Templates, Tools) | `02-auth.html`, `04-listings.html`, `10-listing-editor.html`, `18-templates.html`, `19-tools.html` | 2.5h | Pending |
+| 1 | Workspace Management | `09-settings.html`, `_shared-navigation.js` | 3h | Complete |
+| 2 | Supplier Ecosystem | `16-suppliers.html` | 2.5h | Complete |
+| 3 | Order Fulfillment Flow | `05-orders.html` | 2h | Complete |
+| 4 | Research & Tag Analysis | `06-research.html` | 2h | Complete |
+| 5 | Dashboard, Analytics & Notifications | `03-dashboard.html`, `08-analytics.html`, `_shared-navigation.js` | 2h | Complete |
+| 6 | Minor Updates (Auth, Listings, Editor, Templates, Tools) | `02-auth.html`, `04-listings.html`, `10-listing-editor.html`, `18-templates.html`, `19-tools.html` | 2.5h | Complete |
 
 ## Dependencies
 

@@ -7,7 +7,7 @@
 
 ## Overview
 - Priority: HIGH
-- Status: Pending
+- Status: Completed
 - Effort: 2.5h
 
 ## Requirements
@@ -74,11 +74,11 @@ Organize suppliers in grid:
 7. Add search/filter bar at top
 
 ## Todo
-- [ ] Add 9 new supplier cards (Merchize, Printify, Printful, Printik, CustomCat, Gearment, BurgerPrints, MangoTee, Pentifine)
-- [ ] Connect Account modal
-- [ ] Supplier Mapping table UI
-- [ ] Reorganize grid layout (Connected → Available → Custom)
-- [ ] Add supplier search/filter
+- [x] Add 9 new supplier cards (Merchize, Printify, Printful, Printik, CustomCat, Gearment, BurgerPrints, MangoTee, Pentifine)
+- [x] Connect Account modal
+- [x] Supplier Mapping table UI
+- [x] Reorganize grid layout (Connected → Available → Custom)
+- [x] Add supplier search/filter
 
 ## Success Criteria
 - All 11 suppliers visible (Gelato + 9 new + Google Sheets)

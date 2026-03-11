@@ -3,6 +3,122 @@
    Used across all wireframe HTML files
    ============================================================ */
 
+// ===== NOTIFICATION BELL =====
+var NOTIFICATIONS = [
+  { id: 'n1', type: 'order', icon: 'shopping-cart', title: 'New Order Received', desc: 'Order #4821 — Scrunchie Set (5-pack) · CozyPrints', time: '2m ago', read: false },
+  { id: 'n2', type: 'error', icon: 'alert-circle', title: 'Deployment Failed', desc: '2 listings failed to sync to Etsy — VintageVibes', time: '18m ago', read: false },
+  { id: 'n3', type: 'sync', icon: 'refresh-cw', title: 'Sync Completed', desc: 'Amazon US — 47 listings synced successfully', time: '1h ago', read: false },
+  { id: 'n4', type: 'shop', icon: 'unplug', title: 'Shop Disconnected', desc: 'Shopify — Main Store token expired. Reconnect now.', time: '3h ago', read: true }
+];
+
+function getUnreadCount() {
+  return NOTIFICATIONS.filter(function(n) { return !n.read; }).length;
+}
+
+function toggleNotificationDropdown() {
+  var dd = document.getElementById('notificationDropdown');
+  var wsDropdown = document.getElementById('workspaceDropdown');
+  var shopDropdown = document.getElementById('shopDropdown');
+  if (wsDropdown) wsDropdown.classList.add('hidden');
+  if (shopDropdown) shopDropdown.classList.add('hidden');
+  if (!dd) return;
+  var isHidden = dd.classList.contains('hidden');
+  if (isHidden) {
+    dd.classList.remove('hidden');
+    renderNotificationDropdown();
+  } else {
+    dd.classList.add('hidden');
+  }
+}
+
+function renderNotificationDropdown() {
+  var dd = document.getElementById('notificationDropdown');
+  if (!dd) return;
+  var typeColors = { order: 'var(--brand-primary)', error: 'var(--danger)', sync: 'var(--success)', shop: 'var(--brand-secondary)' };
+  var typeBgs = { order: 'var(--brand-primary-bg)', error: 'var(--danger-bg)', sync: 'var(--success-bg)', shop: 'var(--brand-secondary-bg)' };
+  dd.innerHTML = '<div class="flex items-center justify-between px-3 py-2.5" style="border-bottom:1px solid var(--border)">'
+    + '<span class="text-xs font-semibold" style="color:var(--text-primary)">Notifications</span>'
+    + '<button onclick="markAllNotificationsRead()" class="text-[10px] font-medium" style="color:var(--brand-primary)">Mark all read</button>'
+    + '</div>'
+    + NOTIFICATIONS.map(function(n) {
+      var bg = n.read ? 'transparent' : 'rgba(59,130,246,.04)';
+      return '<div id="notif-' + n.id + '" class="flex items-start gap-2.5 px-3 py-2.5 cursor-pointer" style="background:' + bg + ';border-bottom:1px solid var(--border)"'
+        + ' onclick="markNotificationRead(\'' + n.id + '\')">'
+        + '<div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style="background:' + (typeBgs[n.type] || 'var(--bg-muted)') + '">'
+        + '<i data-lucide="' + n.icon + '" class="w-3.5 h-3.5" style="color:' + (typeColors[n.type] || 'var(--text-secondary)') + '"></i></div>'
+        + '<div class="flex-1 min-w-0">'
+        + '<div class="text-xs ' + (n.read ? 'font-medium' : 'font-semibold') + ' truncate" style="color:var(--text-primary)">' + n.title + '</div>'
+        + '<div class="text-[10px] mt-0.5 truncate" style="color:var(--text-secondary)">' + n.desc + '</div>'
+        + '<div class="text-[10px] mt-0.5" style="color:var(--text-tertiary)">' + n.time + '</div>'
+        + '</div>'
+        + (!n.read ? '<div class="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style="background:var(--brand-primary)"></div>' : '')
+        + '</div>';
+    }).join('')
+    + '<div class="px-3 py-2.5">'
+    + '<a href="21-notifications.html" class="text-xs font-medium flex items-center justify-center gap-1" style="color:var(--brand-primary)">'
+    + 'View All Notifications <i data-lucide="arrow-right" class="w-3 h-3"></i></a></div>';
+  if (window.lucide) lucide.createIcons();
+}
+
+function markNotificationRead(notifId) {
+  var n = NOTIFICATIONS.find(function(x) { return x.id === notifId; });
+  if (n) n.read = true;
+  renderNotificationDropdown();
+  updateNotificationBadge();
+}
+
+function markAllNotificationsRead() {
+  NOTIFICATIONS.forEach(function(n) { n.read = true; });
+  renderNotificationDropdown();
+  updateNotificationBadge();
+}
+
+function updateNotificationBadge() {
+  var badge = document.getElementById('notifBadge');
+  var count = getUnreadCount();
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Close notification dropdown on outside click
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('notificationDropdown');
+  var btn = document.getElementById('notificationBellBtn');
+  if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    dd.classList.add('hidden');
+  }
+});
+
+// Inject notification bell into header — replaces legacy static bell buttons
+function initNotificationBell() {
+  if (document.querySelector('[data-notification-bell]')) return; // Already present
+
+  // Find header right area containing a static bell button
+  var headerRightAreas = document.querySelectorAll('header .flex.items-center.gap-2');
+  headerRightAreas.forEach(function(area) {
+    var oldBell = area.querySelector('button[onclick*="showToast"]');
+    if (oldBell && oldBell.querySelector('[data-lucide="bell"]')) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'relative';
+      wrapper.setAttribute('data-notification-bell', '1');
+      wrapper.innerHTML = '<button id="notificationBellBtn" onclick="toggleNotificationDropdown()"'
+        + ' class="relative w-9 h-9 flex items-center justify-center rounded-lg transition-colors"'
+        + ' style="color:var(--text-secondary)">'
+        + '<i data-lucide="bell" class="w-[18px] h-[18px]"></i>'
+        + '<span id="notifBadge" class="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold items-center justify-center" style="background:var(--danger);color:#fff;display:flex">'
+        + getUnreadCount() + '</span></button>'
+        + '<div id="notificationDropdown" class="hidden absolute right-0 w-80 rounded-xl z-50 overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-lg);top:calc(100% + 4px)"></div>';
+      area.replaceChild(wrapper, oldBell);
+      if (window.lucide) lucide.createIcons();
+    }
+  });
+}
+
 // ===== WORKSPACE SWITCHER =====
 var WS_KEY = 'dodgeprint_selected_workspace';
 var WORKSPACES = [
@@ -162,7 +278,8 @@ var NAV_FILE_MAP = {
   'templates': '18-templates.html',
   'tools': '19-tools.html',
   'billing': '20-billing.html',
-  'product-tour': '21-product-tour.html'
+  'product-tour': '21-product-tour.html',
+  'notifications': '21-notifications.html'
 };
 
 function navigate(screenId) {
@@ -712,6 +829,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Init command palette
   initCommandPalette();
+
+  // Init notification bell (replaces static bell buttons with managed dropdown)
+  initNotificationBell();
 
   // Init Lucide icons
   if (window.lucide) lucide.createIcons();

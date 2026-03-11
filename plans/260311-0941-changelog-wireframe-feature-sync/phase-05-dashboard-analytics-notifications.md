@@ -7,7 +7,7 @@
 
 ## Overview
 - Priority: MEDIUM
-- Status: Pending
+- Status: Complete
 - Effort: 2h
 
 ## Requirements
@@ -63,11 +63,11 @@ Add new card/section within Etsy platform analytics:
 4. **Notification page**: Create `21-notifications.html` using shared template pattern from other wireframes
 
 ## Todo
-- [ ] Enhance Top Products section in dashboard (table + filters)
-- [ ] Add Fee Breakdown card in analytics (Ads vs Platform)
-- [ ] Fee comparison table
-- [ ] Notification bell + dropdown in shared nav
-- [ ] Create 21-notifications.html (or modal)
+- [x] Enhance Top Products section in dashboard (table + filters)
+- [x] Add Fee Breakdown card in analytics (Ads vs Platform)
+- [x] Fee comparison table
+- [x] Notification bell + dropdown in shared nav
+- [x] Create 21-notifications.html (or modal)
 
 ## Success Criteria
 - Top Products shows ranked products with revenue data
