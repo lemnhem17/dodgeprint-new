@@ -3,6 +3,77 @@
    Used across all wireframe HTML files
    ============================================================ */
 
+// ===== WORKSPACE SWITCHER =====
+var WS_KEY = 'dodgeprint_selected_workspace';
+var WORKSPACES = [
+  { id: 'ws-main', name: 'DodgePrint HQ', type: 'BUSINESS', members: 5, active: true },
+  { id: 'ws-personal', name: 'Personal Experiments', type: 'PERSONAL', members: 1, active: false }
+];
+
+function getSelectedWorkspace() {
+  return localStorage.getItem(WS_KEY) || 'ws-main';
+}
+
+function setSelectedWorkspace(wsId) {
+  localStorage.setItem(WS_KEY, wsId);
+  updateWorkspaceDisplay();
+  var ws = WORKSPACES.find(function(w) { return w.id === wsId; }) || WORKSPACES[0];
+  showToast('Switched to ' + ws.name, 'success');
+}
+
+function updateWorkspaceDisplay() {
+  var wsId = getSelectedWorkspace();
+  var ws = WORKSPACES.find(function(w) { return w.id === wsId; }) || WORKSPACES[0];
+  var el = document.getElementById('workspaceSwitcherLabel');
+  if (el) el.textContent = ws.name;
+}
+
+function toggleWorkspaceDropdown() {
+  var dropdown = document.getElementById('workspaceDropdown');
+  if (!dropdown) return;
+  var isHidden = dropdown.classList.contains('hidden');
+  if (isHidden) {
+    dropdown.classList.remove('hidden');
+    renderWorkspaceDropdown();
+  } else {
+    dropdown.classList.add('hidden');
+  }
+}
+
+function renderWorkspaceDropdown() {
+  var dropdown = document.getElementById('workspaceDropdown');
+  if (!dropdown) return;
+  var current = getSelectedWorkspace();
+  dropdown.innerHTML = WORKSPACES.map(function(ws) {
+    var isActive = ws.id === current;
+    var typeBg = ws.type === 'BUSINESS' ? 'var(--brand-secondary-bg)' : 'var(--bg-muted)';
+    var typeColor = ws.type === 'BUSINESS' ? 'var(--brand-secondary)' : 'var(--text-tertiary)';
+    return '<button onclick="setSelectedWorkspace(\'' + ws.id + '\');toggleWorkspaceDropdown()"'
+      + ' class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium rounded-md transition-colors text-left"'
+      + ' style="background:' + (isActive ? 'var(--brand-primary-bg)' : 'transparent') + '">'
+      + '<div class="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0" style="background:' + (isActive ? 'var(--brand-primary)' : 'var(--bg-muted)') + ';color:' + (isActive ? '#fff' : 'var(--text-secondary)') + '">' + ws.name.substring(0, 2).toUpperCase() + '</div>'
+      + '<div class="flex-1 min-w-0"><div class="truncate" style="color:' + (isActive ? 'var(--brand-primary)' : 'var(--text-primary)') + '">' + ws.name + '</div>'
+      + '<div class="flex items-center gap-1.5 mt-0.5"><span class="inline-flex px-1.5 py-0 rounded text-[9px] font-bold uppercase" style="background:' + typeBg + ';color:' + typeColor + '">' + ws.type + '</span>'
+      + '<span style="color:var(--text-tertiary)">' + ws.members + ' member' + (ws.members !== 1 ? 's' : '') + '</span></div></div>'
+      + (isActive ? '<i data-lucide="check" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--brand-primary)"></i>' : '')
+      + '</button>';
+  }).join('')
+    + '<div style="border-top:1px solid var(--border);margin:4px 0"></div>'
+    + '<button onclick="toggleWorkspaceDropdown();showToast(\'Create workspace coming soon\',\'info\')"'
+    + ' class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-md transition-colors text-left" style="color:var(--brand-primary)">'
+    + '<i data-lucide="plus" class="w-3.5 h-3.5"></i> Create New Workspace</button>';
+  if (window.lucide) lucide.createIcons();
+}
+
+// Close workspace dropdown on outside click
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('workspaceDropdown');
+  var btn = document.getElementById('workspaceSwitcherBtn');
+  if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    dd.classList.add('hidden');
+  }
+});
+
 // ===== SHOP SWITCHER (persists across pages via localStorage) =====
 var SHOP_KEY = 'dodgeprint_selected_shop';
 var SHOPS = [
@@ -79,7 +150,19 @@ var NAV_FILE_MAP = {
   'research': '06-research.html',
   'pod-hub': '07-pod-hub.html',
   'analytics': '08-analytics.html',
-  'settings': '09-settings.html'
+  'settings': '09-settings.html',
+  'listing-editor': '10-listing-editor.html',
+  'bulk-editor': '11-bulk-editor.html',
+  'home': '12-homepage.html',
+  'shops': '13-shops.html',
+  'collections': '14-collections.html',
+  'ai-generator': '15-ai-generator.html',
+  'suppliers': '16-suppliers.html',
+  'deployments': '17-deployments.html',
+  'templates': '18-templates.html',
+  'tools': '19-tools.html',
+  'billing': '20-billing.html',
+  'product-tour': '21-product-tour.html'
 };
 
 function navigate(screenId) {
@@ -421,8 +504,197 @@ function updatePasswordStrength(value) {
   label.style.color = level.color;
 }
 
+// ===== BREADCRUMB =====
+function updateBreadcrumb(items) {
+  var el = document.getElementById('breadcrumb');
+  if (!el) return;
+  el.innerHTML = items.map(function(item, i) {
+    var isLast = i === items.length - 1;
+    if (isLast) return '<span class="breadcrumb-current">' + item.label + '</span>';
+    var sep = '<i data-lucide="chevron-right" class="w-3.5 h-3.5 breadcrumb-separator"></i>';
+    return '<a href="' + (item.href || '#') + '">' + item.label + '</a>' + sep;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+// ===== COMMAND PALETTE =====
+var COMMAND_ITEMS = [
+  { label: 'Dashboard', icon: 'layout-dashboard', action: "navigate('dashboard')" },
+  { label: 'Listings', icon: 'list', action: "navigate('listings')" },
+  { label: 'Orders', icon: 'shopping-cart', action: "navigate('orders')" },
+  { label: 'Research', icon: 'search', action: "navigate('research')" },
+  { label: 'POD Hub', icon: 'printer', action: "navigate('pod-hub')" },
+  { label: 'Analytics', icon: 'bar-chart-3', action: "navigate('analytics')" },
+  { label: 'Settings', icon: 'settings', action: "navigate('settings')" },
+  { label: 'New Listing', icon: 'plus', action: "navigate('listing-editor')", shortcut: 'N' },
+  { label: 'Bulk Edit', icon: 'edit-3', action: "navigate('bulk-editor')" },
+  { label: 'Shops', icon: 'store', action: "navigate('shops')" },
+  { label: 'Collections', icon: 'folder', action: "navigate('collections')" },
+  { label: 'AI Generator', icon: 'sparkles', action: "navigate('ai-generator')" },
+  { label: 'Suppliers', icon: 'truck', action: "navigate('suppliers')" },
+  { label: 'Deployments', icon: 'rocket', action: "navigate('deployments')" },
+  { label: 'Templates', icon: 'file-text', action: "navigate('templates')" },
+  { label: 'Tools', icon: 'wrench', action: "navigate('tools')" },
+  { label: 'Billing', icon: 'credit-card', action: "navigate('billing')" },
+  { label: 'Product Tour', icon: 'map', action: "navigate('product-tour')", keywords: 'tour guide onboarding walkthrough help' }
+];
+
+function initCommandPalette() {
+  if (document.getElementById('commandPalette')) return;
+  var html = '<div class="command-palette-overlay" id="commandPalette">'
+    + '<div class="command-palette">'
+    + '<div style="position:relative">'
+    + '<i data-lucide="search" class="w-4.5 h-4.5" style="position:absolute;left:14px;top:14px;color:var(--text-tertiary)"></i>'
+    + '<input class="command-palette-input" placeholder="Type a command or search..." id="commandInput">'
+    + '</div>'
+    + '<div class="command-palette-results" id="commandResults"></div>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('commandInput').addEventListener('input', filterCommands);
+}
+
+function toggleCommandPalette() {
+  var el = document.getElementById('commandPalette');
+  if (!el) { initCommandPalette(); el = document.getElementById('commandPalette'); }
+  el.classList.toggle('active');
+  if (el.classList.contains('active')) {
+    var input = document.getElementById('commandInput');
+    input.value = '';
+    filterCommands();
+    setTimeout(function() { input.focus(); }, 50);
+  }
+}
+
+function filterCommands() {
+  var query = (document.getElementById('commandInput').value || '').toLowerCase();
+  var results = COMMAND_ITEMS.filter(function(c) {
+    return c.label.toLowerCase().indexOf(query) !== -1;
+  });
+  var container = document.getElementById('commandResults');
+  container.innerHTML = results.map(function(c) {
+    return '<div class="command-result" onclick="' + c.action + ';toggleCommandPalette()">'
+      + '<i data-lucide="' + c.icon + '" class="w-4 h-4 command-result-icon"></i>'
+      + '<span>' + c.label + '</span>'
+      + (c.shortcut ? '<span class="command-result-shortcut">' + c.shortcut + '</span>' : '')
+      + '</div>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+// Cmd+K / Ctrl+K listener for command palette
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    toggleCommandPalette();
+  }
+  if (e.key === 'Escape') {
+    var el = document.getElementById('commandPalette');
+    if (el && el.classList.contains('active')) {
+      el.classList.remove('active');
+    }
+  }
+});
+
+// ===== RECOVERY TOAST WITH UNDO =====
+function showUndoToast(message, undoCallback) {
+  var container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'fixed top-4 right-4 z-[600] space-y-2';
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.className = 'toast-undo toast-enter';
+  toast.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 flex-shrink-0" style="color:var(--success)"></i>'
+    + '<div style="flex:1"><div class="text-sm font-medium">' + message + '</div>'
+    + '<div class="toast-undo-progress"><div class="toast-undo-progress-fill"></div></div></div>'
+    + '<button class="btn-ghost text-xs px-3 py-1" style="border-radius:8px;font-weight:600;color:var(--brand-primary)" '
+    + 'onclick="this.closest(\'.toast-undo\').remove()">Undo</button>';
+  container.appendChild(toast);
+  if (window.lucide) lucide.createIcons();
+  setTimeout(function() { if (toast.parentNode) toast.remove(); }, 10000);
+}
+
+// ===== HELP TOOLTIPS =====
+function toggleHelp(btn) {
+  var tooltip = btn.querySelector('.help-tooltip');
+  if (!tooltip) return;
+  tooltip.classList.toggle('active');
+}
+
+// ===== DYNAMIC SIDEBAR NAV INJECTION =====
+// Ensures consistent navigation across ALL wireframe pages
+var SIDEBAR_NAV_SECTIONS = [
+  {
+    label: 'Core',
+    items: [
+      { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+      { id: 'listings', icon: 'list', label: 'Listings' },
+      { id: 'orders', icon: 'shopping-cart', label: 'Orders' },
+      { id: 'shops', icon: 'store', label: 'Shops', badge: '2', badgeType: 'danger' }
+    ]
+  },
+  {
+    label: 'Create',
+    items: [
+      { id: 'ai-generator', icon: 'sparkles', label: 'AI Generator' },
+      { id: 'collections', icon: 'folder', label: 'Collections' },
+      { id: 'templates', icon: 'file-text', label: 'Templates' }
+    ]
+  },
+  {
+    label: 'Fulfill',
+    items: [
+      { id: 'pod-hub', icon: 'printer', label: 'POD Hub' },
+      { id: 'suppliers', icon: 'truck', label: 'Suppliers' },
+      { id: 'deployments', icon: 'rocket', label: 'Deployments' }
+    ]
+  },
+  {
+    label: 'Insights',
+    items: [
+      { id: 'research', icon: 'search', label: 'Research' },
+      { id: 'analytics', icon: 'bar-chart-3', label: 'Analytics' },
+      { id: 'tools', icon: 'wrench', label: 'Tools' }
+    ]
+  }
+];
+
+function initSidebar() {
+  var nav = document.querySelector('#sidebar > nav');
+  if (!nav) return;
+
+  var currentPage = document.body.getAttribute('data-page') || '';
+
+  // Build nav HTML from SIDEBAR_NAV_SECTIONS
+  var html = '';
+  SIDEBAR_NAV_SECTIONS.forEach(function(section) {
+    html += '<div>'
+      + '<div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1" style="color:var(--text-tertiary)">'
+      + section.label + '</div><div class="space-y-0.5">';
+    section.items.forEach(function(item) {
+      var isActive = item.id === currentPage;
+      html += '<a data-nav="' + item.id + '" data-tooltip="' + item.label + '" onclick="navigate(\'' + item.id + '\')"'
+        + ' class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer'
+        + (isActive ? ' active' : '') + '"'
+        + (isActive ? '' : ' style="color:var(--text-secondary)"') + '>'
+        + '<i data-lucide="' + item.icon + '" class="w-[18px] h-[18px] flex-shrink-0"></i>'
+        + '<span class="nav-text">' + item.label + '</span>'
+        + (item.badge ? '<span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background:var(--' + (item.badgeType || 'danger') + ');color:#fff">' + item.badge + '</span>' : '')
+        + '</a>';
+    });
+    html += '</div></div>';
+  });
+
+  nav.innerHTML = html;
+}
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function() {
+  // Inject consistent sidebar nav across all pages
+  initSidebar();
+
   // Load persisted theme
   loadTheme();
 
@@ -432,8 +704,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Init shop switcher display
   updateShopDisplay();
 
+  // Init workspace switcher display
+  updateWorkspaceDisplay();
+
   // Init upload zones
   initUploadZone();
+
+  // Init command palette
+  initCommandPalette();
 
   // Init Lucide icons
   if (window.lucide) lucide.createIcons();

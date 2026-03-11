@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeprint — Product Tour</title>
+<link rel="stylesheet" href="_shared-tokens.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['class', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        page: '#F9FAFB',
+        blue: { DEFAULT: '#3B82F6', light: '#60A5FA', bg: '#EFF6FF', dark: '#2563EB' },
+        orange: { DEFAULT: '#F97316', bg: '#FFF7ED' },
+        cyan: { DEFAULT: '#06B6D4', bg: '#ECFEFF' },
+        muted: '#F3F4F6',
+        'border-c': '#E5E7EB',
+        'border-light': '#F3F4F6',
+        'txt': '#111827',
+        'txt-s': '#6B7280',
+        'txt-t': '#9CA3AF',
+        danger: { DEFAULT: '#EF4444', bg: '#FEF2F2' },
+        success: { DEFAULT: '#22C55E', bg: '#F0FDF4' },
+        info: { DEFAULT: '#3B82F6', bg: '#EFF6FF' },
+        purple: { DEFAULT: '#8B5CF6', bg: '#F5F3FF' },
+        etsy: '#F1641E', shopify: '#96BF48', amazon: '#FF9900',
+      },
+      fontFamily: {
+        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      borderRadius: { sm: '8px', md: '12px', lg: '16px', xl: '20px' },
+    }
+  }
+}
+</script>
+<style>
+/* ===== Tour Overlay (spotlight backdrop) ===== */
+.tour-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 800;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  display: none;
+}
+.tour-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+  display: block;
+}
+
+/* Cut-out hole around highlighted element via box-shadow */
+.tour-highlight-cutout {
+  position: fixed;
+  z-index: 810;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+  transition: all 0.25s ease;
+}
+
+/* ===== Tour Tooltip (spotlight steps) ===== */
+.tour-tooltip {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  width: 320px;
+  box-shadow: var(--shadow-lg);
+  z-index: 900;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== Coachmark (no overlay, floating card) ===== */
+.tour-coachmark {
+  position: fixed;
+  background: var(--bg-card);
+  border: 2px solid var(--brand-primary);
+  border-radius: 16px;
+  padding: 16px 20px;
+  width: 280px;
+  box-shadow: var(--shadow-lg);
+  z-index: 900;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Arrow connector for coachmarks */
+.tour-coachmark::before {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--brand-primary);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.tour-coachmark.arrow-left::before  { left: -6px;  top: 20px; background: var(--brand-primary); border: 2px solid var(--brand-primary); }
+.tour-coachmark.arrow-right::before { right: -6px; top: 20px; background: var(--brand-primary); border: 2px solid var(--brand-primary); }
+.tour-coachmark.arrow-top::before   { top: -6px;   left: 24px; background: var(--brand-primary); border: 2px solid var(--brand-primary); }
+.tour-coachmark.arrow-bottom::before { bottom: -6px; left: 24px; background: var(--brand-primary); border: 2px solid var(--brand-primary); }
+
+/* ===== Progress Dots ===== */
+.tour-dots {
+  display: flex; gap: 6px; align-items: center;
+}
+.tour-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.tour-dot.active {
+  background: var(--brand-primary);
+  width: 20px; border-radius: 4px;
+}
+.tour-dot.completed { background: var(--brand-primary); }
+
+/* ===== Highlight ring on spotlight target ===== */
+.tour-highlight {
+  position: relative;
+  z-index: 820 !important;
+  border-radius: 12px;
+  outline: 3px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+
+/* ===== Pulse for coachmark targets ===== */
+@keyframes tourPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+  50%       { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+}
+.tour-pulse {
+  animation: tourPulse 2s infinite;
+  border-radius: 8px;
+}
+
+/* ===== Checklist card (persistent, bottom-right) ===== */
+.checklist-card {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 300px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  animation: slideUp 0.3s ease-out;
+}
+.checklist-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; padding: 5px 0;
+  color: var(--text-secondary);
+}
+.checklist-item.done {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+
+/* ===== Tour start banner ===== */
+.tour-banner {
+  background: linear-gradient(135deg, var(--brand-primary-bg) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--brand-primary);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap-12px;
+}
+
+/* ===== Sparkline bars ===== */
+.sparkline { display: flex; align-items: flex-end; gap: 2px; height: 20px; }
+.sparkline span {
+  width: 3px; border-radius: 2px 2px 0 0;
+  background: var(--brand-primary);
+  opacity: 0.5;
+  display: block;
+}
+.sparkline span:last-child { opacity: 1; }
+
+/* ===== Quality score badge ===== */
+.quality-score {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 7px; border-radius: 6px;
+}
+.quality-score.high  { background: var(--success-bg);  color: var(--success); }
+.quality-score.mid   { background: var(--brand-secondary-bg); color: var(--brand-secondary); }
+.quality-score.low   { background: var(--danger-bg);   color: var(--danger); }
+
+/* ===== Platform pill ===== */
+.platform-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+  background: var(--bg-muted); color: var(--text-secondary);
+}
+
+/* ===== Btn AI ===== */
+.btn-ai {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--brand-primary); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  padding: 0 14px; height: 36px;
+  transition: background 0.15s;
+}
+.btn-ai:hover { background: var(--brand-primary-dark); }
+
+/* ===== Status chip ===== */
+.status-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+}
+.status-chip.synced { background: var(--success-bg); color: var(--success); }
+.status-chip.draft  { background: var(--bg-muted); color: var(--text-tertiary); }
+
+/* Table row hover */
+tbody tr:hover { background: var(--bg-muted); }
+</style>
+</head>
+<body data-page="dashboard" class="font-jakarta">
+
+<!-- Navigation progress bar -->
+<div id="nav-progress-bar"></div>
+
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[1000] space-y-2"></div>
+
+<!-- Tour backdrop overlay -->
+<div id="tourOverlay" class="tour-overlay"></div>
+<!-- Cutout box (positions itself over highlighted element) -->
+<div id="tourCutout" class="tour-highlight-cutout" style="display:none"></div>
+
+<!-- ============================================================
+     LAYOUT
+     ============================================================ -->
+<div class="flex min-h-screen">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar fixed left-0 top-0 h-full z-30 flex flex-col"
+         style="background:var(--bg-sidebar);border-right:1px solid var(--border)" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo-area flex items-center gap-2.5 px-3 py-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+           style="background:var(--brand-primary)">
+        <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+      </div>
+      <span class="sidebar-brand-text font-bold text-base tracking-tight" style="color:var(--text-primary)">Dodgeprint</span>
+    </div>
+
+    <!-- Shop Switcher -->
+    <div class="px-3 pb-2">
+      <button id="shopSwitcherBtn" onclick="showToast('Shop switcher — switch between shops or view all','info')"
+              class="shop-switcher w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              style="background:var(--bg-muted);color:var(--text-secondary)">
+        <i data-lucide="store" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span class="shop-switcher-text truncate" id="shopSwitcherLabel">All Shops (3)</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 ml-auto flex-shrink-0"></i>
+      </button>
+    </div>
+
+    <!-- Nav Groups -->
+    <nav class="flex-1 py-2 px-2 space-y-4 overflow-y-auto">
+
+      <!-- CORE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Core</div>
+        <div class="space-y-0.5">
+          <a data-nav="dashboard" data-tooltip="Dashboard"
+             class="nav-item active flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer">
+            <i data-lucide="layout-dashboard" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a data-nav="listings" data-tooltip="Listings"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="list" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Listings</span>
+          </a>
+          <a data-nav="orders" data-tooltip="Orders"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="shopping-cart" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+          <a data-nav="shops" data-tooltip="Shops"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="store" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Shops</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- CREATE -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Create</div>
+        <div class="space-y-0.5">
+          <a data-nav="ai-generator" data-tooltip="AI Generator"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="sparkles" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">AI Generator</span>
+          </a>
+          <a data-nav="collections" data-tooltip="Collections"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="layers" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Collections</span>
+          </a>
+          <a data-nav="templates" data-tooltip="Templates"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="copy" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Templates</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- FULFILL -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Fulfill</div>
+        <div class="space-y-0.5">
+          <a data-nav="pod-hub" data-tooltip="POD Hub"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="printer" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">POD Hub</span>
+          </a>
+          <a data-nav="suppliers" data-tooltip="Suppliers"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="package" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Suppliers</span>
+          </a>
+          <a data-nav="deployments" data-tooltip="Deployments"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="send" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Deployments</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div>
+        <div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1"
+             style="color:var(--text-tertiary)">Insights</div>
+        <div class="space-y-0.5">
+          <a id="navResearch" data-nav="research" data-tooltip="Research"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Research</span>
+          </a>
+          <a data-nav="analytics" data-tooltip="Analytics"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="bar-chart-3" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Analytics</span>
+          </a>
+          <a data-nav="tools" data-tooltip="Tools"
+             class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+             style="color:var(--text-secondary)">
+            <i data-lucide="wrench" class="w-[18px] h-[18px] flex-shrink-0"></i>
+            <span class="nav-text">Tools</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Bottom pinned -->
+    <div class="px-2 py-3 space-y-1" style="border-top:1px solid var(--border)">
+      <a id="navSettings" data-nav="settings" data-tooltip="Settings"
+         class="nav-item flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium cursor-pointer"
+         style="color:var(--text-secondary)">
+        <i data-lucide="settings" class="w-[18px] h-[18px] flex-shrink-0"></i>
+        <span class="nav-text">Settings</span>
+      </a>
+      <div class="flex items-center gap-2 px-2.5 py-1.5">
+        <button onclick="toggleSidebar()" class="p-1 rounded-md" style="color:var(--text-tertiary)" title="Collapse sidebar">
+          <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+        </button>
+        <button onclick="toggleTheme()" class="p-1 rounded-md collapse-text" style="color:var(--text-tertiary)" title="Toggle theme">
+          <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area flex-1 ml-[220px] transition-all duration-200" id="mainArea">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-20 h-[56px] flex items-center justify-between px-6"
+            style="background:var(--bg-card);border-bottom:1px solid var(--border)">
+      <div class="flex items-center gap-3">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-1.5 text-xs" style="color:var(--text-tertiary)">
+          <span>Home</span>
+          <i data-lucide="chevron-right" class="w-3 h-3"></i>
+          <span style="color:var(--text-primary); font-weight:600;">Dashboard</span>
+        </nav>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- Command palette trigger -->
+        <button id="cmdPaletteTrigger"
+                onclick="showToast('Command palette — search anything with ⌘K','info')"
+                class="hidden md:flex items-center gap-2 h-8 px-3 rounded-lg text-xs"
+                style="background:var(--bg-muted);color:var(--text-tertiary);border:1px solid var(--border)">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+          <span>Search</span>
+          <kbd class="ml-1 font-mono text-[10px] px-1.5 py-0.5 rounded"
+               style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-tertiary)">⌘K</kbd>
+        </button>
+        <!-- Theme toggle -->
+        <button onclick="toggleTheme()" class="w-9 h-9 flex items-center justify-center rounded-lg"
+                style="color:var(--text-tertiary)" title="Toggle theme">
+          <i data-lucide="moon" id="headerThemeIcon" class="w-[18px] h-[18px]"></i>
+        </button>
+        <!-- Notification bell -->
+        <button onclick="showToast('3 new notifications','info')"
+                class="relative w-9 h-9 flex items-center justify-center rounded-lg">
+          <i data-lucide="bell" class="w-[18px] h-[18px]" style="color:var(--text-secondary)"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style="background:var(--brand-accent)"></span>
+        </button>
+        <!-- AI sparkle button — tour target step 6 -->
+        <button id="tourAiBtn" onclick="showToast('AI Generator — create titles, tags & descriptions instantly','info')"
+                class="btn-ai">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>AI</span>
+        </button>
+        <!-- Avatar -->
+        <button class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0"
+                style="background:var(--brand-primary-bg);color:var(--brand-primary)">JD</button>
+      </div>
+    </header>
+
+    <!-- ===== DASHBOARD CONTENT ===== -->
+    <main class="p-6 space-y-5">
+
+      <!-- Tour launch banner — visible before tour starts -->
+      <div id="tourBanner" class="rounded-xl p-4 flex items-center justify-between gap-4"
+           style="background:var(--brand-primary-bg);border:1px solid var(--brand-primary)">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:var(--brand-primary)">
+            <i data-lucide="map" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold" style="color:var(--brand-primary)">Welcome to Dodgeprint!</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-secondary)">
+              Take a 2-minute tour to discover the key features. You can skip anytime.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button onclick="dismissBanner()" class="text-xs font-medium px-3 py-1.5 rounded-lg"
+                  style="color:var(--text-tertiary)">Maybe later</button>
+          <button onclick="startTour()"
+                  class="btn-primary px-4 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            Start Tour
+          </button>
+        </div>
+      </div>
+
+      <!-- Page title row -->
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight" style="color:var(--text-primary)">Good morning, Leo</h1>
+          <p class="text-[13px] mt-0.5" style="color:var(--text-secondary)">All 3 shops are synced. Here's your overview.</p>
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background:var(--success-bg)">
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:var(--success)"></span>
+          <span class="text-xs font-medium" style="color:var(--success)">All synced</span>
+        </div>
+      </div>
+
+      <!-- KPI Row — 4 cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Revenue -->
+        <div class="card-static rounded-xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium" style="color:var(--text-secondary)">Revenue</span>
+            <i data-lucide="dollar-sign" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+          </div>
+          <div class="flex items-end gap-3">
+            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">$24,580</span>
+            <span class="text-xs font-medium mb-1" style="color:var(--success)">↑ 12.3%</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">vs last month</span>
+            <div class="sparkline">
+              <span style="height:7px"></span><span style="height:11px"></span>
+              <span style="height:9px"></span><span style="height:14px"></span>
+              <span style="height:12px"></span><span style="height:17px"></span>
+              <span style="height:20px"></span>
+            </div>
+          </div>
+        </div>
+        <!-- Orders -->
+        <div class="card-static rounded-xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium" style="color:var(--text-secondary)">Orders</span>
+            <i data-lucide="shopping-cart" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+          </div>
+          <div class="flex items-end gap-3">
+            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">1,247</span>
+            <span class="text-xs font-medium mb-1" style="color:var(--success)">↑ 8.3%</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">vs last month</span>
+            <div class="sparkline">
+              <span style="height:10px"></span><span style="height:8px"></span>
+              <span style="height:13px"></span><span style="height:11px"></span>
+              <span style="height:15px"></span><span style="height:14px"></span>
+              <span style="height:17px"></span>
+            </div>
+          </div>
+        </div>
+        <!-- Conversion -->
+        <div class="card-static rounded-xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium" style="color:var(--text-secondary)">Conversion</span>
+            <i data-lucide="percent" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+          </div>
+          <div class="flex items-end gap-3">
+            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">3.2%</span>
+            <span class="text-xs font-medium mb-1" style="color:var(--brand-secondary)">→ 0%</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">vs last month</span>
+            <div class="sparkline">
+              <span style="height:13px"></span><span style="height:14px"></span>
+              <span style="height:12px"></span><span style="height:13px"></span>
+              <span style="height:14px"></span><span style="height:13px"></span>
+              <span style="height:14px"></span>
+            </div>
+          </div>
+        </div>
+        <!-- Active Listings -->
+        <div class="card-static rounded-xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium" style="color:var(--text-secondary)">Active Listings</span>
+            <i data-lucide="list" class="w-4 h-4" style="color:var(--text-tertiary)"></i>
+          </div>
+          <div class="flex items-end gap-3">
+            <span class="text-2xl font-bold font-mono" style="color:var(--text-primary)">892</span>
+            <span class="text-xs font-medium mb-1" style="color:var(--success)">↑ 14</span>
+          </div>
+          <div class="flex items-center justify-between mt-2">
+            <span class="text-[11px]" style="color:var(--text-tertiary)">new this week</span>
+            <div class="sparkline">
+              <span style="height:14px"></span><span style="height:14px"></span>
+              <span style="height:15px"></span><span style="height:15px"></span>
+              <span style="height:16px"></span><span style="height:16px"></span>
+              <span style="height:18px"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listings table stub -->
+      <div id="tourListingsTable" class="card-static rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3.5"
+             style="border-bottom:1px solid var(--border)">
+          <div>
+            <h3 class="text-sm font-bold" style="color:var(--text-primary)">Recent Listings</h3>
+            <p class="text-xs mt-0.5" style="color:var(--text-tertiary)">Synced across all shops in real-time</p>
+          </div>
+          <button class="btn-ghost px-3 h-8 text-xs font-medium inline-flex items-center gap-1.5">
+            View All
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <table class="w-full text-sm">
+          <thead>
+            <tr style="background:var(--bg-muted);border-bottom:1px solid var(--border)">
+              <th class="text-left px-5 py-2.5 text-xs font-semibold" style="color:var(--text-tertiary)">Listing</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold" style="color:var(--text-tertiary)">Platform</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold" style="color:var(--text-tertiary)">Quality</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold" style="color:var(--text-tertiary)">Status</th>
+            </tr>
+          </thead>
+          <tbody style="border-bottom:1px solid var(--border-light)">
+            <tr style="border-bottom:1px solid var(--border-light)">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg flex-shrink-0"
+                       style="background:var(--bg-muted);border:1px solid var(--border)"></div>
+                  <div>
+                    <p class="text-xs font-semibold leading-snug" style="color:var(--text-primary)">Floral Tote Bag — Summer</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Updated 2h ago</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="platform-pill" style="color:#F1641E;background:#FFF0EC;">
+                  <i data-lucide="shopping-bag" class="w-3 h-3"></i> Etsy
+                </span>
+              </td>
+              <td class="px-4 py-3"><span class="quality-score high">95</span></td>
+              <td class="px-4 py-3"><span class="status-chip synced">● Synced</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-light)">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg flex-shrink-0"
+                       style="background:var(--bg-muted);border:1px solid var(--border)"></div>
+                  <div>
+                    <p class="text-xs font-semibold leading-snug" style="color:var(--text-primary)">Vintage Print Hoodie — Navy</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Updated 5h ago</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="platform-pill" style="color:#96BF48;background:#F0F7E6;">
+                  <i data-lucide="shopping-bag" class="w-3 h-3"></i> Shopify
+                </span>
+              </td>
+              <td class="px-4 py-3"><span class="quality-score mid">72</span></td>
+              <td class="px-4 py-3"><span class="status-chip synced">● Synced</span></td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border-light)">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg flex-shrink-0"
+                       style="background:var(--bg-muted);border:1px solid var(--border)"></div>
+                  <div>
+                    <p class="text-xs font-semibold leading-snug" style="color:var(--text-primary)">Ceramic Mug — Morning Fog</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Updated 1d ago</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="platform-pill" style="color:#F1641E;background:#FFF0EC;">
+                  <i data-lucide="shopping-bag" class="w-3 h-3"></i> Etsy
+                </span>
+              </td>
+              <td class="px-4 py-3"><span class="quality-score low">41</span></td>
+              <td class="px-4 py-3"><span class="status-chip draft">○ Draft</span></td>
+            </tr>
+            <tr>
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg flex-shrink-0"
+                       style="background:var(--bg-muted);border:1px solid var(--border)"></div>
+                  <div>
+                    <p class="text-xs font-semibold leading-snug" style="color:var(--text-primary)">Wall Art Set — Botanical Series</p>
+                    <p class="text-[11px]" style="color:var(--text-tertiary)">Updated 2d ago</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="platform-pill" style="color:#FF9900;background:#FFF8EC;">
+                  <i data-lucide="shopping-bag" class="w-3 h-3"></i> Amazon
+                </span>
+              </td>
+              <td class="px-4 py-3"><span class="quality-score high">88</span></td>
+              <td class="px-4 py-3"><span class="status-chip synced">● Synced</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div><!-- /main-area -->
+</div><!-- /flex -->
+
+<!-- ===== PERSISTENT ONBOARDING CHECKLIST ===== -->
+<div id="onboardingChecklist" class="checklist-card" style="display:none">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <i data-lucide="rocket" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+      <h4 class="text-sm font-bold" style="color:var(--text-primary)">Getting Started</h4>
+    </div>
+    <span class="text-xs font-mono font-bold" style="color:var(--brand-primary)">3/7</span>
+  </div>
+  <!-- Progress bar -->
+  <div class="h-1.5 rounded-full mb-4" style="background:var(--bg-muted)">
+    <div class="h-1.5 rounded-full transition-all duration-500" style="width:43%;background:var(--brand-primary)"></div>
+  </div>
+  <div class="space-y-0.5">
+    <div class="checklist-item done">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0" style="color:var(--success)"></i>
+      Connect your first shop
+    </div>
+    <div class="checklist-item done">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0" style="color:var(--success)"></i>
+      Import listings
+    </div>
+    <div class="checklist-item done">
+      <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0" style="color:var(--success)"></i>
+      Complete product tour
+    </div>
+    <div class="checklist-item">
+      <i data-lucide="circle" class="w-4 h-4 flex-shrink-0" style="color:var(--border)"></i>
+      Optimize 5 listing titles
+    </div>
+    <div class="checklist-item">
+      <i data-lucide="circle" class="w-4 h-4 flex-shrink-0" style="color:var(--border)"></i>
+      Set up sync schedule
+    </div>
+    <div class="checklist-item">
+      <i data-lucide="circle" class="w-4 h-4 flex-shrink-0" style="color:var(--border)"></i>
+      Explore Research tools
+    </div>
+    <div class="checklist-item">
+      <i data-lucide="circle" class="w-4 h-4 flex-shrink-0" style="color:var(--border)"></i>
+      Invite a team member
+    </div>
+  </div>
+  <button onclick="document.getElementById('onboardingChecklist').style.display='none'"
+          class="text-xs mt-4 block" style="color:var(--text-tertiary)">Dismiss</button>
+</div>
+
+<!-- ===== SHARED NAVIGATION ===== -->
+<script src="_shared-navigation.js"></script>
+
+<!-- ===== PAGE SCRIPT ===== -->
+<script>
+/* ============================================================
+   TOUR ENGINE
+   ============================================================ */
+
+var TOUR_STEPS = [
+  {
+    target: '#sidebar',
+    type: 'spotlight',
+    position: 'right',
+    title: 'Navigation',
+    text: 'Your command center. All sections one click away.'
+  },
+  {
+    target: '#shopSwitcherBtn',
+    type: 'spotlight',
+    position: 'bottom',
+    title: 'Shop Switcher',
+    text: 'Switch between shops instantly, or view all at once.'
+  },
+  {
+    target: '#tourListingsTable',
+    type: 'coachmark',
+    position: 'top',
+    title: 'Your Listings',
+    text: 'Your listings, synced in real-time. Quality scores help you optimize.'
+  },
+  {
+    target: '#cmdPaletteTrigger',
+    type: 'spotlight',
+    position: 'bottom',
+    title: 'Quick Search',
+    text: 'Power move: Press \u2318K to search anything \u2014 listings, orders, shops.'
+  },
+  {
+    target: '#navResearch',
+    type: 'coachmark',
+    position: 'right',
+    title: 'Research Tools',
+    text: 'Discover trending products and keywords your competitors use.'
+  },
+  {
+    target: '#tourAiBtn',
+    type: 'coachmark',
+    position: 'bottom',
+    title: 'AI Assistant',
+    text: 'AI writes titles, tags, descriptions. Just click the sparkle.'
+  },
+  {
+    target: '#navSettings',
+    type: 'coachmark',
+    position: 'right',
+    title: 'Settings',
+    text: 'Settings & support are always here when you need them.'
+  }
+];
+
+var currentTourStep = 0;
+var tourActive = false;
+
+/* ---- Public entry points ---- */
+
+function startTour() {
+  tourActive = true;
+  currentTourStep = 0;
+  // Hide banner if visible
+  var banner = document.getElementById('tourBanner');
+  if (banner) banner.style.display = 'none';
+  showTourStep(0);
+}
+
+function nextTourStep() {
+  if (currentTourStep < TOUR_STEPS.length - 1) {
+    currentTourStep++;
+    showTourStep(currentTourStep);
+  } else {
+    endTour();
+  }
+}
+
+function skipTour() {
+  endTour();
+}
+
+/* ---- Core step renderer ---- */
+
+function showTourStep(index) {
+  var step = TOUR_STEPS[index];
+  var el = document.querySelector(step.target);
+  if (!el) { nextTourStep(); return; }
+
+  clearTourUI();
+
+  if (step.type === 'spotlight') {
+    showSpotlight(el, step, index);
+  } else {
+    showCoachmark(el, step, index);
+  }
+}
+
+/* ---- Spotlight (dimmed backdrop + cutout) ---- */
+
+function showSpotlight(el, step, index) {
+  var overlay = document.getElementById('tourOverlay');
+  overlay.classList.add('active');
+
+  // Position the cutout box over the element
+  var cutout = document.getElementById('tourCutout');
+  var rect = el.getBoundingClientRect();
+  var pad = 8;
+  cutout.style.display = 'block';
+  cutout.style.top    = (rect.top    - pad) + 'px';
+  cutout.style.left   = (rect.left   - pad) + 'px';
+  cutout.style.width  = (rect.width  + pad * 2) + 'px';
+  cutout.style.height = (rect.height + pad * 2) + 'px';
+
+  // Highlight ring
+  el.classList.add('tour-highlight');
+
+  // Create tooltip
+  var tooltip = createTourCard(step, index, 'tour-tooltip');
+  positionCard(tooltip, rect, step.position, false);
+  document.body.appendChild(tooltip);
+}
+
+/* ---- Coachmark (no overlay, floating card with pulse) ---- */
+
+function showCoachmark(el, step, index) {
+  el.classList.add('tour-pulse');
+
+  var rect = el.getBoundingClientRect();
+  var card = createTourCard(step, index, 'tour-coachmark');
+  positionCard(card, rect, step.position, true);
+  document.body.appendChild(card);
+}
+
+/* ---- Build tour card HTML ---- */
+
+function createTourCard(step, index, className) {
+  var isLast = (index === TOUR_STEPS.length - 1);
+  var card = document.createElement('div');
+  card.className = className + ' tour-card-active';
+
+  var dotsHtml = '';
+  for (var i = 0; i < TOUR_STEPS.length; i++) {
+    var cls = 'tour-dot';
+    if (i === index) cls += ' active';
+    else if (i < index) cls += ' completed';
+    dotsHtml += '<div class="' + cls + '"></div>';
+  }
+
+  card.innerHTML =
+    '<div class="flex items-center justify-between mb-2">' +
+      '<span class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--brand-primary)">' +
+        'Step ' + (index + 1) + ' of ' + TOUR_STEPS.length +
+      '</span>' +
+      '<button onclick="skipTour()" class="text-[11px] hover:underline" style="color:var(--text-tertiary)">Skip Tour</button>' +
+    '</div>' +
+    '<h4 class="text-sm font-bold mb-1" style="color:var(--text-primary)">' + step.title + '</h4>' +
+    '<p class="text-xs mb-4 leading-relaxed" style="color:var(--text-secondary)">' + step.text + '</p>' +
+    '<div class="flex items-center justify-between">' +
+      '<div class="tour-dots">' + dotsHtml + '</div>' +
+      '<button onclick="nextTourStep()" class="btn-primary px-4 py-1.5 text-xs font-semibold">' +
+        (isLast ? 'Finish \u2713' : 'Next \u2192') +
+      '</button>' +
+    '</div>';
+
+  return card;
+}
+
+/* ---- Position card relative to target rect ---- */
+
+function positionCard(card, rect, position, isCoachmark) {
+  card.style.position = 'fixed';
+  var GAP = 16;
+
+  // Temporarily render off-screen to measure
+  card.style.visibility = 'hidden';
+  card.style.top  = '-9999px';
+  card.style.left = '-9999px';
+  document.body.appendChild(card);
+  var cardW = card.offsetWidth;
+  var cardH = card.offsetHeight;
+  card.remove();
+  card.style.visibility = '';
+
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+
+  var top, left;
+
+  if (position === 'right') {
+    top  = rect.top + (rect.height / 2) - (cardH / 2);
+    left = rect.right + GAP;
+    if (isCoachmark) card.classList.add('arrow-left');
+  } else if (position === 'left') {
+    top  = rect.top + (rect.height / 2) - (cardH / 2);
+    left = rect.left - cardW - GAP;
+    if (isCoachmark) card.classList.add('arrow-right');
+  } else if (position === 'bottom') {
+    top  = rect.bottom + GAP;
+    left = rect.left + (rect.width / 2) - (cardW / 2);
+    if (isCoachmark) card.classList.add('arrow-top');
+  } else { /* top */
+    top  = rect.top - cardH - GAP;
+    left = rect.left + (rect.width / 2) - (cardW / 2);
+    if (isCoachmark) card.classList.add('arrow-bottom');
+  }
+
+  /* Clamp to viewport with 12px margin */
+  var M = 12;
+  if (top < M) top = M;
+  if (top + cardH > vh - M) top = vh - cardH - M;
+  if (left < M) left = M;
+  if (left + cardW > vw - M) left = vw - cardW - M;
+
+  card.style.top  = top + 'px';
+  card.style.left = left + 'px';
+}
+
+/* ---- Clean up all tour UI ---- */
+
+function clearTourUI() {
+  var overlay = document.getElementById('tourOverlay');
+  overlay.classList.remove('active');
+
+  var cutout = document.getElementById('tourCutout');
+  cutout.style.display = 'none';
+
+  document.querySelectorAll('.tour-highlight').forEach(function(el) {
+    el.classList.remove('tour-highlight');
+  });
+  document.querySelectorAll('.tour-pulse').forEach(function(el) {
+    el.classList.remove('tour-pulse');
+  });
+  document.querySelectorAll('.tour-card-active').forEach(function(el) {
+    el.remove();
+  });
+}
+
+/* ---- End tour ---- */
+
+function endTour() {
+  tourActive = false;
+  clearTourUI();
+  showChecklist();
+  if (typeof showToast === 'function') {
+    showToast('Tour complete! Check your Getting Started list.', 'success');
+  }
+}
+
+/* ---- Show checklist ---- */
+
+function showChecklist() {
+  var cl = document.getElementById('onboardingChecklist');
+  if (cl) {
+    cl.style.display = 'block';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+/* ---- Dismiss banner ---- */
+
+function dismissBanner() {
+  var banner = document.getElementById('tourBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+/* ---- Sidebar / theme helpers (if _shared-navigation.js not loaded) ---- */
+
+function toggleSidebar() {
+  var sidebar  = document.getElementById('sidebar');
+  var mainArea = document.getElementById('mainArea');
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  mainArea.classList.toggle('ml-[220px]');
+  mainArea.classList.toggle('ml-[48px]');
+}
+
+function toggleTheme() {
+  var html = document.documentElement;
+  var isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  var icon1 = document.getElementById('themeIcon');
+  var icon2 = document.getElementById('headerThemeIcon');
+  [icon1, icon2].forEach(function(ic) {
+    if (!ic) return;
+    ic.setAttribute('data-lucide', isDark ? 'moon' : 'sun');
+  });
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+/* ---- Auto-start tour after 500ms ---- */
+window.addEventListener('DOMContentLoaded', function() {
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  setTimeout(function() {
+    // Only auto-start if banner is still visible (user hasn't dismissed)
+    var banner = document.getElementById('tourBanner');
+    if (banner && banner.style.display !== 'none') {
+      startTour();
+    }
+  }, 800);
+});
+</script>
+</body>
+</html>

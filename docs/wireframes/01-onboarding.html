@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dodgeprint — Welcome</title>
+<title>Dodgeprint — Get Started</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -39,6 +39,146 @@ tailwind.config = {
   }
 }
 </script>
+<style>
+/* ===== Persona Cards ===== */
+.persona-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 16px;
+  text-align: center;
+  background: var(--bg-card);
+}
+.persona-card:hover {
+  border-color: var(--brand-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.1);
+}
+.persona-card.selected {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-bg);
+}
+
+/* ===== Goal Cards ===== */
+.goal-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg-card);
+}
+.goal-card:hover { border-color: var(--brand-primary); }
+.goal-card.selected {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-bg);
+}
+.goal-card .goal-check {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.goal-card.selected .goal-check {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+/* ===== Social Proof Banner ===== */
+.social-proof-banner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: var(--brand-primary-bg);
+  margin-bottom: 24px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-primary);
+}
+
+/* ===== Avatar Stack ===== */
+.avatar-stack {
+  display: flex;
+}
+.avatar-stack .avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  margin-right: -6px;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ===== Platform option w/ social count ===== */
+.platform-count {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* ===== Quick Win Preview Card ===== */
+.qw-preview-card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  background: var(--bg-card);
+  transition: all 0.2s;
+}
+
+/* ===== Bulk connect textarea ===== */
+.bulk-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ===== Connected success pulse ===== */
+@keyframes checkPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+.connected-pulse { animation: checkPulse 0.6s ease-out; }
+
+/* ===== Step animation ===== */
+.ob-step { display: none; }
+.ob-step.active { display: block; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.progress-bar-ob { transition: width 0.5s ease-out; }
+
+/* ===== Trend keyword row ===== */
+.kw-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.kw-row:last-child { border-bottom: none; }
+
+/* ===== Scrollable step content when viewport is short ===== */
+.ob-scroll { overflow-y: auto; max-height: calc(100vh - 160px); }
+</style>
 </head>
 <body>
 
@@ -52,7 +192,7 @@ tailwind.config = {
 <div id="screen-onboarding" class="auth-screen active min-h-screen flex-col">
 
   <!-- Header -->
-  <header class="flex items-center justify-between px-6 py-4 bg-white border-b" style="border-color:var(--border)">
+  <header class="flex items-center justify-between px-6 py-4 bg-white border-b flex-shrink-0" style="border-color:var(--border)">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background:var(--brand-primary)">
         <i data-lucide="zap" class="w-5 h-5 text-white"></i>
@@ -69,123 +209,269 @@ tailwind.config = {
   </header>
 
   <!-- Progress bar -->
-  <div class="h-1" style="background:var(--bg-muted)">
+  <div class="h-1 flex-shrink-0" style="background:var(--bg-muted)">
     <div class="progress-bar-ob h-1 rounded-r-full" id="obProgressBar" style="width:25%;background:var(--brand-primary)"></div>
   </div>
 
   <!-- Step content area -->
-  <div class="flex-1 flex items-center justify-center p-6">
+  <div class="flex-1 flex items-start justify-center p-6 overflow-auto">
     <div class="w-full max-w-2xl">
 
-      <!-- ===== Step 1: Welcome ===== -->
+      <!-- ===== Step 1: Seller Profile ===== -->
       <div class="ob-step active" id="obStep1">
-        <div class="text-center mb-10">
-          <div class="w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-6" style="background:var(--brand-primary-bg)">
-            <i data-lucide="zap" class="w-10 h-10" style="color:var(--brand-primary)"></i>
-          </div>
-          <h1 class="text-3xl font-extrabold tracking-tight mb-3">Welcome to Dodgeprint</h1>
-          <p class="text-lg max-w-md mx-auto" style="color:var(--text-secondary)">The all-in-one platform to manage your e-commerce listings, research products, and grow your business.</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-          <!-- Feature: Multi-channel Listings -->
-          <div class="bg-white rounded-xl border p-5 text-center cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style="background:var(--brand-primary-bg)">
-              <i data-lucide="list" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+
+        <!-- Social proof banner -->
+        <div class="flex justify-center">
+          <div class="social-proof-banner">
+            <div class="avatar-stack">
+              <div class="avatar" style="background:#3B82F6">A</div>
+              <div class="avatar" style="background:#F97316">B</div>
+              <div class="avatar" style="background:#8B5CF6">C</div>
+              <div class="avatar" style="background:#22C55E">D</div>
             </div>
-            <h4 class="text-sm font-semibold mb-1">Multi-channel Listings</h4>
-            <p class="text-xs" style="color:var(--text-secondary)">Manage all your listings in one powerful spreadsheet view</p>
-          </div>
-          <!-- Feature: Product Research -->
-          <div class="bg-white rounded-xl border p-5 text-center cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style="background:var(--brand-secondary-bg)">
-              <i data-lucide="search" class="w-5 h-5" style="color:var(--brand-secondary)"></i>
-            </div>
-            <h4 class="text-sm font-semibold mb-1">Product Research</h4>
-            <p class="text-xs" style="color:var(--text-secondary)">Discover trending products and winning keywords</p>
-          </div>
-          <!-- Feature: POD Integration -->
-          <div class="bg-white rounded-xl border p-5 text-center cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-3" style="background:var(--brand-accent-bg)">
-              <i data-lucide="printer" class="w-5 h-5" style="color:var(--brand-accent)"></i>
-            </div>
-            <h4 class="text-sm font-semibold mb-1">POD Integration</h4>
-            <p class="text-xs" style="color:var(--text-secondary)">Create & push print-on-demand products everywhere</p>
+            <span>Join <strong>12,000+</strong> sellers managing <strong>$2.4M+</strong> monthly revenue</span>
           </div>
         </div>
+
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-extrabold tracking-tight mb-3">Tell us about your business</h1>
+          <p class="text-base" style="color:var(--text-secondary)">Setup takes ~2 minutes &amp; we'll personalise everything for you</p>
+        </div>
+
+        <!-- Persona grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <!-- Starter -->
+          <div class="persona-card" id="persona-starter" onclick="setSellerLevel('starter')">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background:var(--success-bg)">
+              <i data-lucide="sprout" class="w-6 h-6" style="color:var(--success)"></i>
+            </div>
+            <h3 class="text-base font-bold mb-1">Just Starting</h3>
+            <p class="text-xs font-semibold mb-2" style="color:var(--text-tertiary)">1–3 shops</p>
+            <p class="text-xs" style="color:var(--text-secondary)">I want to organise my listings</p>
+          </div>
+          <!-- Growing -->
+          <div class="persona-card" id="persona-growing" onclick="setSellerLevel('growing')">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background:var(--brand-primary-bg)">
+              <i data-lucide="trending-up" class="w-6 h-6" style="color:var(--brand-primary)"></i>
+            </div>
+            <h3 class="text-base font-bold mb-1">Growing Fast</h3>
+            <p class="text-xs font-semibold mb-2" style="color:var(--text-tertiary)">4–20 shops</p>
+            <p class="text-xs" style="color:var(--text-secondary)">I need to scale efficiently</p>
+          </div>
+          <!-- Enterprise -->
+          <div class="persona-card" id="persona-enterprise" onclick="setSellerLevel('enterprise')">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style="background:var(--purple-bg)">
+              <i data-lucide="building-2" class="w-6 h-6" style="color:var(--purple)"></i>
+            </div>
+            <h3 class="text-base font-bold mb-1">At Scale</h3>
+            <p class="text-xs font-semibold mb-2" style="color:var(--text-tertiary)">20+ shops</p>
+            <p class="text-xs" style="color:var(--text-secondary)">I manage a large operation</p>
+          </div>
+        </div>
+
+        <!-- Goal picker -->
+        <div class="mb-8">
+          <p class="text-sm font-semibold mb-3">What are your main goals? <span class="font-normal" style="color:var(--text-tertiary)">(pick 1–2)</span></p>
+          <div class="space-y-2">
+            <div class="goal-card" id="goal-listings" onclick="toggleGoal('listings')">
+              <div class="goal-check" id="gc-listings">
+                <i data-lucide="check" class="w-3 h-3 text-white hidden" id="gci-listings"></i>
+              </div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
+                <i data-lucide="list" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold">Manage listings across platforms</p>
+                <p class="text-xs" style="color:var(--text-secondary)">One place for all your products</p>
+              </div>
+            </div>
+            <div class="goal-card" id="goal-research" onclick="toggleGoal('research')">
+              <div class="goal-check" id="gc-research">
+                <i data-lucide="check" class="w-3 h-3 text-white hidden" id="gci-research"></i>
+              </div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-accent-bg)">
+                <i data-lucide="search" class="w-4 h-4" style="color:var(--brand-accent)"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold">Research trending products</p>
+                <p class="text-xs" style="color:var(--text-secondary)">Discover keywords &amp; opportunities</p>
+              </div>
+            </div>
+            <div class="goal-card" id="goal-pod" onclick="toggleGoal('pod')">
+              <div class="goal-check" id="gc-pod">
+                <i data-lucide="check" class="w-3 h-3 text-white hidden" id="gci-pod"></i>
+              </div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-secondary-bg)">
+                <i data-lucide="printer" class="w-4 h-4" style="color:var(--brand-secondary)"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold">Automate POD workflow</p>
+                <p class="text-xs" style="color:var(--text-secondary)">Create &amp; push designs everywhere</p>
+              </div>
+            </div>
+            <div class="goal-card" id="goal-analytics" onclick="toggleGoal('analytics')">
+              <div class="goal-check" id="gc-analytics">
+                <i data-lucide="check" class="w-3 h-3 text-white hidden" id="gci-analytics"></i>
+              </div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--success-bg)">
+                <i data-lucide="bar-chart-3" class="w-4 h-4" style="color:var(--success)"></i>
+              </div>
+              <div>
+                <p class="text-sm font-semibold">Track revenue &amp; analytics</p>
+                <p class="text-xs" style="color:var(--text-secondary)">Revenue, orders, and insights</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="text-center">
-          <button onclick="goToObStep(2)" class="btn-primary px-8 py-3 text-base font-semibold inline-flex items-center gap-2">
-            Get Started <i data-lucide="arrow-right" class="w-5 h-5"></i>
+          <button id="step1Btn" onclick="obNext()" disabled
+            class="btn-primary px-8 py-3 text-base font-semibold inline-flex items-center gap-2 opacity-40 cursor-not-allowed"
+            style="cursor:not-allowed">
+            Continue <i data-lucide="arrow-right" class="w-5 h-5"></i>
           </button>
+          <p class="text-xs mt-3" style="color:var(--text-tertiary)">No credit card required</p>
         </div>
       </div>
 
-      <!-- ===== Step 2: Connect Shop ===== -->
+      <!-- ===== Step 2: Connect Shops ===== -->
       <div class="ob-step" id="obStep2">
         <div class="text-center mb-8">
           <h2 class="text-2xl font-bold tracking-tight mb-2">Connect Your Shops</h2>
           <p class="text-sm" style="color:var(--text-secondary)">Select the marketplaces where you sell. You can connect multiple shops from the same platform.</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+
+        <!-- Platform grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <!-- Etsy -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(241,100,30,.1)"><span class="text-2xl font-bold" style="color:#F1641E">E</span></div>
-              <div><h4 class="text-base font-semibold">Etsy</h4><p class="text-xs" style="color:var(--text-secondary)">Connect your Etsy shop to sync listings</p></div>
+              <div>
+                <h4 class="text-base font-semibold">Etsy</h4>
+                <p class="text-xs platform-count">8,200 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">OAuth — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Shopify -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(150,191,72,.1)"><span class="text-2xl font-bold" style="color:#96BF48">S</span></div>
-              <div><h4 class="text-base font-semibold">Shopify</h4><p class="text-xs" style="color:var(--text-secondary)">Connect your Shopify store</p></div>
+              <div>
+                <h4 class="text-base font-semibold">Shopify</h4>
+                <p class="text-xs platform-count">5,100 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">OAuth — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Amazon -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(255,153,0,.1)"><span class="text-2xl font-bold" style="color:#FF9900">A</span></div>
-              <div><h4 class="text-base font-semibold">Amazon</h4><p class="text-xs" style="color:var(--text-secondary)">Link your Amazon Seller Central</p></div>
+              <div>
+                <h4 class="text-base font-semibold">Amazon</h4>
+                <p class="text-xs platform-count">3,800 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">API key — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- TikTok -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(0,0,0,.06)"><span class="text-2xl font-bold" style="color:#111">T</span></div>
-              <div><h4 class="text-base font-semibold">TikTok Shop</h4><p class="text-xs" style="color:var(--text-secondary)">Connect your TikTok Shop account</p></div>
+              <div>
+                <h4 class="text-base font-semibold">TikTok Shop</h4>
+                <p class="text-xs platform-count">2,400 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">OAuth — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- eBay -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(220,50,50,.08)"><span class="text-2xl font-bold" style="color:#dc3232">e</span></div>
-              <div><h4 class="text-base font-semibold">eBay</h4><p class="text-xs" style="color:var(--text-secondary)">Connect your eBay seller account</p></div>
+              <div>
+                <h4 class="text-base font-semibold">eBay</h4>
+                <p class="text-xs platform-count">1,900 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">OAuth — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Walmart -->
-          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatform(this)">
+          <div class="platform-option bg-white rounded-lg border-2 p-5 relative" style="border-color:var(--border)" onclick="selectPlatformOb(this)">
             <div class="check-icon absolute top-3 right-3 w-6 h-6 rounded-full items-center justify-center hidden" style="background:var(--brand-primary)"><i data-lucide="check" class="w-4 h-4 text-white"></i></div>
             <div class="flex items-center gap-4">
               <div class="w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(0,113,206,.08)"><span class="text-2xl font-bold" style="color:#0071CE">W</span></div>
-              <div><h4 class="text-base font-semibold">Walmart</h4><p class="text-xs" style="color:var(--text-secondary)">Connect your Walmart Marketplace</p></div>
+              <div>
+                <h4 class="text-base font-semibold">Walmart</h4>
+                <p class="text-xs platform-count">980 sellers connected</p>
+                <div class="flex items-center gap-1 mt-1">
+                  <p class="text-xs" style="color:var(--text-secondary)">API key — read-only</p>
+                  <button class="help-tooltip-btn" onclick="event.stopPropagation();toggleHelp(this)" style="width:16px;height:16px;font-size:10px;border:1px solid var(--border);border-radius:50%;background:none;cursor:pointer;color:var(--text-tertiary)">?
+                    <span class="help-tooltip" style="width:200px">We use read-only access. Your data stays private and you can disconnect anytime.</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <!-- PSYCH: Transparency panel — what we access -->
+
+        <!-- Enterprise: Bulk connect section -->
+        <div id="bulkConnectSection" class="hidden mb-6 rounded-xl border p-5" style="border-color:var(--border);background:var(--bg-muted)">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="zap" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+            <h4 class="text-sm font-semibold">Bulk Connect <span class="text-xs font-normal ml-1 px-2 py-0.5 rounded-full" style="background:var(--purple-bg);color:var(--purple)">Enterprise</span></h4>
+          </div>
+          <p class="text-xs mb-3" style="color:var(--text-secondary)">Paste multiple API keys (one per line) or upload a CSV with shop credentials.</p>
+          <textarea class="bulk-textarea mb-3" placeholder="api_key_shop1&#10;api_key_shop2&#10;api_key_shop3"></textarea>
+          <div class="upload-zone rounded-lg p-4 text-center cursor-pointer">
+            <i data-lucide="upload-cloud" class="w-6 h-6 mx-auto mb-1" style="color:var(--text-tertiary)"></i>
+            <p class="text-xs" style="color:var(--text-tertiary)">Or drop a CSV file here</p>
+          </div>
+        </div>
+
+        <!-- Transparency panel -->
         <div class="bg-white rounded-lg border p-5 mb-8" style="border-color:var(--border)">
           <h4 class="text-sm font-semibold mb-3">What we access:</h4>
           <div class="space-y-2">
             <div class="flex items-center gap-2">
               <i data-lucide="check" class="w-4 h-4 flex-shrink-0" style="color:var(--brand-primary)"></i>
-              <span class="text-sm" style="color:var(--text-secondary)">Listings & inventory</span>
+              <span class="text-sm" style="color:var(--text-secondary)">Listings &amp; inventory (read-only)</span>
             </div>
             <div class="flex items-center gap-2">
               <i data-lucide="check" class="w-4 h-4 flex-shrink-0" style="color:var(--brand-primary)"></i>
-              <span class="text-sm" style="color:var(--text-secondary)">Orders & customers</span>
+              <span class="text-sm" style="color:var(--text-secondary)">Orders &amp; customers (read-only)</span>
             </div>
             <div class="flex items-center gap-2">
               <i data-lucide="x" class="w-4 h-4 flex-shrink-0" style="color:var(--danger)"></i>
@@ -196,10 +482,12 @@ tailwind.config = {
         </div>
 
         <div class="flex items-center justify-between">
-          <button onclick="goToObStep(1)" class="px-5 py-2.5 text-sm font-medium btn-ghost">Back</button>
+          <button onclick="obPrev()" class="px-5 py-2.5 text-sm font-medium btn-ghost">Back</button>
           <div class="flex items-center gap-3">
-            <button onclick="goToObStep(3)" class="text-sm font-medium" style="color:var(--text-tertiary)">Skip for now</button>
-            <button onclick="goToObStep(3)" class="btn-primary px-6 py-2.5 text-sm font-semibold inline-flex items-center gap-2">Connect & Continue <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+            <button onclick="obNext()" class="text-sm font-medium" style="color:var(--text-tertiary)">Skip for now</button>
+            <button onclick="obConnectAndContinue()" class="btn-primary px-6 py-2.5 text-sm font-semibold inline-flex items-center gap-2">
+              Connect &amp; Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -208,13 +496,13 @@ tailwind.config = {
       <div class="ob-step" id="obStep3">
         <div class="text-center mb-8">
           <h2 class="text-2xl font-bold tracking-tight mb-2">Import Your Listings</h2>
-          <p class="text-sm" style="color:var(--text-secondary)">Choose how you'd like to bring your products into Dodgeprint.</p>
+          <p class="text-sm" id="importSubtitle" style="color:var(--text-secondary)">Let's import your listings so you can manage everything in one place.</p>
         </div>
 
         <!-- Import options -->
-        <div class="space-y-3 mb-8">
+        <div class="space-y-3 mb-6">
           <label class="flex items-center gap-4 bg-white rounded-lg border-2 p-5 cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)" id="importOptionAuto">
-            <input type="radio" name="importMethod" value="auto" class="w-4 h-4 accent-sage" checked onchange="showImportPreview('auto')">
+            <input type="radio" name="importMethod" value="auto" class="w-4 h-4 accent-blue" checked onchange="showImportPreview('auto')">
             <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
               <i data-lucide="refresh-cw" class="w-5 h-5" style="color:var(--brand-primary)"></i>
             </div>
@@ -228,7 +516,7 @@ tailwind.config = {
           </label>
 
           <label class="flex items-center gap-4 bg-white rounded-lg border-2 p-5 cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)">
-            <input type="radio" name="importMethod" value="csv" class="w-4 h-4 accent-sage" onchange="showImportPreview('csv')">
+            <input type="radio" name="importMethod" value="csv" class="w-4 h-4 accent-blue" onchange="showImportPreview('csv')">
             <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-secondary-bg)">
               <i data-lucide="upload" class="w-5 h-5" style="color:var(--brand-secondary)"></i>
             </div>
@@ -239,7 +527,7 @@ tailwind.config = {
           </label>
 
           <label class="flex items-center gap-4 bg-white rounded-lg border-2 p-5 cursor-pointer transition-all hover:border-[var(--brand-primary)]" style="border-color:var(--border)">
-            <input type="radio" name="importMethod" value="fresh" class="w-4 h-4 accent-sage" onchange="showImportPreview('fresh')">
+            <input type="radio" name="importMethod" value="fresh" class="w-4 h-4 accent-blue" onchange="showImportPreview('fresh')">
             <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--brand-accent-bg)">
               <i data-lucide="plus-circle" class="w-5 h-5" style="color:var(--brand-accent)"></i>
             </div>
@@ -250,17 +538,27 @@ tailwind.config = {
           </label>
         </div>
 
-        <!-- PSYCH: Listing count preview + estimated time -->
+        <!-- Listing count + ETA -->
         <div class="flex items-center gap-3 mb-4 p-3 rounded-lg" style="background:var(--brand-primary-bg)">
           <i data-lucide="database" class="w-5 h-5 flex-shrink-0" style="color:var(--brand-primary)"></i>
           <div class="flex-1">
             <p class="text-sm font-medium" style="color:var(--brand-primary)">Found 247 listings ready to import</p>
-            <p class="text-xs" style="color:var(--text-secondary)">Estimated time: ~2 min for 500 listings</p>
+            <p class="text-xs" style="color:var(--text-secondary)">~45 seconds remaining</p>
           </div>
         </div>
 
-        <!-- Import progress preview (auto-import) -->
-        <div id="importPreviewAuto" class="bg-white rounded-lg border p-6 mb-6" style="border-color:var(--border)">
+        <!-- Enterprise: platform breakdown -->
+        <div id="platformBreakdown" class="hidden mb-4 p-3 rounded-lg border text-sm" style="border-color:var(--border);background:var(--bg-muted)">
+          <p class="text-xs font-semibold mb-2" style="color:var(--text-secondary)">Breakdown by platform:</p>
+          <div class="flex flex-wrap gap-3">
+            <span class="flex items-center gap-1 text-xs"><span class="font-semibold" style="color:#F1641E">Etsy</span> <span style="color:var(--text-secondary)">500</span></span>
+            <span class="flex items-center gap-1 text-xs"><span class="font-semibold" style="color:#96BF48">Shopify</span> <span style="color:var(--text-secondary)">200</span></span>
+            <span class="flex items-center gap-1 text-xs"><span class="font-semibold" style="color:#FF9900">Amazon</span> <span style="color:var(--text-secondary)">150</span></span>
+          </div>
+        </div>
+
+        <!-- Auto-import progress preview -->
+        <div id="importPreviewAuto" class="bg-white rounded-lg border p-6 mb-4" style="border-color:var(--border)">
           <div class="flex items-center justify-center mb-5">
             <div class="relative">
               <div class="w-20 h-20 rounded-full" style="border:4px solid var(--bg-muted)">
@@ -272,7 +570,12 @@ tailwind.config = {
           <div class="grid grid-cols-3 gap-4 mb-4">
             <div class="rounded-lg p-3 text-center" style="background:var(--bg-muted)"><p class="text-xl font-bold font-mono" style="color:var(--brand-primary)">668</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">Imported</p></div>
             <div class="rounded-lg p-3 text-center" style="background:var(--bg-muted)"><p class="text-xl font-bold font-mono" style="color:var(--text-secondary)">224</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">Remaining</p></div>
-            <div class="rounded-lg p-3 text-center" style="background:var(--bg-muted)"><p class="text-xl font-bold font-mono" style="color:var(--brand-primary)">0</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">Errors</p></div>
+            <div class="rounded-lg p-3 text-center" style="background:var(--bg-muted)"><p class="text-xl font-bold font-mono" style="color:var(--danger)">3</p><p class="text-[10px] uppercase font-medium" style="color:var(--text-tertiary)">Skipped</p></div>
+          </div>
+          <!-- Error recovery message -->
+          <div class="flex items-center gap-2 p-2 rounded-lg mb-3" style="background:var(--brand-secondary-bg)">
+            <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0" style="color:var(--brand-secondary)"></i>
+            <p class="text-xs" style="color:var(--brand-secondary)">3 listings skipped — we'll help you fix them in Settings</p>
           </div>
           <div class="rounded-lg p-3 flex items-center gap-3" style="background:var(--bg-muted)">
             <div class="w-8 h-8 rounded flex items-center justify-center flex-shrink-0" style="background:var(--brand-primary-bg)">
@@ -285,8 +588,8 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- CSV upload preview (hidden by default) -->
-        <div id="importPreviewCsv" class="bg-white rounded-lg border p-6 mb-6 hidden" style="border-color:var(--border)">
+        <!-- CSV upload preview -->
+        <div id="importPreviewCsv" class="bg-white rounded-lg border p-6 mb-4 hidden" style="border-color:var(--border)">
           <div class="upload-zone rounded-lg p-8 text-center">
             <i data-lucide="upload-cloud" class="w-10 h-10 mx-auto mb-3" style="color:var(--text-tertiary)"></i>
             <p class="text-sm font-medium mb-1">Drop your CSV file here</p>
@@ -294,8 +597,8 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Fresh start preview (hidden by default) -->
-        <div id="importPreviewFresh" class="bg-white rounded-lg border p-6 mb-6 hidden text-center" style="border-color:var(--border)">
+        <!-- Fresh start preview -->
+        <div id="importPreviewFresh" class="bg-white rounded-lg border p-6 mb-4 hidden text-center" style="border-color:var(--border)">
           <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style="background:var(--brand-accent-bg)">
             <i data-lucide="sparkles" class="w-6 h-6" style="color:var(--brand-accent)"></i>
           </div>
@@ -304,13 +607,166 @@ tailwind.config = {
         </div>
 
         <div class="flex items-center justify-between">
-          <button onclick="goToObStep(2)" class="px-5 py-2.5 text-sm font-medium btn-ghost">Back</button>
-          <button onclick="goToObStep(4)" class="btn-primary px-6 py-2.5 text-sm font-semibold inline-flex items-center gap-2">Continue <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+          <button onclick="obPrev()" class="px-5 py-2.5 text-sm font-medium btn-ghost">Back</button>
+          <button onclick="obNext()" class="btn-primary px-6 py-2.5 text-sm font-semibold inline-flex items-center gap-2">
+            Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
         </div>
       </div>
 
-      <!-- ===== Step 4: Success ===== -->
+      <!-- ===== Step 4: Quick Win (Growing + Enterprise only) ===== -->
       <div class="ob-step" id="obStep4">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl font-bold tracking-tight mb-2">Here's what Dodgeprint found for you</h2>
+          <p class="text-sm" style="color:var(--text-secondary)">Based on your goals, here's a personalised preview of what you'll unlock</p>
+        </div>
+
+        <!-- Quick win preview: listings goal -->
+        <div class="qw-preview-card mb-4" id="qwListings">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--brand-primary-bg)">
+              <i data-lucide="bar-chart-3" class="w-4 h-4" style="color:var(--brand-primary)"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold">Listing Quality Scores</h4>
+              <p class="text-xs" style="color:var(--text-tertiary)">Your current listing health</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div class="text-center p-3 rounded-lg" style="background:var(--success-bg)">
+              <p class="text-xl font-bold font-mono" style="color:var(--success)">124</p>
+              <p class="text-[10px] font-semibold uppercase" style="color:var(--success)">Grade A</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:var(--brand-primary-bg)">
+              <p class="text-xl font-bold font-mono" style="color:var(--brand-primary)">289</p>
+              <p class="text-[10px] font-semibold uppercase" style="color:var(--brand-primary)">Grade B</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:var(--brand-secondary-bg)">
+              <p class="text-xl font-bold font-mono" style="color:var(--brand-secondary)">156</p>
+              <p class="text-[10px] font-semibold uppercase" style="color:var(--brand-secondary)">Grade C</p>
+            </div>
+            <div class="text-center p-3 rounded-lg" style="background:var(--danger-bg)">
+              <p class="text-xl font-bold font-mono" style="color:var(--danger)">23</p>
+              <p class="text-[10px] font-semibold uppercase" style="color:var(--danger)">Needs work</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick win preview: research goal -->
+        <div class="qw-preview-card mb-4 hidden" id="qwResearch">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--brand-accent-bg)">
+              <i data-lucide="trending-up" class="w-4 h-4" style="color:var(--brand-accent)"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold">Trending Keywords</h4>
+              <p class="text-xs" style="color:var(--text-tertiary)">Hot right now in your niche</p>
+            </div>
+          </div>
+          <div>
+            <div class="kw-row">
+              <span class="text-sm font-medium">personalized gifts for her</span>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono" style="color:var(--brand-primary)">48.2k/mo</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full" style="background:var(--success-bg);color:var(--success)">Low comp</span>
+              </div>
+            </div>
+            <div class="kw-row">
+              <span class="text-sm font-medium">boho wall art printable</span>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono" style="color:var(--brand-primary)">32.7k/mo</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full" style="background:var(--brand-secondary-bg);color:var(--brand-secondary)">Med comp</span>
+              </div>
+            </div>
+            <div class="kw-row">
+              <span class="text-sm font-medium">vintage floral tote bag</span>
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-mono" style="color:var(--brand-primary)">21.4k/mo</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full" style="background:var(--success-bg);color:var(--success)">Low comp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick win preview: POD goal -->
+        <div class="qw-preview-card mb-4 hidden" id="qwPod">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--brand-secondary-bg)">
+              <i data-lucide="printer" class="w-4 h-4" style="color:var(--brand-secondary)"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold">Ready-Made Templates</h4>
+              <p class="text-xs" style="color:var(--text-tertiary)">Matched to your niche</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <div class="w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center" style="background:var(--brand-secondary-bg)">
+                <i data-lucide="image" class="w-5 h-5" style="color:var(--brand-secondary)"></i>
+              </div>
+              <p class="text-xs font-semibold">Boho Print</p>
+              <p class="text-[10px]" style="color:var(--text-tertiary)">Mug + Tote</p>
+            </div>
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <div class="w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center" style="background:var(--brand-primary-bg)">
+                <i data-lucide="image" class="w-5 h-5" style="color:var(--brand-primary)"></i>
+              </div>
+              <p class="text-xs font-semibold">Floral Art</p>
+              <p class="text-[10px]" style="color:var(--text-tertiary)">Canvas + Frame</p>
+            </div>
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <div class="w-10 h-10 rounded-lg mx-auto mb-2 flex items-center justify-center" style="background:var(--success-bg)">
+                <i data-lucide="image" class="w-5 h-5" style="color:var(--success)"></i>
+              </div>
+              <p class="text-xs font-semibold">Vintage Gift</p>
+              <p class="text-[10px]" style="color:var(--text-tertiary)">Card + Wrap</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick win preview: analytics goal -->
+        <div class="qw-preview-card mb-4 hidden" id="qwAnalytics">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--success-bg)">
+              <i data-lucide="bar-chart-3" class="w-4 h-4" style="color:var(--success)"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold">Revenue Dashboard Preview</h4>
+              <p class="text-xs" style="color:var(--text-tertiary)">Last 30 days</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <p class="text-lg font-bold font-mono" style="color:var(--success)">$4,280</p>
+              <p class="text-[10px] uppercase" style="color:var(--text-tertiary)">Revenue</p>
+            </div>
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <p class="text-lg font-bold font-mono" style="color:var(--brand-primary)">312</p>
+              <p class="text-[10px] uppercase" style="color:var(--text-tertiary)">Orders</p>
+            </div>
+            <div class="p-3 rounded-lg text-center" style="background:var(--bg-muted)">
+              <p class="text-lg font-bold font-mono" style="color:var(--brand-accent)">3.8%</p>
+              <p class="text-[10px] uppercase" style="color:var(--text-tertiary)">Conversion</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social proof -->
+        <div class="flex items-center gap-3 p-4 rounded-xl mb-8" style="background:var(--brand-primary-bg)">
+          <i data-lucide="clock" class="w-5 h-5 flex-shrink-0" style="color:var(--brand-primary)"></i>
+          <p class="text-sm" style="color:var(--brand-primary)">Impressive, right? <strong>Sellers who use this feature save an avg 2 hours/week.</strong></p>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <button onclick="obPrev()" class="px-5 py-2.5 text-sm font-medium btn-ghost">Back</button>
+          <button onclick="obNext()" class="btn-primary px-6 py-2.5 text-sm font-semibold inline-flex items-center gap-2">
+            Continue <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Step 5: Success + Tour Trigger ===== -->
+      <div class="ob-step" id="obStep5">
         <div class="text-center mb-8">
           <div class="relative inline-block mb-6">
             <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style="background:var(--brand-primary-bg)">
@@ -335,7 +791,9 @@ tailwind.config = {
               <h4 class="text-sm font-semibold">Etsy — CozyPrints Shop</h4>
               <p class="text-xs" style="color:var(--text-tertiary)">892 listings imported successfully</p>
             </div>
-            <span class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)"><i data-lucide="check" class="w-3 h-3"></i> Connected</span>
+            <span class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium" style="background:var(--brand-primary-bg);color:var(--brand-primary)">
+              <i data-lucide="check" class="w-3 h-3"></i> Connected
+            </span>
           </div>
           <div class="grid grid-cols-4 gap-3">
             <div class="rounded-lg p-2.5 text-center" style="background:var(--bg-muted)"><p class="text-lg font-bold font-mono">892</p><p class="text-[10px] uppercase" style="color:var(--text-tertiary)">Listings</p></div>
@@ -345,9 +803,25 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- PSYCH: 3 action cards — clear next steps -->
-        <div class="mb-8">
-          <h4 class="text-sm font-semibold mb-3" style="color:var(--text-secondary)">What would you like to do first?</h4>
+        <!-- Social proof for tour -->
+        <div class="flex items-center gap-3 p-3 rounded-xl mb-6 text-center justify-center" style="background:var(--success-bg)">
+          <i data-lucide="star" class="w-4 h-4 flex-shrink-0" style="color:var(--success)"></i>
+          <p class="text-sm" style="color:var(--success)">Most sellers <strong>save 30 min</strong> in their first week with the guided tour</p>
+        </div>
+
+        <!-- Tour CTAs -->
+        <div class="flex flex-col sm:flex-row items-center gap-3 mb-8">
+          <button onclick="navigate('product-tour')" class="btn-primary w-full sm:w-auto px-8 py-3 text-base font-semibold inline-flex items-center justify-center gap-2">
+            <i data-lucide="play-circle" class="w-5 h-5"></i> Take a 2-min Tour
+          </button>
+          <button onclick="navigate('dashboard')" class="btn-ghost w-full sm:w-auto px-8 py-3 text-base font-medium">
+            I'll explore myself
+          </button>
+        </div>
+
+        <!-- What to do first -->
+        <div>
+          <h4 class="text-sm font-semibold mb-3" style="color:var(--text-secondary)">Or jump straight in:</h4>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <a onclick="navigate('dashboard')" class="bg-white rounded-xl border p-5 text-center cursor-pointer transition-all hover:border-[var(--brand-primary)] hover:shadow-sm" style="border-color:var(--border)">
               <div class="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3" style="background:var(--brand-primary-bg)">
@@ -361,7 +835,7 @@ tailwind.config = {
                 <i data-lucide="list" class="w-5 h-5" style="color:var(--brand-secondary)"></i>
               </div>
               <h5 class="text-sm font-semibold mb-1">Edit Listings</h5>
-              <p class="text-xs" style="color:var(--text-secondary)">Review quality scores and optimize your titles and tags</p>
+              <p class="text-xs" style="color:var(--text-secondary)">Review quality scores and optimise your titles and tags</p>
             </a>
             <a onclick="navigate('research')" class="bg-white rounded-xl border p-5 text-center cursor-pointer transition-all hover:border-[var(--brand-primary)] hover:shadow-sm" style="border-color:var(--border)">
               <div class="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-3" style="background:var(--brand-accent-bg)">
@@ -374,24 +848,186 @@ tailwind.config = {
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /max-w-2xl -->
+  </div><!-- /flex-1 -->
+</div><!-- /screen-onboarding -->
 
 <script src="_shared-navigation.js"></script>
 <script>
-// Import method preview toggle
+// ===== ONBOARDING STATE =====
+var sellerLevel = null; // 'starter' | 'growing' | 'enterprise'
+var sellerGoals = [];
+
+// Branching: step sequence per level
+// starter:    1 -> 2 -> 3 -> 5  (skip 4)
+// growing:    1 -> 2 -> 3 -> 4 -> 5
+// enterprise: 1 -> 2 -> 3 -> 4 -> 5
+var obCurrentStep = 1;
+
+function getTotalSteps() {
+  return sellerLevel === 'starter' ? 4 : 5;
+}
+
+// Maps logical step position to actual DOM step id
+function getStepSequence() {
+  if (sellerLevel === 'starter') {
+    return [1, 2, 3, 5]; // no step 4
+  }
+  return [1, 2, 3, 4, 5];
+}
+
+function obUpdateHeader() {
+  var seq = getStepSequence();
+  var pos = seq.indexOf(obCurrentStep) + 1;
+  var total = getTotalSteps();
+  var indicator = document.getElementById('obStepIndicator');
+  if (indicator) indicator.textContent = 'Step ' + pos + ' of ' + total;
+  var bar = document.getElementById('obProgressBar');
+  if (bar) bar.style.width = Math.round((pos / total) * 100) + '%';
+}
+
+// Override shared goToObStep with branching-aware version
+function goToObStep(step) {
+  var prev = document.getElementById('obStep' + obCurrentStep);
+  var next = document.getElementById('obStep' + step);
+  if (prev) prev.classList.remove('active');
+  if (next) next.classList.add('active');
+  obCurrentStep = step;
+  obUpdateHeader();
+  if (window.lucide) lucide.createIcons();
+  // Scroll to top of content
+  var content = document.querySelector('#screen-onboarding .flex-1');
+  if (content) content.scrollTop = 0;
+}
+
+function obNext() {
+  var seq = getStepSequence();
+  var idx = seq.indexOf(obCurrentStep);
+  if (idx < seq.length - 1) {
+    goToObStep(seq[idx + 1]);
+  }
+}
+
+function obPrev() {
+  var seq = getStepSequence();
+  var idx = seq.indexOf(obCurrentStep);
+  if (idx > 0) {
+    goToObStep(seq[idx - 1]);
+  }
+}
+
+// ===== SELLER LEVEL =====
+function setSellerLevel(level) {
+  sellerLevel = level;
+  // Highlight persona cards
+  ['starter', 'growing', 'enterprise'].forEach(function(l) {
+    var card = document.getElementById('persona-' + l);
+    if (card) card.classList.toggle('selected', l === level);
+  });
+  // Show/hide bulk connect on step 2
+  var bulk = document.getElementById('bulkConnectSection');
+  if (bulk) bulk.classList.toggle('hidden', level !== 'enterprise');
+  // Show platform breakdown on step 3
+  var breakdown = document.getElementById('platformBreakdown');
+  if (breakdown) breakdown.classList.toggle('hidden', level !== 'enterprise');
+  // Enable continue button
+  updateStep1Btn();
+}
+
+// ===== GOAL TOGGLE =====
+function toggleGoal(goal) {
+  var idx = sellerGoals.indexOf(goal);
+  if (idx === -1) {
+    sellerGoals.push(goal);
+  } else {
+    sellerGoals.splice(idx, 1);
+  }
+  // Update card visual
+  var card = document.getElementById('goal-' + goal);
+  var check = document.getElementById('gc-' + goal);
+  var checkIcon = document.getElementById('gci-' + goal);
+  if (card) card.classList.toggle('selected', sellerGoals.indexOf(goal) !== -1);
+  if (check) check.style.background = sellerGoals.indexOf(goal) !== -1 ? 'var(--brand-primary)' : '';
+  if (checkIcon) checkIcon.classList.toggle('hidden', sellerGoals.indexOf(goal) === -1);
+  // Update import subtitle on step 3
+  updateImportSubtitle();
+  // Update quick win cards on step 4
+  updateQuickWin();
+}
+
+function updateImportSubtitle() {
+  var el = document.getElementById('importSubtitle');
+  if (!el) return;
+  var goalText = 'manage everything in one place';
+  if (sellerGoals.indexOf('research') !== -1) goalText = 'start discovering trends';
+  else if (sellerGoals.indexOf('pod') !== -1) goalText = 'begin creating products';
+  else if (sellerGoals.indexOf('analytics') !== -1) goalText = 'see your revenue dashboard';
+  el.textContent = "Let's import your listings so you can " + goalText + ".";
+}
+
+function updateQuickWin() {
+  // Show the most relevant quick win card (first matched goal)
+  var priority = ['listings', 'research', 'pod', 'analytics'];
+  var shown = false;
+  priority.forEach(function(g) {
+    var card = document.getElementById('qw' + g.charAt(0).toUpperCase() + g.slice(1));
+    if (!card) return;
+    var shouldShow = !shown && sellerGoals.indexOf(g) !== -1;
+    card.classList.toggle('hidden', !shouldShow);
+    if (shouldShow) shown = true;
+  });
+  // Fallback: if no goals selected, show listings card
+  if (!shown) {
+    var fallback = document.getElementById('qwListings');
+    if (fallback) fallback.classList.remove('hidden');
+  }
+}
+
+// ===== STEP 1 BUTTON STATE =====
+function updateStep1Btn() {
+  var btn = document.getElementById('step1Btn');
+  if (!btn) return;
+  var ready = sellerLevel !== null;
+  btn.disabled = !ready;
+  btn.classList.toggle('opacity-40', !ready);
+  btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+}
+
+// ===== CONNECT & CONTINUE (step 2) =====
+function obConnectAndContinue() {
+  // Simulate connection success pulse on selected platforms
+  document.querySelectorAll('.platform-option.selected').forEach(function(opt) {
+    var logo = opt.querySelector('.w-14');
+    if (logo) {
+      logo.classList.add('connected-pulse');
+      setTimeout(function() { logo.classList.remove('connected-pulse'); }, 700);
+    }
+  });
+  showToast('Shops connected successfully!', 'success');
+  obNext();
+}
+
+// ===== IMPORT PREVIEW TOGGLE =====
 function showImportPreview(method) {
   document.getElementById('importPreviewAuto').classList.add('hidden');
   document.getElementById('importPreviewCsv').classList.add('hidden');
   document.getElementById('importPreviewFresh').classList.add('hidden');
-
   if (method === 'auto') document.getElementById('importPreviewAuto').classList.remove('hidden');
   if (method === 'csv') document.getElementById('importPreviewCsv').classList.remove('hidden');
   if (method === 'fresh') document.getElementById('importPreviewFresh').classList.remove('hidden');
-
   if (window.lucide) lucide.createIcons();
 }
+
+// ===== LOCAL PLATFORM SELECTION (step 2) =====
+// Uses a local version to avoid interfering with other pages' selectPlatform
+function selectPlatformOb(el) {
+  el.classList.toggle('selected');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+  updateQuickWin(); // default: show listings card
+});
 </script>
 </body>
 </html>
