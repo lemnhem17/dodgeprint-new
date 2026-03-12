@@ -638,6 +638,12 @@ button:active, a[onclick]:active { transform: scale(0.97); }
 .sidebar.collapsed .sidebar-brand-text,
 .sidebar.collapsed .sidebar-section-label { opacity: 0; }
 
+/* Collapsible nav groups */
+.sidebar-section-items { transition: max-height 0.2s ease, opacity 0.15s ease; }
+.sidebar-chevron { transition: transform 0.2s ease; }
+.sidebar-chevron.collapsed { transform: rotate(-90deg); }
+.sidebar-section-label:hover { color: var(--text-secondary) !important; }
+
 /* Toast slide-in */
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }

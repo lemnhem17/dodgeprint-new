@@ -2,14 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=12-homepage.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dodgeprint Wireframes</title>
 <style>
-  body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #F9FAFB; color: #6B7280; }
-  a { color: #3B82F6; text-decoration: none; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #F9FAFB; color: #1F2937; min-height: 100vh; padding: 48px 24px; }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: #6B7280; font-size: 14px; margin-bottom: 32px; }
+  .section { margin-bottom: 28px; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9CA3AF; margin-bottom: 8px; padding-left: 4px; }
+  .links { display: flex; flex-direction: column; gap: 2px; }
+  a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: #374151; font-size: 14px; font-weight: 500; transition: background 0.12s; }
+  a:hover { background: #E5E7EB; }
+  .num { color: #9CA3AF; font-size: 12px; font-variant-numeric: tabular-nums; min-width: 20px; }
+  .badge { font-size: 10px; font-weight: 600; background: #DBEAFE; color: #3B82F6; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
+  .badge.hidden { background: #F3F4F6; color: #9CA3AF; }
 </style>
 </head>
 <body>
-  <p>Redirecting to <a href="12-homepage.html">Dodgeprint Homepage</a>...</p>
+<div class="container">
+  <h1>Dodgeprint Wireframes</h1>
+  <p class="subtitle">Ordered by user journey flow</p>
+
+  <div class="section">
+    <div class="section-label">Entry & Setup</div>
+    <div class="links">
+      <a href="02-auth.html"><span class="num">02</span> Auth (Register / Login)</a>
+      <a href="01-onboarding.html"><span class="num">01</span> Onboarding Wizard</a>
+      <a href="21-product-tour.html"><span class="num">21</span> Product Tour</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Daily Operations</div>
+    <div class="links">
+      <a href="12-homepage.html"><span class="num">12</span> Home</a>
+      <a href="03-dashboard.html"><span class="num">03</span> Dashboard</a>
+      <a href="13-shops.html"><span class="num">13</span> Shops</a>
+      <a href="04-listings.html"><span class="num">04</span> Listings</a>
+      <a href="05-orders.html"><span class="num">05</span> Orders</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Production</div>
+    <div class="links">
+      <a href="10-listing-editor.html"><span class="num">10</span> Listing Editor <span class="badge hidden">sidebar hidden</span></a>
+      <a href="11-bulk-editor.html"><span class="num">11</span> Bulk Editor <span class="badge hidden">sidebar hidden</span></a>
+      <a href="15-ai-generator.html"><span class="num">15</span> AI Generator</a>
+      <a href="07-pod-hub.html"><span class="num">07</span> POD Hub</a>
+      <a href="14-collections.html"><span class="num">14</span> Collections</a>
+      <a href="18-templates.html"><span class="num">18</span> Templates</a>
+      <a href="16-suppliers.html"><span class="num">16</span> Suppliers</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Analytics & Tools</div>
+    <div class="links">
+      <a href="08-analytics.html"><span class="num">08</span> Analytics</a>
+      <a href="06-research.html"><span class="num">06</span> Research</a>
+      <a href="17-deployments.html"><span class="num">17</span> Deployments</a>
+      <a href="19-tools.html"><span class="num">19</span> Tools</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Settings</div>
+    <div class="links">
+      <a href="20-billing.html"><span class="num">20</span> Billing</a>
+      <a href="09-settings.html"><span class="num">09</span> Settings</a>
+      <a href="21-notifications.html"><span class="num">21</span> Notifications</a>
+    </div>
+  </div>
+</div>
 </body>
 </html>

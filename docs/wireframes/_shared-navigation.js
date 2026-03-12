@@ -636,23 +636,23 @@ function updateBreadcrumb(items) {
 
 // ===== COMMAND PALETTE =====
 var COMMAND_ITEMS = [
+  { label: 'Home', icon: 'home', action: "navigate('home')", keywords: 'welcome start' },
   { label: 'Dashboard', icon: 'layout-dashboard', action: "navigate('dashboard')" },
+  { label: 'Shops', icon: 'store', action: "navigate('shops')" },
   { label: 'Listings', icon: 'list', action: "navigate('listings')" },
   { label: 'Orders', icon: 'shopping-cart', action: "navigate('orders')" },
-  { label: 'Research', icon: 'search', action: "navigate('research')" },
-  { label: 'POD Hub', icon: 'printer', action: "navigate('pod-hub')" },
-  { label: 'Analytics', icon: 'bar-chart-3', action: "navigate('analytics')" },
-  { label: 'Settings', icon: 'settings', action: "navigate('settings')" },
-  { label: 'New Listing', icon: 'plus', action: "navigate('listing-editor')", shortcut: 'N' },
-  { label: 'Bulk Edit', icon: 'edit-3', action: "navigate('bulk-editor')" },
-  { label: 'Shops', icon: 'store', action: "navigate('shops')" },
-  { label: 'Collections', icon: 'folder', action: "navigate('collections')" },
   { label: 'AI Generator', icon: 'sparkles', action: "navigate('ai-generator')" },
-  { label: 'Suppliers', icon: 'truck', action: "navigate('suppliers')" },
-  { label: 'Deployments', icon: 'rocket', action: "navigate('deployments')" },
+  { label: 'POD Hub', icon: 'printer', action: "navigate('pod-hub')" },
+  { label: 'Collections', icon: 'folder', action: "navigate('collections')" },
   { label: 'Templates', icon: 'file-text', action: "navigate('templates')" },
+  { label: 'Suppliers', icon: 'truck', action: "navigate('suppliers')" },
+  { label: 'Analytics', icon: 'bar-chart-3', action: "navigate('analytics')" },
+  { label: 'Research', icon: 'search', action: "navigate('research')" },
+  { label: 'Deployments', icon: 'rocket', action: "navigate('deployments')" },
   { label: 'Tools', icon: 'wrench', action: "navigate('tools')" },
   { label: 'Billing', icon: 'credit-card', action: "navigate('billing')" },
+  { label: 'Settings', icon: 'settings', action: "navigate('settings')" },
+  { label: 'Notifications', icon: 'bell', action: "navigate('notifications')", keywords: 'alerts messages' },
   { label: 'Product Tour', icon: 'map', action: "navigate('product-tour')", keywords: 'tour guide onboarding walkthrough help' }
 ];
 
@@ -744,36 +744,49 @@ function toggleHelp(btn) {
 // Ensures consistent navigation across ALL wireframe pages
 var SIDEBAR_NAV_SECTIONS = [
   {
-    label: 'Core',
+    label: null, // top-level, no group header
     items: [
-      { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
-      { id: 'listings', icon: 'list', label: 'Listings' },
-      { id: 'orders', icon: 'shopping-cart', label: 'Orders' },
-      { id: 'shops', icon: 'store', label: 'Shops', badge: '2', badgeType: 'danger' }
+      { id: 'home', icon: 'home', label: 'Home' },
+      { id: 'dashboard', icon: 'layout-dashboard', label: 'Dashboard' }
     ]
   },
   {
-    label: 'Create',
+    label: 'Shops & Orders',
+    collapsible: true,
+    items: [
+      { id: 'shops', icon: 'store', label: 'Shops', badge: '2', badgeType: 'danger' },
+      { id: 'listings', icon: 'list', label: 'Listings' },
+      { id: 'orders', icon: 'shopping-cart', label: 'Orders' }
+    ]
+  },
+  {
+    label: 'Production',
+    collapsible: true,
     items: [
       { id: 'ai-generator', icon: 'sparkles', label: 'AI Generator' },
-      { id: 'collections', icon: 'folder', label: 'Collections' },
-      { id: 'templates', icon: 'file-text', label: 'Templates' }
-    ]
-  },
-  {
-    label: 'Fulfill',
-    items: [
       { id: 'pod-hub', icon: 'printer', label: 'POD Hub' },
-      { id: 'suppliers', icon: 'truck', label: 'Suppliers' },
-      { id: 'deployments', icon: 'rocket', label: 'Deployments' }
+      { id: 'collections', icon: 'folder', label: 'Collections' },
+      { id: 'templates', icon: 'file-text', label: 'Templates' },
+      { id: 'suppliers', icon: 'truck', label: 'Suppliers' }
     ]
   },
   {
-    label: 'Insights',
+    label: 'Analytics & Tools',
+    collapsible: true,
     items: [
-      { id: 'research', icon: 'search', label: 'Research' },
       { id: 'analytics', icon: 'bar-chart-3', label: 'Analytics' },
+      { id: 'research', icon: 'search', label: 'Research' },
+      { id: 'deployments', icon: 'rocket', label: 'Deployments' },
       { id: 'tools', icon: 'wrench', label: 'Tools' }
+    ]
+  },
+  {
+    label: 'Settings',
+    collapsible: true,
+    items: [
+      { id: 'billing', icon: 'credit-card', label: 'Billing' },
+      { id: 'settings', icon: 'settings', label: 'Settings' },
+      { id: 'notifications', icon: 'bell', label: 'Notifications' }
     ]
   }
 ];
@@ -784,12 +797,29 @@ function initSidebar() {
 
   var currentPage = document.body.getAttribute('data-page') || '';
 
-  // Build nav HTML from SIDEBAR_NAV_SECTIONS
+  // Build nav HTML from SIDEBAR_NAV_SECTIONS with collapsible groups
   var html = '';
   SIDEBAR_NAV_SECTIONS.forEach(function(section) {
-    html += '<div>'
-      + '<div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1" style="color:var(--text-tertiary)">'
-      + section.label + '</div><div class="space-y-0.5">';
+    var storageKey = section.label ? 'dodgeprint_nav_' + section.label.toLowerCase().replace(/[^a-z0-9]/g, '_') : null;
+    var isCollapsed = storageKey ? localStorage.getItem(storageKey) === 'collapsed' : false;
+
+    html += '<div class="sidebar-section">';
+
+    // Section label (skip if null for top-level items)
+    if (section.label) {
+      html += '<div class="sidebar-section-label text-[10px] font-semibold uppercase tracking-wider px-2 pb-1 flex items-center justify-between'
+        + (section.collapsible ? ' cursor-pointer select-none' : '') + '"'
+        + ' style="color:var(--text-tertiary)"'
+        + (section.collapsible ? ' onclick="toggleNavGroup(this)" data-nav-group="' + storageKey + '"' : '') + '>'
+        + '<span>' + section.label + '</span>'
+        + (section.collapsible ? '<i data-lucide="chevron-down" class="w-3 h-3 sidebar-chevron' + (isCollapsed ? ' collapsed' : '') + '"></i>' : '')
+        + '</div>';
+    }
+
+    // Items container with collapse support
+    html += '<div class="sidebar-section-items space-y-0.5"'
+      + (isCollapsed ? ' style="max-height:0px;overflow:hidden;opacity:0"' : '') + '>';
+
     section.items.forEach(function(item) {
       var isActive = item.id === currentPage;
       html += '<a data-nav="' + item.id + '" data-tooltip="' + item.label + '" onclick="navigate(\'' + item.id + '\')"'
@@ -801,10 +831,37 @@ function initSidebar() {
         + (item.badge ? '<span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background:var(--' + (item.badgeType || 'danger') + ');color:#fff">' + item.badge + '</span>' : '')
         + '</a>';
     });
+
     html += '</div></div>';
   });
 
+  // Suppress transition flash on initial render
+  nav.style.cssText = 'transition:none';
   nav.innerHTML = html;
+  requestAnimationFrame(function() { nav.style.cssText = ''; });
+}
+
+// Toggle collapsible sidebar nav group
+function toggleNavGroup(labelEl) {
+  var key = labelEl.getAttribute('data-nav-group');
+  var items = labelEl.nextElementSibling;
+  var chevron = labelEl.querySelector('.sidebar-chevron');
+  if (!items) return;
+
+  var isCollapsed = items.style.maxHeight === '0px';
+  if (isCollapsed) {
+    items.style.maxHeight = '';
+    items.style.overflow = '';
+    items.style.opacity = '';
+    if (chevron) chevron.classList.remove('collapsed');
+    if (key) localStorage.removeItem(key);
+  } else {
+    items.style.maxHeight = '0px';
+    items.style.overflow = 'hidden';
+    items.style.opacity = '0';
+    if (chevron) chevron.classList.add('collapsed');
+    if (key) localStorage.setItem(key, 'collapsed');
+  }
 }
 
 // ===== INITIALIZATION =====
